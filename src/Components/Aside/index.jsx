@@ -1,7 +1,12 @@
 import { StyledAside } from './styled'
+import MapsContainer from '../MapsContainer'
+import PersonalContainer from '../PersonalContainer'
 
 export default function Aside(){
     return(
-        <StyledAside />
+        <StyledAside>
+            <PersonalContainer />
+            {/* <MapsContainer /> */}
+        </StyledAside>
     )
 }

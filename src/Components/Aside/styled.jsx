@@ -2,6 +2,7 @@ import styled from 'styled-components'
 
 export const StyledAside = styled.aside`
     position: absolute;
+    padding: 10px;
     z-index: 5;
     left: 0;
     width: 300px;
