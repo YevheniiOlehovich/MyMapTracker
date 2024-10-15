@@ -17,7 +17,7 @@ export const StyledWrapper = styled.div`
 
 export const StyledModal = styled.div`
     width: 400px;
-    height: 500px;
+    height: 350px;
     background: white;
     padding: 10px;
     display: flex;
@@ -37,4 +37,50 @@ export const StyledCloseButton = styled.button`
     background-size: contain;
     background-repeat: no-repeat; 
     cursor: pointer;
+`
+
+export const StyledTitle = styled.h4`
+    font-family: Arial, sans-serif;
+    font-weight: 700;
+    font-size: 17px;
+    color: black;
+    margin: 0;
+    margin-bottom: 20px;
+`
+
+export const StyledLabel = styled.label`
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+`
+
+export const StyledSubtitle = styled.h5`
+    font-family: Arial, sans-serif;
+    font-weight: 500;
+    font-size: 14px;
+    color: black;
+    margin: 0;
+    display: block;
+`
+
+export const StyledInput = styled.input`
+    width: 200px;
+    border: 1px solid grey;
+    height: 20px;
+    padding: 4px;
+    &:focus{
+        border: 1px solid black;
+        border-radius: none;
+    }
+`
+
+export const StyledTextArea = styled.textarea`
+    width: 100%;
+    height: 100px;
+    border: 1px solid grey;
+    resize: none; 
+    word-wrap: break-word; 
+    overflow: auto; 
 `
