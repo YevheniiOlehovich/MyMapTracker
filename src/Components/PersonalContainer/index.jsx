@@ -3,11 +3,13 @@ import { StyledWrapper, StyledTitle, StyledBlock, StyledButton, StyledIco, Style
 import TriangleIco from '../../assets/ico/triangle.png';
 import Button from '../Button';
 import AddGroupModal from '../AddGroupModal';
+import AddPersonalModal from '../AddPersonalModal';
 
 export default function Personal() {
     const [rotation, setRotation] = useState(0);
     const [isContainerVisible, setIsContainerVisible] = useState(false);
     const [isAddGroupModalVisible, setIsAddGroupModalVisible] = useState(false);
+    const [isAddPersonalModalVisible, setIsAddPersonalModalVisible] = useState(false);
 
     const handleClick = () => {
         setRotation(prev => prev + 180); 
@@ -18,8 +20,16 @@ export default function Personal() {
         setIsAddGroupModalVisible(true);
     };
 
+    const showPersonalModal = () => {
+        setIsAddPersonalModalVisible(true);
+    };
+
     const closeGroupModal = () => {
         setIsAddGroupModalVisible(false); 
+    };
+
+    const closePersonalModal = () => {
+        setIsAddPersonalModalVisible(false); 
     };
 
     return (
@@ -33,7 +43,7 @@ export default function Personal() {
                 </StyledBlock>
                 <StyledBlock>
                     <Button text={'Створити групу'} onClick={showGroupModal} /> 
-                    <Button text={'Додати працівника'} />
+                    <Button text={'Додати працівника'} onClick={showPersonalModal}/>
                 </StyledBlock>
 
                 {isContainerVisible && <StyledContainer />}
@@ -41,6 +51,7 @@ export default function Personal() {
             </StyledWrapper>
 
             {isAddGroupModalVisible && <AddGroupModal onClose={closeGroupModal}/>} 
+            {isAddPersonalModalVisible && <AddPersonalModal onClose={closePersonalModal}/>} 
         </>
     );
 }
