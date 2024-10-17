@@ -1,9 +1,10 @@
+import { useEffect, useState } from 'react';
 import { StyledWrapper, StyledModal, StyledCloseButton, StyledTitle, StyledLabel, StyledSubtitle, StyledInput, StyledTextArea, StyledPhotoBlock, PhotoBlock, BlockColumn, PhotoPic, StyledButtonLabel, StyledInputFile, StyledText } from './styles';
 import closeModal from "../../helpres/closeModal";
 import Button from '../Button';
-import { useState } from 'react';
 import apiRoutes from '../../helpres/ApiRoutes';
-import QuestionIco from '../../assets/ico/10965421.png'
+import QuestionIco from '../../assets/ico/10965421.png';
+import SelectComponent from '../Select'; // Імпортуємо компонент SelectComponent
 
 export default function AddPersonalModal({ onClose }) { 
     const handleWrapperClick = closeModal(onClose);
@@ -15,6 +16,24 @@ export default function AddPersonalModal({ onClose }) {
     const [groupDescription, setGroupDescription] = useState('');
     const [employeePhoto, setEmployeePhoto] = useState(null); // Стан для фото працівника
     const [previewPhoto, setPreviewPhoto] = useState(QuestionIco); // Стан для попереднього перегляду фото
+    const [groups, setGroups] = useState([]); // Стан для груп
+    const [selectedGroup, setSelectedGroup] = useState(null); // Стан для обраної групи
+
+    // Отримання груп з бекенду
+    useEffect(() => {
+        const fetchGroups = async () => {
+            try {
+                const response = await fetch(apiRoutes.getGroups); // Маршрут для отримання груп
+                const data = await response.json();
+                const groupOptions = data.map(group => ({ value: group._id, label: group.name })); // Форматування даних для Select
+                setGroups(groupOptions); // Зберігаємо групи в стані
+            } catch (error) {
+                console.error('Error fetching groups:', error);
+            }
+        };
+
+        fetchGroups();
+    }, []);
 
     const handlePhotoChange = (e) => {
         const file = e.target.files[0];
@@ -23,33 +42,50 @@ export default function AddPersonalModal({ onClose }) {
     };
 
     const handleSave = async () => {
-        const groupData = new FormData();
-        groupData.append('name', groupName);
-        groupData.append('ownership', groupOwnership);
-        groupData.append('contactNumber', contactNumber); 
-        groupData.append('description', groupDescription);
+        const employeeData = {
+            name: groupName,
+            ownership: groupOwnership,
+            contactNumber,
+            description: groupDescription,
+            groupId: selectedGroup ? selectedGroup.value : null
+        };
 
-        if (employeePhoto) {
-            groupData.append('photo', employeePhoto);
-        }
-
+        console.log(employeeData)
+    
         try {
-            const response = await fetch(apiRoutes.addGroup, { 
+            const response = await fetch(apiRoutes.addPersonnel(selectedGroup.value), {
                 method: 'POST',
-                body: groupData,
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(employeeData),
             });
 
+            console.log(response)
+    
             if (!response.ok) {
-                throw new Error('Failed to save group');
+                throw new Error('Failed to save employee');
             }
+    
+            const savedEmployee = await response.json();
 
-            const savedGroup = await response.json();
-            console.log('Group saved:', savedGroup); 
-            onClose(); 
+            console.log('Employee saved:', savedEmployee);
+    
+            // Оновлюємо стан груп
+            setGroups((prevGroups) =>
+                prevGroups.map((group) =>
+                    group.value === selectedGroup.value
+                        ? { ...group, personnel: [...group.personnel, savedEmployee] }
+                        : group
+                )
+            );
+    
+            onClose();
         } catch (error) {
-            console.error('Error saving group:', error);
+            console.error('Error saving employee:', error);
         }
     };
+    
 
     return (
         <StyledWrapper onClick={handleWrapperClick}>
@@ -73,6 +109,17 @@ export default function AddPersonalModal({ onClose }) {
                         <PhotoPic src={previewPhoto} alt="Прев'ю фото"></PhotoPic>
                     </PhotoBlock>
                 </StyledPhotoBlock>
+
+                <StyledLabel>
+                    <StyledSubtitle>Виберіть групу</StyledSubtitle>
+                    <SelectComponent 
+                        options={groups} // Передаємо отримані групи як пропси
+                        value={selectedGroup} // Вибрана група
+                        onChange={(option) => setSelectedGroup(option)} // Обробка вибору
+                        placeholder="Оберіть групу"
+                    />
+                </StyledLabel>
+
                 <StyledLabel>
                     <StyledSubtitle>Ім'я працівника</StyledSubtitle>
                     <StyledInput 
@@ -109,3 +156,4 @@ export default function AddPersonalModal({ onClose }) {
         </StyledWrapper>
     );
 }
+

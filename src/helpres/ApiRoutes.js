@@ -9,6 +9,7 @@ const API_BASE_URL = `http://localhost:5000`; // Змініть порт від�
 const apiRoutes = {
     getGroups: `${API_BASE_URL}/groups`,  // Для отримання груп
     addGroup: `${API_BASE_URL}/groups`, // Для POST-запиту на додавання нової групи
+    addPersonnel: (groupId) => `${API_BASE_URL}/groups/${groupId}/personnel`,
     // Додайте інші ендпоінти за потреби
 };
 
