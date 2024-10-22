@@ -4,6 +4,7 @@ import TriangleIco from '../../assets/ico/triangle.png';
 import Button from '../Button';
 import AddGroupModal from '../AddGroupModal';
 import AddPersonalModal from '../AddPersonalModal';
+import PersonalList from '../PersonalList';
 
 export default function Personal() {
     const [rotation, setRotation] = useState(0);
@@ -46,7 +47,7 @@ export default function Personal() {
                     <Button text={'Додати працівника'} onClick={showPersonalModal}/>
                 </StyledBlock>
 
-                {isContainerVisible && <StyledContainer />}
+                {isContainerVisible && <PersonalList />}
                 
             </StyledWrapper>
 
