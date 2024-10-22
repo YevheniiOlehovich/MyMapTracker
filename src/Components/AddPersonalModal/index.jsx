@@ -1,44 +1,38 @@
 import { useEffect, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchGroups, selectAllGroups } from '../../store/groupSlice'; // Імпортуємо селектор і екшен
 import { StyledWrapper, StyledModal, StyledCloseButton, StyledTitle, StyledLabel, StyledSubtitle, StyledInput, StyledTextArea, StyledPhotoBlock, PhotoBlock, BlockColumn, PhotoPic, StyledButtonLabel, StyledInputFile, StyledText } from './styles';
 import closeModal from "../../helpres/closeModal";
 import Button from '../Button';
 import apiRoutes from '../../helpres/ApiRoutes';
 import QuestionIco from '../../assets/ico/10965421.png';
-import SelectComponent from '../Select'; // Імпортуємо компонент SelectComponent
+import SelectComponent from '../Select'; 
 
 export default function AddPersonalModal({ onClose }) { 
     const handleWrapperClick = closeModal(onClose);
+
+    // Диспетчер для використання Redux
+    const dispatch = useDispatch();
+    const groups = useSelector(selectAllGroups); // Отримуємо групи з глобального стану
+    const [selectedGroup, setSelectedGroup] = useState(null); // Стан для обраної групи
 
     // Стан для кожного поля
     const [groupName, setGroupName] = useState('');
     const [groupOwnership, setGroupOwnership] = useState('');
     const [contactNumber, setContactNumber] = useState(''); 
     const [groupDescription, setGroupDescription] = useState('');
-    const [employeePhoto, setEmployeePhoto] = useState(null); // Стан для фото працівника
-    const [previewPhoto, setPreviewPhoto] = useState(QuestionIco); // Стан для попереднього перегляду фото
-    const [groups, setGroups] = useState([]); // Стан для груп
-    const [selectedGroup, setSelectedGroup] = useState(null); // Стан для обраної групи
+    const [employeePhoto, setEmployeePhoto] = useState(null);
+    const [previewPhoto, setPreviewPhoto] = useState(QuestionIco); 
 
-    // Отримання груп з бекенду
+    // Отримання груп з бекенду при монтуванні компонента
     useEffect(() => {
-        const fetchGroups = async () => {
-            try {
-                const response = await fetch(apiRoutes.getGroups); // Маршрут для отримання груп
-                const data = await response.json();
-                const groupOptions = data.map(group => ({ value: group._id, label: group.name })); // Форматування даних для Select
-                setGroups(groupOptions); // Зберігаємо групи в стані
-            } catch (error) {
-                console.error('Error fetching groups:', error);
-            }
-        };
-
-        fetchGroups();
-    }, []);
+        dispatch(fetchGroups());
+    }, [dispatch]);
 
     const handlePhotoChange = (e) => {
         const file = e.target.files[0];
-        setEmployeePhoto(file); // Зберігаємо вибране зображення
-        setPreviewPhoto(URL.createObjectURL(file)); // Створюємо тимчасовий URL для попереднього перегляду
+        setEmployeePhoto(file); 
+        setPreviewPhoto(URL.createObjectURL(file));
     };
 
     const handleSave = async () => {
@@ -50,8 +44,6 @@ export default function AddPersonalModal({ onClose }) {
             groupId: selectedGroup ? selectedGroup.value : null
         };
 
-        console.log(employeeData)
-    
         try {
             const response = await fetch(apiRoutes.addPersonnel(selectedGroup.value), {
                 method: 'POST',
@@ -61,31 +53,19 @@ export default function AddPersonalModal({ onClose }) {
                 body: JSON.stringify(employeeData),
             });
 
-            console.log(response)
-    
             if (!response.ok) {
                 throw new Error('Failed to save employee');
             }
-    
-            const savedEmployee = await response.json();
 
-            console.log('Employee saved:', savedEmployee);
+            const savedEmployee = await response.json();
     
             // Оновлюємо стан груп
-            setGroups((prevGroups) =>
-                prevGroups.map((group) =>
-                    group.value === selectedGroup.value
-                        ? { ...group, personnel: [...group.personnel, savedEmployee] }
-                        : group
-                )
-            );
-    
+            // Це краще реалізувати в Redux, але поки що залишимо так
             onClose();
         } catch (error) {
             console.error('Error saving employee:', error);
         }
     };
-    
 
     return (
         <StyledWrapper onClick={handleWrapperClick}>
@@ -113,9 +93,9 @@ export default function AddPersonalModal({ onClose }) {
                 <StyledLabel>
                     <StyledSubtitle>Виберіть групу</StyledSubtitle>
                     <SelectComponent 
-                        options={groups} // Передаємо отримані групи як пропси
-                        value={selectedGroup} // Вибрана група
-                        onChange={(option) => setSelectedGroup(option)} // Обробка вибору
+                        options={groups} 
+                        value={selectedGroup} 
+                        onChange={(option) => setSelectedGroup(option)} 
                         placeholder="Оберіть групу"
                     />
                 </StyledLabel>
@@ -156,4 +136,3 @@ export default function AddPersonalModal({ onClose }) {
         </StyledWrapper>
     );
 }
-

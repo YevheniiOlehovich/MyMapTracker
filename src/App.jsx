@@ -1,5 +1,7 @@
 import Main from "./Components/Main";
 import { createGlobalStyle } from 'styled-components';
+import { Provider } from 'react-redux'; // Імпортуємо Provider
+import store from './store/store'; // Імпортуємо ваш store
 
 const GlobalStyle = createGlobalStyle`
   * {
@@ -19,11 +21,11 @@ const GlobalStyle = createGlobalStyle`
 
 function App() {
   return (
-    <>
+    <Provider store={store}> {/* Обгортаємо ваш компонент в Provider */}
       <GlobalStyle />
       <Main />
-    </>
-  )
+    </Provider>
+  );
 }
 
 export default App;
