@@ -61,7 +61,6 @@ export default function AddPersonalModal({ onClose }) {
 
             const savedEmployee = await response.json();
             
-
             // Після успішного збереження групи, викликаємо fetchGroups для оновлення списку
             dispatch(fetchGroups());
             // Оновлюємо стан груп

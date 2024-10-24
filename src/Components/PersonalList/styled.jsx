@@ -1,32 +1,32 @@
 import { styled, css }from 'styled-components'
 
-export const StyledWrapper = styled.div`
-    box-sizing: border-box;
-    position: relative;
-    width: 100%;
-    padding: 4px 0 20px 0;
-    border: 1px solid rgba(0, 0, 0, 0.5);
-    &:hover{
-        border: 1px solid black;
-    }
-    
-`
-
 export const StyledTitle = styled.h3`
     font-family: Arial, Helvetica, sans-serif;
     font-weight: 700;
     font-size: 16px;
     display: block;
-    margin: 0;
+    margin: 0 8px 12px;
 `
 
 export const StyledBlock = styled.div`
-    display: flex;
     width: 100%;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0 8px;
     margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+`
+export const StyledButtonBlock = styled.div`
+    display: flex;
+    width: 50px;
+    justify-content: space-between;
+`
+export const StyledSubtitle = styled.h4`
+    font-family: Arial, Helvetica, sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    display: block;
+    margin: 0;
+    display: block;
 `
 
 export const StyledButton = styled.button`
@@ -36,7 +36,7 @@ export const StyledButton = styled.button`
     display: flex;
     justify-content: center;
     align-items: center;
-    background-color: grey;
+    background-color: white;
     box-sizing: border-box;
     padding: 0;
     cursor: pointer;
@@ -56,9 +56,27 @@ export const StyledIco = styled.div`
     transform: rotate(${props => props.rotation}deg);
 `
 
-export const StyledContainer = styled.div`
+export const StyledList = styled.ul`
+    list-style: none;
+    padding: 0 0 0 12px;
+    margin: 0;
     width: 100%;
-    height: 100px;
-    box-sizing: border-box;
-    border: 1px solid black;
+`
+
+export const StyledListItem = styled.li`
+    list-style: none;
+    margin-bottom: 4px;
+`
+
+export const StyledMainList = styled.ul`
+    list-style: none;
+    padding: 0 8px;
+    margin: 0;
+    width: 100%;
+    height: 600px;
+    overflow-y: auto;
+`
+
+export const StyledSpan = styled.span`
+    margin: 0;
 `

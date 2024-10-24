@@ -7,7 +7,7 @@ export const StyledAside = styled.aside`
     left: 0;
     width: 300px;
     height: 800px;
-    background: rgba(0, 0, 0, 0.2);
+    background: rgba(0, 0, 0, 0.5);
     top: 50%;
     transform: translateY(-50%);
     display: flex;
