@@ -3,9 +3,13 @@ import closeModal from "../../helpres/closeModal";
 import Button from '../Button';
 import { useState } from 'react';
 import apiRoutes from '../../helpres/ApiRoutes';
+import { useDispatch } from 'react-redux';
+import { fetchGroups } from '../../store/groupSlice';
 
 export default function AddGroupModal({ onClose }) { 
     const handleWrapperClick = closeModal(onClose);
+
+    const dispatch = useDispatch(); // Створюємо dispatch
 
     // Стан для кожного поля
     const [groupName, setGroupName] = useState('');
@@ -36,6 +40,10 @@ export default function AddGroupModal({ onClose }) {
 
             const savedGroup = await response.json();
             console.log('Group saved:', savedGroup); // Логування збереженої групи
+            
+            // Після успішного збереження групи, викликаємо fetchGroups для оновлення списку
+            dispatch(fetchGroups());
+            
             onClose(); // Закриття модального вікна
         } catch (error) {
             console.error('Error saving group:', error);

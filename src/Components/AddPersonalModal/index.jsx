@@ -8,6 +8,8 @@ import apiRoutes from '../../helpres/ApiRoutes';
 import QuestionIco from '../../assets/ico/10965421.png';
 import SelectComponent from '../Select'; 
 
+
+
 export default function AddPersonalModal({ onClose }) { 
     const handleWrapperClick = closeModal(onClose);
 
@@ -58,7 +60,10 @@ export default function AddPersonalModal({ onClose }) {
             }
 
             const savedEmployee = await response.json();
-    
+            
+
+            // Після успішного збереження групи, викликаємо fetchGroups для оновлення списку
+            dispatch(fetchGroups());
             // Оновлюємо стан груп
             // Це краще реалізувати в Redux, але поки що залишимо так
             onClose();
