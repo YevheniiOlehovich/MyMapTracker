@@ -33,7 +33,6 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
     const { name, ownership, description } = req.body;
 
-    // Перевірка наявності обов'язкових полів
     if (!name || !ownership) {
         return res.status(400).json({ message: 'Name and ownership are required' });
     }
@@ -42,8 +41,8 @@ router.post('/', async (req, res) => {
         name,
         ownership,
         description,
-        personnel: [], // Створюємо порожній масив для персоналу
-        equipment: []  // Створюємо порожній масив для техніки
+        personnel: [],
+        equipment: [],
     });
 
     try {
@@ -69,15 +68,30 @@ router.put('/:id', async (req, res) => {
             return res.status(404).json({ message: 'Group not found' });
         }
 
-        res.status(204).json(group); // або res.json(group);
+        res.status(200).json(group); // 200 OK для оновлення
     } catch (error) {
         res.status(400).json({ message: 'Error updating group' });
     }
 });
 
-// Маршрут для додавання персоналу до конкретної групи
+// Видалення групи
+router.delete('/:id', async (req, res) => {
+    try {
+        const group = await Group.findByIdAndDelete(req.params.id);
+
+        if (!group) {
+            return res.status(404).json({ message: 'Group not found' });
+        }
+
+        res.status(200).json({ message: 'Group deleted' }); // Повертаємо повідомлення про успішне видалення
+    } catch (error) {
+        res.status(500).json({ message: 'Error deleting group' });
+    }
+});
+
+// Додавання персоналу до конкретної групи
 router.post('/:id/personnel', async (req, res) => {
-    console.log('Request Body:', req.body); // Логування тіла запиту
+    console.log('Request Body:', req.body);
 
     const { name, ownership, contactNumber, description } = req.body;
 
@@ -91,17 +105,11 @@ router.post('/:id/personnel', async (req, res) => {
             return res.status(404).json({ message: 'Group not found' });
         }
 
-        const newPersonnel = {
-            name,
-            ownership,
-            contactNumber,
-            description,
-        };
-
+        const newPersonnel = { name, ownership, contactNumber, description };
         group.personnel.push(newPersonnel);
 
-        await group.save(); // Додайте логування після збереження
-        console.log('Updated Group:', group); // Логування оновленої групи
+        await group.save();
+        console.log('Updated Group:', group);
         res.status(201).json(group);
     } catch (error) {
         console.error('Error adding personnel to group:', error);
@@ -109,6 +117,78 @@ router.post('/:id/personnel', async (req, res) => {
     }
 });
 
+// Оновлення інформації про персонал
+router.put('/:groupId/personnel/:personId', async (req, res) => {
+    const { name, ownership, contactNumber, description } = req.body;
+
+    try {
+        const group = await Group.findById(req.params.groupId);
+        if (!group) {
+            return res.status(404).json({ message: 'Group not found' });
+        }
+
+        const person = group.personnel.id(req.params.personId);
+        if (!person) {
+            return res.status(404).json({ message: 'Personnel not found' });
+        }
+
+        person.name = name || person.name;
+        person.ownership = ownership || person.ownership;
+        person.contactNumber = contactNumber || person.contactNumber;
+        person.description = description || person.description;
+
+        await group.save();
+        res.status(200).json(group);
+    } catch (error) {
+        res.status(400).json({ message: 'Error updating personnel' });
+    }
+});
+
+// Видалення персоналу з групи
+// router.delete('/:groupId/personnel/:personId', async (req, res) => {
+//     try {
+//         const group = await Group.findById(req.params.groupId);
+//         if (!group) {
+//             return res.status(404).json({ message: 'Group not found' });
+//         }
+
+//         const person = group.personnel.id(req.params.personId);
+//         if (!person) {
+//             return res.status(404).json({ message: 'Personnel not found' });
+//         }
+
+//         person.remove(); // Видаляємо конкретного співробітника
+//         await group.save();
+//         res.status(200).json(group);
+//     } catch (error) {
+//         res.status(400).json({ message: 'Error deleting personnel' });
+//     }
+// });
+
+// Видалення персоналу з групи
+router.delete('/:groupId/personnel/:personId', async (req, res) => {
+    try {
+        const { groupId, personId } = req.params; // Отримуємо groupId та personId з параметрів запиту
+
+        const group = await Group.findById(groupId);
+        if (!group) {
+            return res.status(404).json({ message: 'Group not found' });
+        }
+
+        // Знаходимо індекс персоналу
+        const personIndex = group.personnel.findIndex(person => person.id === personId);
+        if (personIndex === -1) {
+            return res.status(404).json({ message: 'Personnel not found' });
+        }
+
+        group.personnel.splice(personIndex, 1); // Видаляємо конкретного співробітника з масиву
+        await group.save();
+        res.status(200).json(group); // Повертаємо оновлену групу
+    } catch (error) {
+        res.status(400).json({ message: 'Error deleting personnel' });
+    }
+});
+
+
 
 export default router;
-

@@ -78,5 +78,6 @@ export const StyledMainList = styled.ul`
 `
 
 export const StyledSpan = styled.span`
-    margin: 0;
+    margin: 0 0 8px 0;
+    display: block;
 `
