@@ -1,26 +1,27 @@
 import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchGroups, selectAllGroups, deleteGroup, deletePersonnel  } from '../../store/groupSlice'; // Імпортуємо потрібні екшени
+import { fetchGroups, selectAllGroups, deleteGroup, deletePersonnel } from '../../store/groupSlice'; 
+import { openAddGroupModal, openAddPersonalModal } from '../../store/modalSlice'; // Імпортуємо дії для відкриття модалок
 import EditIco from '../../assets/ico/edit-icon-black.png';
 import DelIco from '../../assets/ico/del-icon-black.png';
 import { StyledTitle, StyledBlock, StyledSubtitle, StyledButton, StyledIco, StyledButtonBlock, StyledList, StyledListItem, StyledMainList, StyledSpan } from './styled';
 
 export default function PersonalList() {
-    const dispatch = useDispatch(); // Використовуємо dispatch для виклику екшенів
-    const groups = useSelector(selectAllGroups); // Отримуємо всі групи зі стейту
+    const dispatch = useDispatch();
+    const groups = useSelector(selectAllGroups);
 
     useEffect(() => {
-        dispatch(fetchGroups()); // Викликаємо екшен для отримання груп
+        dispatch(fetchGroups());
     }, [dispatch]);
 
     const handleDeleteGroup = (groupId) => {
         dispatch(deleteGroup(groupId))
-            .then(() => dispatch(fetchGroups())) // Оновлення списку після видалення
+            .then(() => dispatch(fetchGroups()))
             .catch((error) => console.error('Помилка при видаленні групи:', error));
     };
 
     const handleDeletePersonnel = (groupId, personnelId) => {
-        console.log(groupId, personnelId); // Переконайтеся, що значення правильні
+        console.log(groupId, personnelId);
         dispatch(deletePersonnel({ groupId, personnelId }))
             .then(() => {
                 dispatch(fetchGroups());
@@ -28,10 +29,14 @@ export default function PersonalList() {
             .catch((error) => console.error('Помилка при видаленні персоналу:', error));
     };
 
-    // Логування отриманих груп
-    console.log('Отримані групи:', groups);
+    const handleOpenEditGroupModal = () => {
+        dispatch(openAddGroupModal()); // Виклик модалки для редагування групи
+    };
 
-    // Рендеримо список груп та персонал
+    const handleOpenEditPersonnelModal = () => {
+        dispatch(openAddPersonalModal()); // Виклик модалки для редагування персоналу
+    };
+
     return (
         <>
             <StyledTitle>Список Груп</StyledTitle>
@@ -44,32 +49,29 @@ export default function PersonalList() {
                             <StyledBlock>
                                 <StyledSubtitle>{group.label}</StyledSubtitle>
 
-                                {/* Кнопка для видалення групи */}
                                 <StyledButtonBlock>
                                     <StyledButton onClick={() => handleDeleteGroup(group.value)}>
                                         <StyledIco pic={DelIco} />
                                     </StyledButton>
-                                    <StyledButton >
+                                    <StyledButton onClick={handleOpenEditGroupModal}> {/* Кнопка редагування групи */}
                                         <StyledIco pic={EditIco} />
                                     </StyledButton>
                                 </StyledButtonBlock>
                             </StyledBlock>
 
-                            {/* Персонал групи */}
                             {group.personnel && group.personnel.length > 0 ? (
                                 <StyledList>
                                     {group.personnel.map(person => (
                                         <StyledBlock key={person.contactNumber}>
                                             <StyledListItem>
-                                                {person.name}  {/* Інформація про персонал */}
+                                                {person.name}
                                             </StyledListItem>
 
-                                            {/* Кнопка для видалення персоналу */}
                                             <StyledButtonBlock>
                                                 <StyledButton onClick={() => handleDeletePersonnel(group.value, person._id)}>
                                                     <StyledIco pic={DelIco}/>
                                                 </StyledButton>
-                                                <StyledButton >
+                                                <StyledButton onClick={handleOpenEditPersonnelModal}> {/* Кнопка редагування персоналу */}
                                                     <StyledIco pic={EditIco} />
                                                 </StyledButton>
                                             </StyledButtonBlock>
