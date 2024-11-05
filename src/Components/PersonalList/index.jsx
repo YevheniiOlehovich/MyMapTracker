@@ -29,8 +29,8 @@ export default function PersonalList() {
             .catch((error) => console.error('Помилка при видаленні персоналу:', error));
     };
 
-    const handleOpenEditGroupModal = () => {
-        dispatch(openAddGroupModal()); // Виклик модалки для редагування групи
+    const handleOpenEditGroupModal = (groupId) => {
+        dispatch(openAddGroupModal(groupId)); // Передаємо ID групи
     };
 
     const handleOpenEditPersonnelModal = () => {
@@ -47,14 +47,16 @@ export default function PersonalList() {
                     {groups.map(group => (
                         <StyledListItem key={group._id}>
                             <StyledBlock>
-                                <StyledSubtitle>{group.label}</StyledSubtitle>
+                                <StyledSubtitle>{group.name}</StyledSubtitle>
 
                                 <StyledButtonBlock>
-                                    <StyledButton onClick={() => handleDeleteGroup(group.value)}>
-                                        <StyledIco pic={DelIco} />
-                                    </StyledButton>
-                                    <StyledButton onClick={handleOpenEditGroupModal}> {/* Кнопка редагування групи */}
+                                    <StyledButton onClick={() => {
+                                        handleOpenEditGroupModal(group._id); // Викликаємо функцію з переданим ID
+                                    }}>
                                         <StyledIco pic={EditIco} />
+                                    </StyledButton>
+                                    <StyledButton onClick={() => handleDeleteGroup(group._id)}>
+                                        <StyledIco pic={DelIco} />
                                     </StyledButton>
                                 </StyledButtonBlock>
                             </StyledBlock>
@@ -68,11 +70,12 @@ export default function PersonalList() {
                                             </StyledListItem>
 
                                             <StyledButtonBlock>
-                                                <StyledButton onClick={() => handleDeletePersonnel(group.value, person._id)}>
-                                                    <StyledIco pic={DelIco}/>
-                                                </StyledButton>
                                                 <StyledButton onClick={handleOpenEditPersonnelModal}> {/* Кнопка редагування персоналу */}
                                                     <StyledIco pic={EditIco} />
+                                                </StyledButton>
+
+                                                <StyledButton onClick={() => handleDeletePersonnel(group.value, person._id)}>
+                                                    <StyledIco pic={DelIco}/>
                                                 </StyledButton>
                                             </StyledButtonBlock>
                                         </StyledBlock>

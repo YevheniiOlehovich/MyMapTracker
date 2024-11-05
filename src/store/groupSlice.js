@@ -11,14 +11,39 @@ export const fetchGroups = createAsyncThunk('groups/fetchGroups', async () => {
 
     // Перетворення даних відповідно до нової схеми
     return data.map(group => ({
-        value: group._id,
-        label: group.name,
+        _id: group._id,
+        name: group.name,
         ownership: group.ownership,
         description: group.description,
         personnel: group.personnel || [], // У випадку, якщо personnel не визначено
         equipment: group.equipment || []    // У випадку, якщо equipment не визначено
     }));
 });
+
+// Асинхронний екшен для оновлення групи
+export const updateGroup = createAsyncThunk('groups/updateGroup', async ({ groupId, groupData }) => {
+    // Використовуємо apiRoutes для формування URL
+    const url = apiRoutes.updateGroup(groupId);
+    
+    // Логування URL для перевірки правильності
+    console.log(`Updating group at URL: ${url}`);
+    
+    const response = await fetch(url, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(groupData),
+    });
+    
+    if (!response.ok) {
+        throw new Error('Failed to update group');
+    }
+    
+    return await response.json();
+});
+
+
 
 // Асинхронний екшен для видалення групи
 export const deleteGroup = createAsyncThunk('groups/deleteGroup', async (groupId) => {
@@ -33,6 +58,7 @@ export const deleteGroup = createAsyncThunk('groups/deleteGroup', async (groupId
     }
     return groupId; // Повертаємо groupId, щоб видалити групу з локального стану
 });
+
 
 
 // Асинхронний екшен для видалення персоналу з групи
@@ -50,7 +76,6 @@ export const deletePersonnel = createAsyncThunk('groups/deletePersonnel', async 
 
     return personnelId; // Повертаємо personnelId для подальшого видалення з локального стану
 });
-
 
 // Створення слайсу
 const groupsSlice = createSlice({
@@ -73,6 +98,12 @@ const groupsSlice = createSlice({
             .addCase(fetchGroups.rejected, (state, action) => {
                 state.status = 'failed';
                 state.error = action.error.message;
+            })
+            .addCase(updateGroup.fulfilled, (state, action) => {
+                const updatedGroup = action.payload;
+                state.groups = state.groups.map(group => 
+                    group._id === updatedGroup._id ? updatedGroup : group
+                );
             })
             .addCase(deleteGroup.fulfilled, (state, action) => {
                 state.groups = state.groups.filter(group => group._id !== action.payload);

@@ -55,24 +55,26 @@ router.post('/', async (req, res) => {
 
 // Оновлення групи
 router.put('/:id', async (req, res) => {
-    const { personnel, equipment } = req.body;
+    const { name, ownership, description, personnel, equipment } = req.body; // Додано всі необхідні поля
 
     try {
         const group = await Group.findByIdAndUpdate(
             req.params.id,
-            { personnel, equipment },
-            { new: true }
+            { name, ownership, description, personnel, equipment }, // Всі поля, які потрібно оновити
+            { new: true, runValidators: true } // `runValidators` перевіряє, чи відповідають нові дані схемі
         );
 
         if (!group) {
             return res.status(404).json({ message: 'Group not found' });
         }
 
-        res.status(200).json(group); // 200 OK для оновлення
+        res.status(200).json(group); // Відправляємо оновлену групу
     } catch (error) {
-        res.status(400).json({ message: 'Error updating group' });
+        console.error('Error updating group:', error); // Логування помилки
+        res.status(400).json({ message: 'Error updating group', error: error.message }); // Відправляємо повідомлення з помилкою
     }
 });
+
 
 // Видалення групи
 router.delete('/:id', async (req, res) => {
@@ -145,27 +147,6 @@ router.put('/:groupId/personnel/:personId', async (req, res) => {
 });
 
 // Видалення персоналу з групи
-// router.delete('/:groupId/personnel/:personId', async (req, res) => {
-//     try {
-//         const group = await Group.findById(req.params.groupId);
-//         if (!group) {
-//             return res.status(404).json({ message: 'Group not found' });
-//         }
-
-//         const person = group.personnel.id(req.params.personId);
-//         if (!person) {
-//             return res.status(404).json({ message: 'Personnel not found' });
-//         }
-
-//         person.remove(); // Видаляємо конкретного співробітника
-//         await group.save();
-//         res.status(200).json(group);
-//     } catch (error) {
-//         res.status(400).json({ message: 'Error deleting personnel' });
-//     }
-// });
-
-// Видалення персоналу з групи
 router.delete('/:groupId/personnel/:personId', async (req, res) => {
     try {
         const { groupId, personId } = req.params; // Отримуємо groupId та personId з параметрів запиту
@@ -188,7 +169,6 @@ router.delete('/:groupId/personnel/:personId', async (req, res) => {
         res.status(400).json({ message: 'Error deleting personnel' });
     }
 });
-
 
 
 export default router;

@@ -1,79 +1,134 @@
 import { StyledWrapper, StyledModal, StyledCloseButton, StyledTitle, StyledLabel, StyledSubtitle, StyledInput, StyledTextArea } from './styles';
 import closeModal from "../../helpres/closeModal";
 import Button from '../Button';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import apiRoutes from '../../helpres/ApiRoutes';
-import { useDispatch } from 'react-redux';
-import { fetchGroups } from '../../store/groupSlice';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchGroups, updateGroup } from '../../store/groupSlice';
 
 export default function AddGroupModal({ onClose }) { 
     const handleWrapperClick = closeModal(onClose);
+    const dispatch = useDispatch(); // Create dispatch
 
-    const dispatch = useDispatch(); // Створюємо dispatch
+    const editGroupId = useSelector(state => state.modals.editGroupId);
+    const groups = useSelector(state => state.groups.groups);
+    const editGroup = groups.find(group => group._id === editGroupId); // Find the group being edited
 
-    // Стан для кожного поля
-    const [groupName, setGroupName] = useState('');
-    const [groupOwnership, setGroupOwnership] = useState('');
-    const [groupDescription, setGroupDescription] = useState('');
+    // Log the group ID
+    console.log('Edit Group ID in Modal:', editGroupId); 
+
+    // State for each field, initialized with the group's current data if editing
+    const [groupName, setGroupName] = useState(editGroup ? editGroup.name : '');
+    const [groupOwnership, setGroupOwnership] = useState(editGroup ? editGroup.ownership : '');
+    const [groupDescription, setGroupDescription] = useState(editGroup ? editGroup.description : '');
+
+    useEffect(() => {
+        if (editGroup) {
+            setGroupName(editGroup.name);
+            setGroupOwnership(editGroup.ownership);
+            setGroupDescription(editGroup.description);
+        }
+    }, [editGroup]);
+
+    // const handleSave = async () => {
+    //     // Create an object with the data
+    //     const groupData = {
+    //         name: groupName,
+    //         ownership: groupOwnership,
+    //         description: groupDescription,
+    //     };
+
+    //     try {
+    //         if (editGroupId) {
+    //             // If we are editing, dispatch the update action
+    //             await dispatch(updateGroup({ groupId: editGroupId, groupData }));
+    //         } else {
+    //             // Handle the creation of a new group
+    //             const response = await fetch(apiRoutes.addGroup, {
+    //                 method: 'POST',
+    //                 headers: {
+    //                     'Content-Type': 'application/json',
+    //                 },
+    //                 body: JSON.stringify(groupData),
+    //             });
+
+    //             if (!response.ok) {
+    //                 throw new Error('Failed to save group');
+    //             }
+    //             const savedGroup = await response.json();
+    //             console.log('Group saved:', savedGroup);
+    //             dispatch(fetchGroups()); // Refresh the group list
+    //         }
+
+    //         onClose(); // Close the modal
+    //     } catch (error) {
+    //         console.error('Error saving group:', error);
+    //     }
+    // };
 
     const handleSave = async () => {
-        // Створення об'єкта з даними
+        // Створюємо об'єкт з даними групи
         const groupData = {
             name: groupName,
             ownership: groupOwnership,
             description: groupDescription,
         };
-
+    
         try {
-            // Відправка POST-запиту на сервер
-            const response = await fetch(apiRoutes.addGroup, { // Використання імпортованого маршруту
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(groupData),
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to save group');
+            if (editGroupId) {
+                // Якщо редагуємо існуючу групу
+                await dispatch(updateGroup({ groupId: editGroupId, groupData }));
+                console.log(`Group with ID ${editGroupId} updated successfully.`);
+            } else {
+                // Якщо створюємо нову групу
+                const response = await fetch(apiRoutes.addGroup, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(groupData),
+                });
+    
+                if (!response.ok) {
+                    throw new Error('Failed to save new group'); // Обробка помилки
+                }
+    
+                const savedGroup = await response.json();
+                console.log('New group created:', savedGroup);
+                dispatch(fetchGroups()); // Оновлюємо список груп
             }
-
-            const savedGroup = await response.json();
-            console.log('Group saved:', savedGroup); // Логування збереженої групи
-            
-            // Після успішного збереження групи, викликаємо fetchGroups для оновлення списку
-            dispatch(fetchGroups());
-            
-            onClose(); // Закриття модального вікна
+    
+            onClose(); // Закриваємо модальне вікно
         } catch (error) {
             console.error('Error saving group:', error);
         }
     };
+    
 
     return (
         <StyledWrapper onClick={handleWrapperClick}>
             <StyledModal>
                 <StyledCloseButton onClick={onClose} /> 
-                <StyledTitle>Створення нової групи</StyledTitle>
+                <StyledTitle>{editGroupId ? 'Редагування групи' : 'Створення нової групи'}</StyledTitle>
                 <StyledLabel>
                     <StyledSubtitle>Назва нової групи</StyledSubtitle>
                     <StyledInput 
                         value={groupName}
-                        onChange={(e) => setGroupName(e.target.value)} // Збереження назви групи
+                        onChange={(e) => setGroupName(e.target.value)} // Save group name
                     />
                 </StyledLabel>
                 <StyledLabel>
                     <StyledSubtitle>Приналежність групи</StyledSubtitle>
                     <StyledInput 
                         value={groupOwnership} 
-                        onChange={(e) => setGroupOwnership(e.target.value)} // Збереження приналежності
+                        onChange={(e) => setGroupOwnership(e.target.value)} // Save ownership
                     />
                 </StyledLabel>
                 <StyledLabel>
                     <StyledTextArea
                         maxLength={250}
-                        value={groupDescription} // Виправлено на правильний стан
-                        onChange={(e) => setGroupDescription(e.target.value)} // Збереження опису
+                        value={groupDescription} // Correctly bind to state
+                        onChange={(e) => setGroupDescription(e.target.value)} // Save description
                     />
                 </StyledLabel>
                 <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>

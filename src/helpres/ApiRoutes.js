@@ -5,7 +5,7 @@ const API_BASE_URL = `http://localhost:5000`; // Змініть порт від�
 const apiRoutes = {
     getGroups: `${API_BASE_URL}/groups`,  
     addGroup: `${API_BASE_URL}/groups`, 
-    // updateGroup: (groupId) => `${API_BASE_URL}/groups/${groupId}`, 
+    updateGroup: (groupId) => `${API_BASE_URL}/groups/${groupId}`, 
     deleteGroup: (groupId) => `${API_BASE_URL}/groups/${groupId}`, 
     addPersonnel: (groupId) => `${API_BASE_URL}/groups/${groupId}/personnel`,
     // updatePersonnel: (groupId, personId) => `${API_BASE_URL}/groups/${groupId}/personnel/${personId}`,
