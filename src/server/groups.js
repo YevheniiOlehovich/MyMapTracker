@@ -1,22 +1,27 @@
 import express from 'express';
 import mongoose from 'mongoose';
+import multer from 'multer';
 
+const storage = multer.memoryStorage();
+const upload = multer();  // Використовуємо multer без збереження файлів на сервері (зберігаємо в пам'яті)
 const router = express.Router();
 
-// Створюємо схему та модель для груп
+// Схема для групи з вбудованими даними про персонал
 const GroupSchema = new mongoose.Schema({
     name: { type: String, required: true },
     ownership: { type: String, required: true },
     description: { type: String },
-    personnel: [{
-        name: { type: String, required: true },
-        ownership: { type: String, required: true },
+    personnel: [{ 
+        firstName: { type: String, required: true },
+        lastName: { type: String, required: true },
         contactNumber: { type: String, required: true },
-        description: { type: String },
+        note: { type: String },
+        photo: { type: Buffer }, // Збереження фото як Buffer
     }],
-    equipment: { type: [String], default: [] }, // Масив для техніки, за замовчуванням порожній
+    equipment: { type: [String], default: [] },
 });
 
+// Створення моделі для групи
 const Group = mongoose.model('Group', GroupSchema);
 
 // Отримання всіх груп
@@ -91,60 +96,87 @@ router.delete('/:id', async (req, res) => {
     }
 });
 
-// Додавання персоналу до конкретної групи
-router.post('/:id/personnel', async (req, res) => {
-    console.log('Request Body:', req.body);
 
-    const { name, ownership, contactNumber, description } = req.body;
 
-    if (!name || !ownership || !contactNumber) {
-        return res.status(400).json({ message: 'Name, ownership, and contact number are required' });
-    }
-
+router.post('/:groupId/personnel', upload.single('photo'), async (req, res) => {
     try {
-        const group = await Group.findById(req.params.id);
+        // Отримуємо дані з запиту
+        const { firstName, lastName, contactNumber, note, groupId } = req.body;
+
+        // Шукаємо групу за ID
+        const group = await Group.findById(groupId);
         if (!group) {
             return res.status(404).json({ message: 'Group not found' });
         }
 
-        const newPersonnel = { name, ownership, contactNumber, description };
+        // Створюємо новий об'єкт персоналу
+        const newPersonnel = {
+            firstName,
+            lastName,
+            contactNumber,
+            note,
+            photo: req.file ? req.file.buffer : null, // Зберігаємо фото в Buffer, якщо воно є
+        };
+
+        // Додаємо персонал до групи
         group.personnel.push(newPersonnel);
 
+        // Зберігаємо оновлену групу
         await group.save();
-        console.log('Updated Group:', group);
+
+        // Повертаємо групу з доданим персоналом
         res.status(201).json(group);
     } catch (error) {
-        console.error('Error adding personnel to group:', error);
-        res.status(400).json({ message: 'Error adding personnel to group' });
+        console.error('Error saving employee:', error);
+        res.status(500).json({ message: 'Error saving employee', error: error.message });
     }
 });
 
-// Оновлення інформації про персонал
-router.put('/:groupId/personnel/:personId', async (req, res) => {
-    const { name, ownership, contactNumber, description } = req.body;
 
+// Оновлення інформації про персонал
+router.put('/:groupId/personnel/:personId', upload.single('photo'), async (req, res) => {
+    console.log('Request body:', req.body);  // Логування даних, що надходять в тілі запиту
+    console.log('Request file:', req.file);  // Логування файлу, якщо він є
+
+    const { firstName, lastName, contactNumber, note } = req.body; // Дані, які можна оновити
+    
     try {
+        // Шукаємо групу за ID
         const group = await Group.findById(req.params.groupId);
         if (!group) {
             return res.status(404).json({ message: 'Group not found' });
         }
 
+        // Шукаємо персонала в групі за ID
         const person = group.personnel.id(req.params.personId);
         if (!person) {
             return res.status(404).json({ message: 'Personnel not found' });
         }
 
-        person.name = name || person.name;
-        person.ownership = ownership || person.ownership;
+        // Оновлюємо дані персонала
+        person.firstName = firstName || person.firstName;
+        person.lastName = lastName || person.lastName;
         person.contactNumber = contactNumber || person.contactNumber;
-        person.description = description || person.description;
+        person.note = note || person.note;
 
+        // Якщо є нове фото, оновлюємо його
+        if (req.file) {
+            console.log('New photo received');
+            person.photo = req.file.buffer; // Оновлюємо фото на нове з buffer
+        }
+
+        // Зберігаємо оновлену групу
         await group.save();
+
+        // Повертаємо оновлену групу
         res.status(200).json(group);
     } catch (error) {
-        res.status(400).json({ message: 'Error updating personnel' });
+        console.error('Error updating personnel:', error);
+        res.status(400).json({ message: 'Error updating personnel', error: error.message });
     }
 });
+
+
 
 // Видалення персоналу з групи
 router.delete('/:groupId/personnel/:personId', async (req, res) => {
@@ -170,5 +202,5 @@ router.delete('/:groupId/personnel/:personId', async (req, res) => {
     }
 });
 
-
 export default router;
+

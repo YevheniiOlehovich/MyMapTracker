@@ -37,6 +37,10 @@ export const StyledCloseButton = styled.button`
     background-size: contain;
     background-repeat: no-repeat; 
     cursor: pointer;
+    transition: 0.4s;
+    &:hover{
+        transform: rotate(180deg);
+    }
 `
 
 export const StyledTitle = styled.h4`

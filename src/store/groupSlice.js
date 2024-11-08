@@ -77,6 +77,43 @@ export const deletePersonnel = createAsyncThunk('groups/deletePersonnel', async 
     return personnelId; // Повертаємо personnelId для подальшого видалення з локального стану
 });
 
+// Асинхронний екшен для оновлення персоналу
+export const updatePersonnel = createAsyncThunk(
+    'groups/updatePersonnel',
+    async ({ groupId, personnelId, personnelData, photo }) => {
+        const formData = new FormData();
+
+        // Додаємо всі дані персоналу для оновлення
+        formData.append('firstName', personnelData.firstName);
+        formData.append('lastName', personnelData.lastName);
+        formData.append('contactNumber', personnelData.contactNumber);
+        formData.append('note', personnelData.note);
+
+        // Якщо є фото, додаємо його до formData
+        if (photo) {
+            formData.append('photo', photo, 'employee.webp'); // Додаємо фото у форматі WebP
+        }
+
+        // Формуємо URL для оновлення персоналу
+        const url = apiRoutes.updatePersonnel(groupId, personnelId);
+
+        console.log(`Updating personnel with groupId: ${groupId}, personnelId: ${personnelId}`, url);
+
+        // Відправляємо запит на сервер
+        const response = await fetch(url, {
+            method: 'PUT',
+            body: formData, // Використовуємо formData для відправки
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to update personnel');
+        }
+
+        return await response.json(); // Повертаємо оновлені дані персоналу
+    }
+);
+
+
 // Створення слайсу
 const groupsSlice = createSlice({
     name: 'groups',
@@ -115,6 +152,19 @@ const groupsSlice = createSlice({
                 if (group) {
                     // Виправлений код для фільтрації
                     group.personnel = group.personnel.filter(person => person._id !== personnelId); // Фільтруємо персонал
+                }
+            })
+            .addCase(updatePersonnel.fulfilled, (state, action) => {
+                const updatedPersonnel = action.payload;
+                const groupIndex = state.groups.findIndex(group => group._id === updatedPersonnel.groupId); // Знаходимо групу за groupId
+
+                if (groupIndex !== -1) {
+                    // Знаходимо персонала в групі та оновлюємо його дані
+                    const personnelIndex = state.groups[groupIndex].personnel.findIndex(person => person._id === updatedPersonnel._id);
+
+                    if (personnelIndex !== -1) {
+                        state.groups[groupIndex].personnel[personnelIndex] = updatedPersonnel; // Оновлюємо персонала
+                    }
                 }
             });
     },

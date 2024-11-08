@@ -30,42 +30,6 @@ export default function AddGroupModal({ onClose }) {
         }
     }, [editGroup]);
 
-    // const handleSave = async () => {
-    //     // Create an object with the data
-    //     const groupData = {
-    //         name: groupName,
-    //         ownership: groupOwnership,
-    //         description: groupDescription,
-    //     };
-
-    //     try {
-    //         if (editGroupId) {
-    //             // If we are editing, dispatch the update action
-    //             await dispatch(updateGroup({ groupId: editGroupId, groupData }));
-    //         } else {
-    //             // Handle the creation of a new group
-    //             const response = await fetch(apiRoutes.addGroup, {
-    //                 method: 'POST',
-    //                 headers: {
-    //                     'Content-Type': 'application/json',
-    //                 },
-    //                 body: JSON.stringify(groupData),
-    //             });
-
-    //             if (!response.ok) {
-    //                 throw new Error('Failed to save group');
-    //             }
-    //             const savedGroup = await response.json();
-    //             console.log('Group saved:', savedGroup);
-    //             dispatch(fetchGroups()); // Refresh the group list
-    //         }
-
-    //         onClose(); // Close the modal
-    //     } catch (error) {
-    //         console.error('Error saving group:', error);
-    //     }
-    // };
-
     const handleSave = async () => {
         // Створюємо об'єкт з даними групи
         const groupData = {

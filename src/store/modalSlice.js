@@ -1,38 +1,3 @@
-// // store/slices/modalSlice.js
-// import { createSlice } from '@reduxjs/toolkit';
-
-// const modalSlice = createSlice({
-//     name: 'modals',
-//     initialState: {
-//         isAddGroupModalVisible: false,
-//         isAddPersonalModalVisible: false,
-//     },
-//     reducers: {
-//         openAddGroupModal: (state) => {
-//             state.isAddGroupModalVisible = true;
-//         },
-//         closeAddGroupModal: (state) => {
-//             state.isAddGroupModalVisible = false;
-//         },
-//         openAddPersonalModal: (state) => {
-//             state.isAddPersonalModalVisible = true;
-//         },
-//         closeAddPersonalModal: (state) => {
-//             state.isAddPersonalModalVisible = false;
-//         },
-//     },
-// });
-
-// export const {
-//     openAddGroupModal,
-//     closeAddGroupModal,
-//     openAddPersonalModal,
-//     closeAddPersonalModal,
-// } = modalSlice.actions;
-
-// export default modalSlice.reducer;
-
-
 // modalSlice.js
 import { createSlice } from '@reduxjs/toolkit';
 
@@ -41,7 +6,8 @@ const modalSlice = createSlice({
     initialState: {
         isAddGroupModalVisible: false,
         isAddPersonalModalVisible: false, // Додаємо видимість модалки для персоналу
-        editGroupId: null, // ID редагованої групи
+        editGroupId: null, // ID редагованої 
+        editPersonId: null, // ID редагованого персоналу
     },
     reducers: {
         openAddGroupModal: (state, action) => {
@@ -52,11 +18,14 @@ const modalSlice = createSlice({
             state.isAddGroupModalVisible = false;
             state.editGroupId = null;
         },
-        openAddPersonalModal: (state) => { // Додаємо екшен для відкриття персональної модалки
+        openAddPersonalModal: (state, action) => {
             state.isAddPersonalModalVisible = true;
+            state.editPersonId = action.payload?.personId || null;  // Тільки персонал
+            state.editGroupId = action.payload?.groupId || null;  // Додаємо групу
         },
-        closeAddPersonalModal: (state) => { // Додаємо екшен для закриття персональної модалки
+        closeAddPersonalModal: (state) => {
             state.isAddPersonalModalVisible = false;
+            state.editPersonId = null; // При закритті модалки, скидаємо тільки ID персоналу
         },
     },
 });
@@ -69,3 +38,4 @@ export const {
 } = modalSlice.actions;
 
 export default modalSlice.reducer;
+

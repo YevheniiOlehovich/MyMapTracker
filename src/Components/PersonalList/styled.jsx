@@ -58,7 +58,7 @@ export const StyledIco = styled.div`
 
 export const StyledList = styled.ul`
     list-style: none;
-    padding: 0 0 0 12px;
+    padding: 0px;
     margin: 0;
     width: 100%;
 `
@@ -80,4 +80,13 @@ export const StyledMainList = styled.ul`
 export const StyledSpan = styled.span`
     margin: 0 0 8px 0;
     display: block;
+`
+
+export const StyledImgBlock = styled.div`
+    width: 32px;
+    height: 32px;
+    margin-right: 12px;
+    background-size: cover;
+    background-position: center;
+    background-image: ${({ imageUrl }) => `url(${imageUrl})`};
 `

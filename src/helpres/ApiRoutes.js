@@ -8,7 +8,7 @@ const apiRoutes = {
     updateGroup: (groupId) => `${API_BASE_URL}/groups/${groupId}`, 
     deleteGroup: (groupId) => `${API_BASE_URL}/groups/${groupId}`, 
     addPersonnel: (groupId) => `${API_BASE_URL}/groups/${groupId}/personnel`,
-    // updatePersonnel: (groupId, personId) => `${API_BASE_URL}/groups/${groupId}/personnel/${personId}`,
+    updatePersonnel: (groupId, personId) => `${API_BASE_URL}/groups/${groupId}/personnel/${personId}`,
     deletePersonnel: (groupId, personnelId) => `${API_BASE_URL}/groups/${groupId}/personnel/${personnelId}`,
 };
 

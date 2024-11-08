@@ -4,11 +4,14 @@ import { fetchGroups, selectAllGroups, deleteGroup, deletePersonnel } from '../.
 import { openAddGroupModal, openAddPersonalModal } from '../../store/modalSlice'; // Імпортуємо дії для відкриття модалок
 import EditIco from '../../assets/ico/edit-icon-black.png';
 import DelIco from '../../assets/ico/del-icon-black.png';
-import { StyledTitle, StyledBlock, StyledSubtitle, StyledButton, StyledIco, StyledButtonBlock, StyledList, StyledListItem, StyledMainList, StyledSpan } from './styled';
+import { StyledTitle, StyledBlock, StyledSubtitle, StyledButton, StyledIco, StyledButtonBlock, StyledList, StyledListItem, StyledMainList, StyledSpan, StyledImgBlock } from './styled';
+import { getBase64Image } from '../../helpres/imgDecoding'
 
 export default function PersonalList() {
     const dispatch = useDispatch();
     const groups = useSelector(selectAllGroups);
+
+    
 
     useEffect(() => {
         dispatch(fetchGroups());
@@ -33,9 +36,11 @@ export default function PersonalList() {
         dispatch(openAddGroupModal(groupId)); // Передаємо ID групи
     };
 
-    const handleOpenEditPersonnelModal = () => {
-        dispatch(openAddPersonalModal()); // Виклик модалки для редагування персоналу
+    const handleOpenEditPersonnelModal = (groupId, personId) => {
+        // Викликаємо модалку, передаючи тільки групу та id персони
+        dispatch(openAddPersonalModal({ groupId, personId }));
     };
+    
 
     return (
         <>
@@ -48,7 +53,7 @@ export default function PersonalList() {
                         <StyledListItem key={group._id}>
                             <StyledBlock>
                                 <StyledSubtitle>{group.name}</StyledSubtitle>
-
+                                
                                 <StyledButtonBlock>
                                     <StyledButton onClick={() => {
                                         handleOpenEditGroupModal(group._id); // Викликаємо функцію з переданим ID
@@ -65,17 +70,16 @@ export default function PersonalList() {
                                 <StyledList>
                                     {group.personnel.map(person => (
                                         <StyledBlock key={person.contactNumber}>
+                                            <StyledImgBlock imageUrl={person.photo ? getBase64Image(person.photo) : 'defaultImage.jpg'} />
                                             <StyledListItem>
-                                                {person.name}
+                                                {person.lastName} {person.firstName}
                                             </StyledListItem>
-
                                             <StyledButtonBlock>
-                                                <StyledButton onClick={handleOpenEditPersonnelModal}> {/* Кнопка редагування персоналу */}
+                                                <StyledButton onClick={() => handleOpenEditPersonnelModal(group._id, person._id)}>
                                                     <StyledIco pic={EditIco} />
                                                 </StyledButton>
-
-                                                <StyledButton onClick={() => handleDeletePersonnel(group.value, person._id)}>
-                                                    <StyledIco pic={DelIco}/>
+                                                <StyledButton onClick={() => handleDeletePersonnel(group._id, person._id)}>
+                                                    <StyledIco pic={DelIco} />
                                                 </StyledButton>
                                             </StyledButtonBlock>
                                         </StyledBlock>
@@ -84,6 +88,8 @@ export default function PersonalList() {
                             ) : (
                                 <StyledSpan>Персонал не знайдено.</StyledSpan>
                             )}
+
+
                         </StyledListItem>
                     ))}
                 </StyledMainList>
