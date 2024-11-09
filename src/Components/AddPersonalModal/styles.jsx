@@ -105,12 +105,12 @@ export const BlockColumn = styled.div`
     flex-direction: column;
 `
 
-export const PhotoPic = styled.div`
+export const PhotoPic = styled.img`
     width: 100%;
     height: 100%;
-    background-size: cover;
+    /* background-size: cover;
     background-position: center;
-    background-image: url(${props => props.imageUrl});
+    background-image: url(${props => props.imageUrl}); */
 `
 
 export const StyledButtonLabel = styled.label`

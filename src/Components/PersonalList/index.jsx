@@ -5,13 +5,11 @@ import { openAddGroupModal, openAddPersonalModal } from '../../store/modalSlice'
 import EditIco from '../../assets/ico/edit-icon-black.png';
 import DelIco from '../../assets/ico/del-icon-black.png';
 import { StyledTitle, StyledBlock, StyledSubtitle, StyledButton, StyledIco, StyledButtonBlock, StyledList, StyledListItem, StyledMainList, StyledSpan, StyledImgBlock } from './styled';
-import { getBase64Image } from '../../helpres/imgDecoding'
+import QuestionIco from '../../assets/ico/10965421.webp'
 
 export default function PersonalList() {
     const dispatch = useDispatch();
     const groups = useSelector(selectAllGroups);
-
-    
 
     useEffect(() => {
         dispatch(fetchGroups());
@@ -40,7 +38,14 @@ export default function PersonalList() {
         // Викликаємо модалку, передаючи тільки групу та id персони
         dispatch(openAddPersonalModal({ groupId, personId }));
     };
-    
+
+    // Форматуємо шлях до фото для відображення, якщо воно є
+    const formatPhotoPath = (photoPath) => {
+        // Перевірка наявності шляху і форматування для правильного відображення
+        return photoPath 
+            ? '/src/' + photoPath.substring(3).replace(/\\/g, '/') 
+            : '/src/defaultImage.jpg'; // Шлях до дефолтного зображення, якщо фото немає
+    };
 
     return (
         <>
@@ -55,9 +60,7 @@ export default function PersonalList() {
                                 <StyledSubtitle>{group.name}</StyledSubtitle>
                                 
                                 <StyledButtonBlock>
-                                    <StyledButton onClick={() => {
-                                        handleOpenEditGroupModal(group._id); // Викликаємо функцію з переданим ID
-                                    }}>
+                                    <StyledButton onClick={() => handleOpenEditGroupModal(group._id)}>
                                         <StyledIco pic={EditIco} />
                                     </StyledButton>
                                     <StyledButton onClick={() => handleDeleteGroup(group._id)}>
@@ -70,7 +73,7 @@ export default function PersonalList() {
                                 <StyledList>
                                     {group.personnel.map(person => (
                                         <StyledBlock key={person.contactNumber}>
-                                            <StyledImgBlock imageUrl={person.photo ? getBase64Image(person.photo) : 'defaultImage.jpg'} />
+                                            <StyledImgBlock imageUrl={person.photoPath ? formatPhotoPath(person.photoPath) : QuestionIco} />
                                             <StyledListItem>
                                                 {person.lastName} {person.firstName}
                                             </StyledListItem>
@@ -88,8 +91,6 @@ export default function PersonalList() {
                             ) : (
                                 <StyledSpan>Персонал не знайдено.</StyledSpan>
                             )}
-
-
                         </StyledListItem>
                     ))}
                 </StyledMainList>

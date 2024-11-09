@@ -1,22 +1,38 @@
 import express from 'express';
 import mongoose from 'mongoose';
 import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
 
-const storage = multer.memoryStorage();
-const upload = multer();  // Використовуємо multer без збереження файлів на сервері (зберігаємо в пам'яті)
 const router = express.Router();
 
-// Схема для групи з вбудованими даними про персонал
+// Налаштування `multer` для збереження файлів в папку `uploads/personnel`
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        const dir = '../uploads/personnel';
+        if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true });
+        }
+        cb(null, dir);
+    },
+    filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+        cb(null, uniqueSuffix + path.extname(file.originalname));
+    },
+});
+const upload = multer({ storage });
+
+// Схема для групи з шляхом до фото в базі даних
 const GroupSchema = new mongoose.Schema({
     name: { type: String, required: true },
     ownership: { type: String, required: true },
     description: { type: String },
-    personnel: [{ 
+    personnel: [{
         firstName: { type: String, required: true },
         lastName: { type: String, required: true },
         contactNumber: { type: String, required: true },
         note: { type: String },
-        photo: { type: Buffer }, // Збереження фото як Buffer
+        photoPath: { type: String }, // Шлях до фото замість Buffer
     }],
     equipment: { type: [String], default: [] },
 });
@@ -97,35 +113,46 @@ router.delete('/:id', async (req, res) => {
 });
 
 
+// Додавання нового працівника з зображенням
 
 router.post('/:groupId/personnel', upload.single('photo'), async (req, res) => {
     try {
-        // Отримуємо дані з запиту
-        const { firstName, lastName, contactNumber, note, groupId } = req.body;
+        const { firstName, lastName, contactNumber, note } = req.body;
 
-        // Шукаємо групу за ID
-        const group = await Group.findById(groupId);
+        // Перевірка, чи всі необхідні дані надані
+        if (!firstName || !lastName || !contactNumber) {
+            return res.status(400).json({ message: 'First name, last name, and contact number are required.' });
+        }
+
+        // Знаходимо групу за groupId
+        const group = await Group.findById(req.params.groupId);
         if (!group) {
             return res.status(404).json({ message: 'Group not found' });
         }
 
-        // Створюємо новий об'єкт персоналу
+        // Логування шляху до фото
+        const photoPath = req.file ? req.file.path : null;
+        if (photoPath) {
+            console.log('Image uploaded to: ', photoPath); // Логування шляху до зображення
+        }
+
+        // Створення нового працівника
         const newPersonnel = {
             firstName,
             lastName,
             contactNumber,
             note,
-            photo: req.file ? req.file.buffer : null, // Зберігаємо фото в Buffer, якщо воно є
+            photoPath, // Зберігаємо шлях до фото
         };
 
-        // Додаємо персонал до групи
+        // Додавання працівника в масив personnel групи
         group.personnel.push(newPersonnel);
 
-        // Зберігаємо оновлену групу
+        // Збереження оновленої групи
         await group.save();
 
-        // Повертаємо групу з доданим персоналом
-        res.status(201).json(group);
+        // Відправка лише нового працівника в відповіді
+        res.status(201).json(newPersonnel);
     } catch (error) {
         console.error('Error saving employee:', error);
         res.status(500).json({ message: 'Error saving employee', error: error.message });
@@ -133,52 +160,32 @@ router.post('/:groupId/personnel', upload.single('photo'), async (req, res) => {
 });
 
 
-// Оновлення інформації про персонал
-router.put('/:groupId/personnel/:personId', upload.single('photo'), async (req, res) => {
-    console.log('Request body:', req.body);  // Логування даних, що надходять в тілі запиту
-    console.log('Request file:', req.file);  // Логування файлу, якщо він є
-
-    const { firstName, lastName, contactNumber, note } = req.body; // Дані, які можна оновити
-    
-    try {
-        // Шукаємо групу за ID
-        const group = await Group.findById(req.params.groupId);
-        if (!group) {
-            return res.status(404).json({ message: 'Group not found' });
-        }
-
-        // Шукаємо персонала в групі за ID
-        const person = group.personnel.id(req.params.personId);
-        if (!person) {
-            return res.status(404).json({ message: 'Personnel not found' });
-        }
-
-        // Оновлюємо дані персонала
-        person.firstName = firstName || person.firstName;
-        person.lastName = lastName || person.lastName;
-        person.contactNumber = contactNumber || person.contactNumber;
-        person.note = note || person.note;
-
-        // Якщо є нове фото, оновлюємо його
-        if (req.file) {
-            console.log('New photo received');
-            person.photo = req.file.buffer; // Оновлюємо фото на нове з buffer
-        }
-
-        // Зберігаємо оновлену групу
-        await group.save();
-
-        // Повертаємо оновлену групу
-        res.status(200).json(group);
-    } catch (error) {
-        console.error('Error updating personnel:', error);
-        res.status(400).json({ message: 'Error updating personnel', error: error.message });
-    }
-});
-
-
 
 // Видалення персоналу з групи
+// router.delete('/:groupId/personnel/:personId', async (req, res) => {
+//     try {
+//         const { groupId, personId } = req.params; // Отримуємо groupId та personId з параметрів запиту
+
+//         const group = await Group.findById(groupId);
+//         if (!group) {
+//             return res.status(404).json({ message: 'Group not found' });
+//         }
+
+//         // Знаходимо індекс персоналу
+//         const personIndex = group.personnel.findIndex(person => person.id === personId);
+//         if (personIndex === -1) {
+//             return res.status(404).json({ message: 'Personnel not found' });
+//         }
+
+//         group.personnel.splice(personIndex, 1); // Видаляємо конкретного співробітника з масиву
+//         await group.save();
+//         res.status(200).json(group); // Повертаємо оновлену групу
+//     } catch (error) {
+//         res.status(400).json({ message: 'Error deleting personnel' });
+//     }
+// });
+
+// Видалення персоналу з групи разом із зображенням
 router.delete('/:groupId/personnel/:personId', async (req, res) => {
     try {
         const { groupId, personId } = req.params; // Отримуємо groupId та personId з параметрів запиту
@@ -188,19 +195,44 @@ router.delete('/:groupId/personnel/:personId', async (req, res) => {
             return res.status(404).json({ message: 'Group not found' });
         }
 
-        // Знаходимо індекс персоналу
+        // Знаходимо працівника за personId
         const personIndex = group.personnel.findIndex(person => person.id === personId);
         if (personIndex === -1) {
             return res.status(404).json({ message: 'Personnel not found' });
         }
 
-        group.personnel.splice(personIndex, 1); // Видаляємо конкретного співробітника з масиву
-        await group.save();
-        res.status(200).json(group); // Повертаємо оновлену групу
+        // Отримуємо шлях до фото
+        const person = group.personnel[personIndex];
+        const photoPath = person.photoPath;
+
+        // Якщо фото є, видаляємо його з файлової системи
+        if (photoPath) {
+            const dir = path.resolve('../uploads/personnel'); // Отримуємо абсолютний шлях до директорії
+            const formattedPath = path.join(dir, path.basename(photoPath)); // Отримуємо шлях до конкретного фото
+
+            try {
+                // Перевірка на існування файлу та його видалення
+                await fs.promises.stat(formattedPath); // Перевіряємо, чи існує файл
+                await fs.promises.unlink(formattedPath); // Видаляємо файл
+                console.log('File deleted successfully:', formattedPath);
+            } catch (err) {
+                console.error('Error with file deletion:', err);
+                return res.status(500).json({ message: 'Error deleting photo' });
+            }
+        }
+
+        // Видаляємо співробітника з масиву персоналу
+        group.personnel.splice(personIndex, 1);
+        await group.save(); // Зберігаємо зміни в базі даних
+
+        res.status(200).json({ message: 'Personnel deleted', group }); // Повертаємо оновлену групу
     } catch (error) {
+        console.error('Error deleting personnel:', error);
         res.status(400).json({ message: 'Error deleting personnel' });
     }
 });
+
+
 
 export default router;
 
