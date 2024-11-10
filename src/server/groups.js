@@ -159,32 +159,6 @@ router.post('/:groupId/personnel', upload.single('photo'), async (req, res) => {
     }
 });
 
-
-
-// Видалення персоналу з групи
-// router.delete('/:groupId/personnel/:personId', async (req, res) => {
-//     try {
-//         const { groupId, personId } = req.params; // Отримуємо groupId та personId з параметрів запиту
-
-//         const group = await Group.findById(groupId);
-//         if (!group) {
-//             return res.status(404).json({ message: 'Group not found' });
-//         }
-
-//         // Знаходимо індекс персоналу
-//         const personIndex = group.personnel.findIndex(person => person.id === personId);
-//         if (personIndex === -1) {
-//             return res.status(404).json({ message: 'Personnel not found' });
-//         }
-
-//         group.personnel.splice(personIndex, 1); // Видаляємо конкретного співробітника з масиву
-//         await group.save();
-//         res.status(200).json(group); // Повертаємо оновлену групу
-//     } catch (error) {
-//         res.status(400).json({ message: 'Error deleting personnel' });
-//     }
-// });
-
 // Видалення персоналу з групи разом із зображенням
 router.delete('/:groupId/personnel/:personId', async (req, res) => {
     try {
@@ -232,7 +206,4 @@ router.delete('/:groupId/personnel/:personId', async (req, res) => {
     }
 });
 
-
-
 export default router;
-

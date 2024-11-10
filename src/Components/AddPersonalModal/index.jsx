@@ -12,41 +12,37 @@ export default function AddPersonalModal({ onClose }) {
     const dispatch = useDispatch();
     const editGroupId = useSelector(state => state.modals.editGroupId);
     const editPersonId = useSelector(state => state.modals.editPersonId);
-    const groups = useSelector(selectAllGroups);  // Всі групи
+    const groups = useSelector(selectAllGroups);
 
-    const editPerson = groups.flatMap(group => group.personnel).find(person => person._id === editPersonId); // Текучий працівник для редагування
+    const editPerson = groups.flatMap(group => group.personnel).find(person => person._id === editPersonId);
 
     const handleWrapperClick = closeModal(onClose);
 
-    // Стейти для нових/редагованих даних
     const [firstName, setFirstName] = useState(editPerson ? editPerson.firstName : '');
     const [lastName, setLastName] = useState(editPerson ? editPerson.lastName : '');
     const [contactNumber, setContactNumber] = useState(editPerson ? editPerson.contactNumber : ''); 
     const [note, setNote] = useState(editPerson ? editPerson.note : '');
-    const [employeePhoto, setEmployeePhoto] = useState(QuestionIco);
-
-    console.log(employeePhoto)
-
-    // Форматуємо шлях до фото, заміняючи перші два зворотних слеші на '/src/' і всі зворотні слеші на прямі
-    // const formattedPhotoPath = editPerson && editPerson.photoPath
-    //     ? '/src/' + editPerson.photoPath.substring(3).replace(/\\/g, '/')
-    //     : null;
-
-    // const [previewPhoto, setPreviewPhoto] = useState(formattedPhotoPath || QuestionIco);
-
+    const [employeePhoto, setEmployeePhoto] = useState(editPerson && editPerson.photoPath 
+        ? '/src/' + editPerson.photoPath.substring(3).replace(/\\/g, '/') 
+        : QuestionIco);
     const [selectedGroup, setSelectedGroup] = useState(editPerson ? editGroupId : null);
-    const [selectedGroupName, setSelectedGroupName] = useState(editPerson ? groups.find(group => group._id === editGroupId)?.name : null); // Ініціалізуємо selectedGroupName
+    const [selectedGroupName, setSelectedGroupName] = useState(editPerson ? groups.find(group => group._id === editGroupId)?.name : null);
 
     const handleGroupChange = (option) => {
-        setSelectedGroup(option.value);  // Оновлюємо ID групи
-        setSelectedGroupName(option.label);  // Оновлюємо назву групи
+        setSelectedGroup(option.value); 
+        setSelectedGroupName(option.label);
     };
 
     useEffect(() => {
-        dispatch(fetchGroups()); // Завантажуємо групи
+        dispatch(fetchGroups());
     }, [dispatch]);
 
-    
+    const createBlobFromImagePath = async (imagePath) => {
+        const response = await fetch(imagePath); 
+        const imageBuffer = await response.arrayBuffer(); 
+        const blob = new Blob([imageBuffer], { type: 'image/webp' });
+        return blob;
+    };
 
     const convertImageToWebP = (file) => {
         return new Promise((resolve, reject) => {
@@ -76,20 +72,15 @@ export default function AddPersonalModal({ onClose }) {
 
     const handlePhotoChange = async (e) => {
         const file = e.target.files[0];
-    
         if (file) {
             if (file.type === 'image/webp') {
-                // Якщо файл вже WebP, зберігаємо його без змін
                 setEmployeePhoto(file);
             } else {
-                // Якщо файл не WebP, конвертуємо його в WebP
                 const webpBlob = await convertImageToWebP(file);
-                setEmployeePhoto(webpBlob); // Зберігаємо Blob або URL
+                setEmployeePhoto(webpBlob);
             }
         }
     };
-
-    
 
     const handleSave = async () => {
         const formData = new FormData();
@@ -99,98 +90,39 @@ export default function AddPersonalModal({ onClose }) {
         formData.append('note', note);
         formData.append('groupId', selectedGroup || editGroupId);
 
-         // Додаємо зображення, якщо воно є (Blob або URL)
         if (employeePhoto instanceof Blob) {
-            console.log("Додаємо зображення на сервер:");
-            console.log(`- Тип: ${employeePhoto.type}`);
-            console.log(`- Розмір: ${employeePhoto.size} байт`);
             formData.append('photo', employeePhoto, 'employee.webp');
+        } else if (typeof employeePhoto === 'string' && employeePhoto !== QuestionIco) {
+            const blob = await createBlobFromImagePath(employeePhoto); 
+            formData.append('photo', blob, 'employee.webp');
         }
 
-        for (let [key, value] of formData.entries()) {
-            if (value instanceof Blob) {
-                console.log(`${key}: [Blob] - ${value.type}, ${value.size} bytes`);
-            } else {
-                console.log(`${key}: ${value}`);
-            }
-        }
-    
-        // Якщо нове фото, додаємо його
-        // if (employeePhoto) {
-        //     console.log("Зображення для завантаження:");
-        //     console.log(`- Тип: ${employeePhoto.type}`);
-        //     console.log(`- Розмір: ${employeePhoto.size} байт`);
-    
-        //     // Якщо зображення конвертоване в WebP, відправляємо його
-        //     formData.append('photo', employeePhoto, 'employee.webp');
-        // } else if (previewPhoto !== QuestionIco) {
-        //     // Якщо фото не змінювалось, але не є стандартним, передаємо фото як є
-        //     const photoBlob = new Blob([previewPhoto], { type: 'image/webp' });
-        //     formData.append('photo', photoBlob, 'employee.webp');
-        // } else if (editPerson && editPerson.photoPath) {
-        //     // Якщо редагуємо і є фото, додаємо його без змін
-        //     const photoPath = editPerson.photoPath;
-            
-        //     if (photoPath) {
-        //         console.log("Існуюче фото для редагування:");
-        //         console.log(`- Шлях: ${photoPath}`);
-    
-        //         // Якщо фото вже в форматі WebP, просто передаємо його в тому вигляді
-        //         if (photoPath.endsWith('.webp')) {
-        //             console.log(1);
-        //             const photoBlob = new Blob([photoPath], { type: 'image/webp' });
-        //             formData.append('photo', photoBlob, 'employee.webp');
-        //         } else {
-        //             console.log(2);
-        //             // Якщо фото в іншому форматі, конвертуємо його в WebP (якщо необхідно)
-        //             const webpBlob = await convertImageToWebP(photoPath); // Логіка для перекодування
-        //             formData.append('photo', webpBlob, 'employee.webp');
-        //         }
-        //     } else {
-        //         console.log("Немає фото для редагування.");
-        //     }
-        // }
-    
-        // Логування форми перед відправкою
-        // for (let [key, value] of formData.entries()) {
-        //     if (value instanceof Blob) {
-        //         console.log(`${key}: [Blob] - ${value.type}, ${value.size} bytes`);
-        //     } else {
-        //         console.log(`${key}: ${value}`);
-        //     }
-        // }
-    
         try {
             const url = apiRoutes.addPersonnel(selectedGroup);
             const response = await fetch(url, { method: 'POST', body: formData });
-    
+
             if (!response.ok) {
                 throw new Error('Failed to save employee');
             }
-    
+
             const savedEmployee = await response.json();
-    
-            // Якщо це редагування, видаляємо старий запис
+
             if (editPersonId) {
                 const deleteUrl = apiRoutes.deletePersonnel(editGroupId, editPersonId);
                 const deleteResponse = await fetch(deleteUrl, { method: 'DELETE' });
-    
+
                 if (!deleteResponse.ok) {
                     throw new Error('Failed to delete old employee');
                 }
             }
-    
-            dispatch(fetchGroups()); // Оновлення груп після операції
+
+            dispatch(fetchGroups());
             onClose();
         } catch (error) {
             console.error('Error saving employee:', error);
         }
     };
     
-    
-    
-    
-
     return (
         <StyledWrapper onClick={handleWrapperClick}>
             <StyledModal>
@@ -211,9 +143,7 @@ export default function AddPersonalModal({ onClose }) {
                     </BlockColumn>
                     
                     <PhotoBlock>
-                        {/* <PhotoPic src={employeePhoto}></PhotoPic> */}
                         <PhotoPic src={employeePhoto instanceof Blob ? URL.createObjectURL(employeePhoto) : employeePhoto} />
-
                     </PhotoBlock>
                 </StyledPhotoBlock>
                 
@@ -221,7 +151,7 @@ export default function AddPersonalModal({ onClose }) {
                     <StyledSubtitle>Виберіть групу</StyledSubtitle>
                     <SelectComponent 
                         options={groups} 
-                        value={selectedGroup ? { value: selectedGroup, label: selectedGroupName } : null} // передаємо значення групи
+                        value={selectedGroup ? { value: selectedGroup, label: selectedGroupName } : null} 
                         onChange={handleGroupChange} 
                         placeholder="Оберіть групу"
                     />
@@ -263,5 +193,3 @@ export default function AddPersonalModal({ onClose }) {
         </StyledWrapper>
     );
 }
-
-

@@ -22,7 +22,6 @@ export default function PersonalList() {
     };
 
     const handleDeletePersonnel = (groupId, personnelId) => {
-        console.log(groupId, personnelId);
         dispatch(deletePersonnel({ groupId, personnelId }))
             .then(() => {
                 dispatch(fetchGroups());
