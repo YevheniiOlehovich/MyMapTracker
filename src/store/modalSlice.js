@@ -6,8 +6,10 @@ const modalSlice = createSlice({
     initialState: {
         isAddGroupModalVisible: false,
         isAddPersonalModalVisible: false, // Додаємо видимість модалки для персоналу
+        isAddVehicleModalVisible: false,
         editGroupId: null, // ID редагованої 
         editPersonId: null, // ID редагованого персоналу
+        editVehicleId: null
     },
     reducers: {
         openAddGroupModal: (state, action) => {
@@ -27,6 +29,15 @@ const modalSlice = createSlice({
             state.isAddPersonalModalVisible = false;
             state.editPersonId = null; // При закритті модалки, скидаємо тільки ID персоналу
         },
+        openAddVehicleModal: (state, action) => {
+            state.isAddVehicleModalVisible = true;
+            state.editVehicleId = action.payload?.vehicleId || null;  // Тільки персонал
+            state.editGroupId = action.payload?.groupId || null;  // Додаємо групу
+        },
+        closeAddVehicleModal: (state) => {
+            state.isAddVehicleModalVisible = false;
+            state.editVehicleId = null;
+        }
     },
 });
 
@@ -35,6 +46,8 @@ export const {
     closeAddGroupModal,
     openAddPersonalModal,
     closeAddPersonalModal,
+    openAddVehicleModal,
+    closeAddVehicleModal
 } = modalSlice.actions;
 
 export default modalSlice.reducer;

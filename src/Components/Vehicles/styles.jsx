@@ -57,9 +57,9 @@ export const StyledIco = styled.div`
     transform: rotate(${props => props.rotation}deg);
 `
 
-export const StyledContainer = styled.div`
-    width: 100%;
-    height: 100px;
-    box-sizing: border-box;
-    border: 1px solid black;
-`
+// export const StyledContainer = styled.div`
+//     width: 100%;
+//     height: 100px;
+//     box-sizing: border-box;
+//     border: 1px solid black;
+// `
