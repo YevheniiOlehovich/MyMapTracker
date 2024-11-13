@@ -61,7 +61,7 @@ export default function AddPersonalModal({ onClose }) {
                         } else {
                             reject('Failed to create WebP Blob');
                         }
-                    }, 'image/webp', 0.8); // 0.8 - quality of WebP
+                    }, 'image/webp', 0.8); 
                 };
                 img.src = event.target.result;
             };
@@ -186,7 +186,7 @@ export default function AddPersonalModal({ onClose }) {
                     />
                 </StyledLabel>
                 
-                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
+                <div style={{ display: 'flex', justifyContent: 'flex-end'}}>
                     <Button text={'Зберегти'} onClick={handleSave} />
                 </div>
             </StyledModal>

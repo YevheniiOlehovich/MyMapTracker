@@ -17,7 +17,6 @@ export const StyledWrapper = styled.div`
 
 export const StyledModal = styled.div`
     width: 400px;
-    height: 600px;
     background: white;
     padding: 10px;
     display: flex;
@@ -37,6 +36,10 @@ export const StyledCloseButton = styled.button`
     background-size: contain;
     background-repeat: no-repeat; 
     cursor: pointer;
+    transition: 0.4s;
+    &:hover{
+        transform: rotate(180deg);
+    }
 `
 
 export const StyledTitle = styled.h4`
@@ -108,9 +111,6 @@ export const BlockColumn = styled.div`
 export const PhotoPic = styled.img`
     width: 100%;
     height: 100%;
-    /* background-size: cover;
-    background-position: center;
-    background-image: url(${props => props.imageUrl}); */
 `
 
 export const StyledButtonLabel = styled.label`
