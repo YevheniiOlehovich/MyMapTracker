@@ -68,7 +68,6 @@ export default function AddGroupModal({ onClose }) {
         }
     };
     
-
     return (
         <StyledWrapper onClick={handleWrapperClick}>
             <StyledModal>

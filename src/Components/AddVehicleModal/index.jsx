@@ -6,6 +6,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import SelectComponent from '../Select';
 import Button from '../Button';
 import QuestionIco from '../../assets/ico/10965421.webp';
+import { vehicleTypes } from '../../helpres';
+import apiRoutes from '../../helpres/ApiRoutes';
 
 export default function AddVehicleModal({onClose}){
     const handleWrapperClick = closeModal(onClose);
@@ -23,6 +25,8 @@ export default function AddVehicleModal({onClose}){
     const [info, setInfo] = useState(null)
     const [note, setNote] = useState(null)
     const [employeePhoto, setEmployeePhoto] = useState(QuestionIco)
+    const [vehicleType, setVehicleType] = useState(null)
+    const [ vehicleTypeName, setVehicleTypeName]= useState(null)
 
     useEffect(() => {
         dispatch(fetchGroups());
@@ -31,6 +35,16 @@ export default function AddVehicleModal({onClose}){
     const handleGroupChange = (option) => {
         setSelectedGroup(option.value); 
         setSelectedGroupName(option.label);
+    };
+
+    const handleVehicleTypeChange = (option) => {
+        if (option) {
+            setVehicleType(option.value);
+            setVehicleTypeName(option.label);
+        } else {
+            setVehicleType(null);
+            setVehicleTypeName(null);
+        }
     };
 
     const convertImageToWebP = (file) => {
@@ -71,14 +85,24 @@ export default function AddVehicleModal({onClose}){
         }
     };
 
-    const handleSave = async () => {
-        onClose();
+    // const handleSave = async () => {
+        // onClose();
         // const formData = new FormData();
-        // formData.append('firstName', firstName);
-        // formData.append('lastName', lastName);
-        // formData.append('contactNumber', contactNumber);
+        // formData.append('groupId', selectedGroup);
+        // formData.append('vehicleType', vehicleType);
+        // formData.append('regNumber', regNumber);
+        // formData.append('info', info);
         // formData.append('note', note);
+
+        // if (employeePhoto instanceof Blob) {
+        //     formData.append('photo', employeePhoto, 'vehicle.webp');
+        // }
+
         // formData.append('groupId', selectedGroup || editGroupId);
+
+        // for (const [key, value] of formData.entries()) {
+        //     console.log(`${key}:`, value);
+        // }
 
         // if (employeePhoto instanceof Blob) {
         //     formData.append('photo', employeePhoto, 'employee.webp');
@@ -111,6 +135,58 @@ export default function AddVehicleModal({onClose}){
         // } catch (error) {
         //     console.error('Error saving employee:', error);
         // }
+    // };
+
+    const handleSave = async () => {
+        // Закриття модалки після збереження
+        onClose();
+    
+        // Створюємо FormData для відправки на сервер
+        const formData = new FormData();
+        formData.append('groupId', selectedGroup); // ID групи
+        formData.append('vehicleType', vehicleType); // Тип техніки
+        formData.append('regNumber', regNumber); // Реєстраційний номер
+        formData.append('info', info); // Інформація про техніку
+        formData.append('note', note); // Нотатки
+    
+        // Якщо фото техніки є, додаємо його до FormData
+        if (employeePhoto instanceof Blob) {
+            formData.append('photo', employeePhoto, 'vehicle.webp'); // Додаємо фото як WebP
+        }
+    
+        // Логування даних для перевірки
+        for (const [key, value] of formData.entries()) {
+            console.log(`${key}:`, value);
+        }
+    
+        try {
+            // Виконуємо POST запит на сервер для додавання техніки
+            const response = await fetch(apiRoutes.addVehicle(selectedGroup), {
+                method: 'POST',
+                body: formData
+            });
+
+            console.log(response)
+    
+            // Перевірка на успіх
+            if (!response.ok) {
+                throw new Error('Не вдалося зберегти техніку');
+            }
+    
+            // Отримуємо результат
+            const savedVehicle = await response.json();
+    
+            // Логування успішного збереження
+            console.log('Техніка успішно додана:', savedVehicle);
+    
+            // Можна додати додаткові дії, наприклад, оновити список техніки або груп
+            dispatch(fetchGroups()); // Оновлення груп чи техніки
+    
+            // Закриваємо модалку після успішного збереження
+            onClose();
+        } catch (error) {
+            console.error('Помилка при збереженні техніки:', error);
+        }
     };
 
     return(
@@ -143,10 +219,19 @@ export default function AddVehicleModal({onClose}){
                     <StyledSubtitle>Виберіть групу</StyledSubtitle>
                     <SelectComponent 
                         options={groups} 
-                        // value={selectedGroup ? { value: selectedGroup, label: selectedGroupName } : null} 
-                        value={{ value: selectedGroup, label: selectedGroupName }}
+                        value={groups.length > 0 && selectedGroup ? { value: selectedGroup, label: selectedGroupName } : null}
                         onChange={handleGroupChange} 
                         placeholder="Оберіть групу"
+                    />
+                </StyledLabel>
+
+                <StyledLabel>
+                    <StyledSubtitle>Виберіть тип техніки</StyledSubtitle>
+                    <SelectComponent 
+                        options={vehicleTypes} // Масив об'єктів передається у options
+                        value={vehicleType ? { value: vehicleType, label: vehicleTypeName } : null} // Передаємо об'єкт з поточним значенням
+                        onChange={handleVehicleTypeChange} // Оновлюємо стан при зміні вибору
+                        placeholder="Оберіть тип техніки"
                     />
                 </StyledLabel>
 

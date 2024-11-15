@@ -20,6 +20,23 @@ const storage = multer.diskStorage({
         cb(null, uniqueSuffix + path.extname(file.originalname));
     },
 });
+
+// Налаштування multer для збереження фотографій техніки в окрему папку
+const vehicleStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        const dir = '../uploads/vehicles';
+        if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true });
+        }
+        cb(null, dir);
+    },
+    filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+        cb(null, uniqueSuffix + path.extname(file.originalname));
+    },
+});
+const vehicleUpload = multer({ storage: vehicleStorage });
+
 const upload = multer({ storage });
 
 // Схема для групи з шляхом до фото в базі даних
@@ -34,7 +51,13 @@ const GroupSchema = new mongoose.Schema({
         note: { type: String },
         photoPath: { type: String }, // Шлях до фото замість Buffer
     }],
-    equipment: { type: [String], default: [] },
+    vehicle: [{
+        vehicleType: { type: String, required: true },
+        regNumber: { type: String, required: true },
+        info: { type: String },
+        note: { type: String },
+        photoPath: { type: String }, // Шлях до фото техніки
+    }],
 });
 
 // Створення моделі для групи
@@ -63,7 +86,7 @@ router.post('/', async (req, res) => {
         ownership,
         description,
         personnel: [],
-        equipment: [],
+        vehicle: [],
     });
 
     try {
@@ -205,5 +228,99 @@ router.delete('/:groupId/personnel/:personId', async (req, res) => {
         res.status(400).json({ message: 'Error deleting personnel' });
     }
 });
+
+// Додавання нового транспортного засобу до групи з фотографією
+router.post('/:groupId/vehicles', upload.single('photo'), async (req, res) => {
+    try {
+        const { vehicleType, regNumber, info, note } = req.body;
+
+        // Перевірка, чи всі необхідні дані надані
+        if (!vehicleType || !regNumber) {
+            return res.status(400).json({ message: 'Vehicle type and registration number are required.' });
+        }
+
+        // Знаходимо групу за groupId
+        const group = await Group.findById(req.params.groupId);
+        if (!group) {
+            return res.status(404).json({ message: 'Group not found' });
+        }
+
+        // Логування шляху до фото
+        const photoPath = req.file ? req.file.path : null;
+        if (photoPath) {
+            console.log('Vehicle image uploaded to: ', photoPath); // Логування шляху до зображення
+        }
+
+        // Створення нового транспортного засобу
+        const newVehicle = {
+            vehicleType,
+            regNumber,
+            info,
+            note,
+            photoPath, // Зберігаємо шлях до фото
+        };
+
+        // Додавання техніки до масиву vehicle групи
+        group.vehicle.push(newVehicle);
+
+        // Збереження оновленої групи
+        await group.save();
+
+        // Відправка лише нового транспортного засобу в відповіді
+        res.status(201).json(newVehicle);
+    } catch (error) {
+        console.error('Error saving vehicle:', error);
+        res.status(500).json({ message: 'Error saving vehicle', error: error.message });
+    }
+});
+
+// Видалення техніки з групи разом із зображенням
+router.delete('/:groupId/vehicles/:vehicleId', async (req, res) => {
+    try {
+        const { groupId, vehicleId } = req.params;
+
+        // Знаходимо групу
+        const group = await Group.findById(groupId);
+        if (!group) {
+            return res.status(404).json({ message: 'Group not found' });
+        }
+
+        // Знаходимо техніку в групі
+        const vehicleIndex = group.vehicle.findIndex(vehicle => vehicle.id === vehicleId);
+        if (vehicleIndex === -1) {
+            return res.status(404).json({ message: 'Vehicle not found' });
+        }
+
+        // Отримуємо шлях до фото техніки
+        const vehicle = group.vehicle[vehicleIndex];
+        const photoPath = vehicle.photoPath;
+
+        // Якщо фото є, видаляємо його з файлової системи
+        if (photoPath) {
+            const dir = path.resolve('../uploads/vehicles'); // Отримуємо абсолютний шлях до директорії
+            const formattedPath = path.join(dir, path.basename(photoPath)); // Отримуємо шлях до конкретного фото
+
+            try {
+                // Перевірка на існування файлу та його видалення
+                await fs.promises.stat(formattedPath); // Перевіряємо, чи існує файл
+                await fs.promises.unlink(formattedPath); // Видаляємо файл
+                console.log('Vehicle photo deleted successfully:', formattedPath);
+            } catch (err) {
+                console.error('Error with vehicle photo deletion:', err);
+                return res.status(500).json({ message: 'Error deleting vehicle photo' });
+            }
+        }
+
+        // Видаляємо техніку з масиву vehicle
+        group.vehicle.splice(vehicleIndex, 1);
+        await group.save(); // Зберігаємо зміни в базі даних
+
+        res.status(200).json({ message: 'Vehicle deleted', group }); // Повертаємо оновлену групу
+    } catch (error) {
+        console.error('Error deleting vehicle:', error);
+        res.status(400).json({ message: 'Error deleting vehicle' });
+    }
+});
+
 
 export default router;

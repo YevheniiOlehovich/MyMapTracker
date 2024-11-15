@@ -7,3 +7,11 @@ export const center = {
     lat: 50.69333,
     lng: 32.17250,
 };
+
+export const vehicleTypes = [
+    { _id: 'car', name: 'Легковий автомобіль' },
+    { _id: 'vintage_car', name: 'Винтажний автомобіль' },
+    { _id: 'tractor', name: 'Трактор' },
+    { _id: 'combine', name: 'Комбайн' },
+    { _id: 'truck', name: 'Вантажівка' }
+];
