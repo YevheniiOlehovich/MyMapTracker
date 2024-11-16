@@ -22,7 +22,7 @@ export default function AddVehicleModal({onClose}){
     const [selectedGroup, setSelectedGroup] = useState(null);
     const [selectedGroupName, setSelectedGroupName] = useState(null);
     const [regNumber, setRegNumber] = useState(null)
-    const [info, setInfo] = useState(null)
+    const [mark, setMark] = useState(null)
     const [note, setNote] = useState(null)
     const [employeePhoto, setEmployeePhoto] = useState(QuestionIco)
     const [vehicleType, setVehicleType] = useState(null)
@@ -146,7 +146,7 @@ export default function AddVehicleModal({onClose}){
         formData.append('groupId', selectedGroup); // ID групи
         formData.append('vehicleType', vehicleType); // Тип техніки
         formData.append('regNumber', regNumber); // Реєстраційний номер
-        formData.append('info', info); // Інформація про техніку
+        formData.append('mark', mark); // Інформація про техніку
         formData.append('note', note); // Нотатки
     
         // Якщо фото техніки є, додаємо його до FormData
@@ -236,10 +236,10 @@ export default function AddVehicleModal({onClose}){
                 </StyledLabel>
 
                 <StyledLabel>
-                    <StyledSubtitle>Інфо</StyledSubtitle>
+                    <StyledSubtitle>Марка засобу</StyledSubtitle>
                     <StyledInput 
-                        value={info}
-                        onChange={(e) => setInfo(e.target.value)}
+                        value={mark}
+                        onChange={(e) => setMark(e.target.value)}
                     />
                 </StyledLabel>
 

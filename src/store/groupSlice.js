@@ -16,7 +16,7 @@ export const fetchGroups = createAsyncThunk('groups/fetchGroups', async () => {
         ownership: group.ownership,
         description: group.description,
         personnel: group.personnel || [], // У випадку, якщо personnel не визначено
-        equipment: group.equipment || []    // У випадку, якщо equipment не визначено
+        vehicles: group.vehicles || []    // У випадку, якщо equipment не визначено
     }));
 });
 
@@ -43,8 +43,6 @@ export const updateGroup = createAsyncThunk('groups/updateGroup', async ({ group
     return await response.json();
 });
 
-
-
 // Асинхронний екшен для видалення групи
 export const deleteGroup = createAsyncThunk('groups/deleteGroup', async (groupId) => {
     const url = apiRoutes.deleteGroup(groupId); // Отримуємо URL
@@ -58,7 +56,6 @@ export const deleteGroup = createAsyncThunk('groups/deleteGroup', async (groupId
     }
     return groupId; // Повертаємо groupId, щоб видалити групу з локального стану
 });
-
 
 
 // Асинхронний екшен для видалення персоналу з групи
@@ -113,6 +110,22 @@ export const updatePersonnel = createAsyncThunk(
     }
 );
 
+// Асинхронний екшен для видалення техніки з групи
+export const deleteVehicle = createAsyncThunk('groups/deleteVehicle', async ({ groupId, vehicleId }) => {
+    const url = apiRoutes.deleteVehicle(groupId, vehicleId);
+    console.log(`Deleting personnel with groupId: ${groupId}, personnelId: ${vehicleId}`, url);
+
+    const response = await fetch(url, {
+        method: 'DELETE',
+    });
+
+    if (!response.ok) {
+        throw new Error('Failed to delete personnel');
+    }
+
+    return vehicleId; // Повертаємо vehicleId для подальшого видалення з локального стану
+});
+
 
 // Створення слайсу
 const groupsSlice = createSlice({
@@ -166,7 +179,17 @@ const groupsSlice = createSlice({
                         state.groups[groupIndex].personnel[personnelIndex] = updatedPersonnel; // Оновлюємо персонала
                     }
                 }
-            });
+            })
+            .addCase(deleteVehicle.fulfilled, (state, action) => {
+                const vehicleId = action.payload; // Отримуємо vehicleId
+                // Знаходимо групу, що містить цю техніку
+                const group = state.groups.find(group => group.vehicle.some(vehicle => vehicle._id === vehicleId));
+            
+                if (group) {
+                    // Видаляємо техніку з групи
+                    group.vehicle = group.vehicle.filter(vehicle => vehicle._id !== vehicleId);
+                }
+            })
     },
 });
 

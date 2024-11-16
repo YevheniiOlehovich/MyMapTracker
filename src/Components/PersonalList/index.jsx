@@ -71,7 +71,7 @@ export default function PersonalList() {
                             {group.personnel && group.personnel.length > 0 ? (
                                 <StyledList>
                                     {group.personnel.map(person => (
-                                        <StyledBlock key={person.contactNumber}>
+                                        <StyledBlock key={person._id}>
                                             <StyledImgBlock imageUrl={person.photoPath ? formatPhotoPath(person.photoPath) : QuestionIco} />
                                             <StyledListItem>
                                                 {person.lastName} {person.firstName}

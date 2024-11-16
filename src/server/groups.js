@@ -51,10 +51,10 @@ const GroupSchema = new mongoose.Schema({
         note: { type: String },
         photoPath: { type: String }, // Шлях до фото замість Buffer
     }],
-    vehicle: [{
+    vehicles: [{
         vehicleType: { type: String, required: true },
         regNumber: { type: String, required: true },
-        info: { type: String },
+        mark: { type: String },
         note: { type: String },
         photoPath: { type: String }, // Шлях до фото техніки
     }],
@@ -230,9 +230,9 @@ router.delete('/:groupId/personnel/:personId', async (req, res) => {
 });
 
 // Додавання нового транспортного засобу до групи з фотографією
-router.post('/:groupId/vehicles', upload.single('photo'), async (req, res) => {
+router.post('/:groupId/vehicles', vehicleUpload.single('photo'), async (req, res) => {
     try {
-        const { vehicleType, regNumber, info, note } = req.body;
+        const { vehicleType, regNumber, mark, note } = req.body;
 
         // Перевірка, чи всі необхідні дані надані
         if (!vehicleType || !regNumber) {
@@ -255,13 +255,13 @@ router.post('/:groupId/vehicles', upload.single('photo'), async (req, res) => {
         const newVehicle = {
             vehicleType,
             regNumber,
-            info,
+            mark,
             note,
             photoPath, // Зберігаємо шлях до фото
         };
 
         // Додавання техніки до масиву vehicle групи
-        group.vehicle.push(newVehicle);
+        group.vehicles.push(newVehicle);
 
         // Збереження оновленої групи
         await group.save();
@@ -286,13 +286,13 @@ router.delete('/:groupId/vehicles/:vehicleId', async (req, res) => {
         }
 
         // Знаходимо техніку в групі
-        const vehicleIndex = group.vehicle.findIndex(vehicle => vehicle.id === vehicleId);
+        const vehicleIndex = group.vehicles.findIndex(vehicle => vehicle.id === vehicleId);
         if (vehicleIndex === -1) {
             return res.status(404).json({ message: 'Vehicle not found' });
         }
 
         // Отримуємо шлях до фото техніки
-        const vehicle = group.vehicle[vehicleIndex];
+        const vehicle = group.vehicles[vehicleIndex];
         const photoPath = vehicle.photoPath;
 
         // Якщо фото є, видаляємо його з файлової системи
@@ -312,7 +312,7 @@ router.delete('/:groupId/vehicles/:vehicleId', async (req, res) => {
         }
 
         // Видаляємо техніку з масиву vehicle
-        group.vehicle.splice(vehicleIndex, 1);
+        group.vehicles.splice(vehicleIndex, 1);
         await group.save(); // Зберігаємо зміни в базі даних
 
         res.status(200).json({ message: 'Vehicle deleted', group }); // Повертаємо оновлену групу

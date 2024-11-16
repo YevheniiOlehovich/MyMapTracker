@@ -22,7 +22,7 @@ export default function Vehicles(){
         <> 
             <StyledWrapper>
                 <StyledBlock>
-                    <StyledTitle>Техніка</StyledTitle>
+                    <StyledTitle>Транспортні засоби</StyledTitle>
                     <StyledButton>
                         <StyledIco pic={TriangleIco} rotation={rotation} onClick={handleClick}></StyledIco>
                     </StyledButton>
