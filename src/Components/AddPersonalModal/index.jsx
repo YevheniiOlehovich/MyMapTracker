@@ -28,6 +28,10 @@ export default function AddPersonalModal({ onClose }) {
     const [selectedGroup, setSelectedGroup] = useState(editPerson ? editGroupId : null);
     const [selectedGroupName, setSelectedGroupName] = useState(editPerson ? groups.find(group => group._id === editGroupId)?.name : null);
 
+
+    console.log('selectedGroup', selectedGroup)
+    console.log('selectedGroupName', selectedGroupName)
+
     const handleGroupChange = (option) => {
         setSelectedGroup(option.value); 
         setSelectedGroupName(option.label);

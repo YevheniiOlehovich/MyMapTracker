@@ -9,42 +9,56 @@ import QuestionIco from '../../assets/ico/10965421.webp';
 import { vehicleTypes } from '../../helpres';
 import apiRoutes from '../../helpres/ApiRoutes';
 
-export default function AddVehicleModal({onClose}){
-    const handleWrapperClick = closeModal(onClose);
-    const groups = useSelector(selectAllGroups);
+export default function AddVehicleModal({ onClose }){
     const dispatch = useDispatch();
+    const editVehicleId = useSelector(state => state.modals.editVehicleId);
+    const editGroupId = useSelector(state => state.modals.editGroupId);
+    const groups = useSelector(selectAllGroups);   
 
-    // const [selectedGroup, setSelectedGroup] = useState(editPerson ? editGroupId : null);
-    // const [selectedGroupName, setSelectedGroupName] = useState(editPerson ? groups.find(group => group._id === editGroupId)?.name : null);
-    // const [employeePhoto, setEmployeePhoto] = useState(editPerson && editPerson.photoPath 
-    //     ? '/src/' + editPerson.photoPath.substring(3).replace(/\\/g, '/') 
-    //     : QuestionIco);
-    const [selectedGroup, setSelectedGroup] = useState(null);
-    const [selectedGroupName, setSelectedGroupName] = useState(null);
-    const [regNumber, setRegNumber] = useState(null)
-    const [mark, setMark] = useState(null)
-    const [note, setNote] = useState(null)
-    const [employeePhoto, setEmployeePhoto] = useState(QuestionIco)
-    const [vehicleType, setVehicleType] = useState(null)
+    const editVehicle = groups
+    .flatMap(group => group.vehicles) // Перебір всіх груп
+    .find(vehicle => vehicle._id === editVehicleId); // Пошук потрібного об'єкта
+
+    const handleWrapperClick = closeModal(onClose);
+
+    const [selectedGroup, setSelectedGroup] = useState(editVehicle ? editGroupId : null);
+    const [selectedGroupName, setSelectedGroupName] = useState(editVehicle ? groups.find(group => group._id === editGroupId)?.name : null);;
+    const [regNumber, setRegNumber] = useState(editVehicle ? editVehicle.regNumber : '')
+    const [mark, setMark] = useState(editVehicle ? editVehicle.mark : '')
+    const [note, setNote] = useState(editVehicle ? editVehicle.note : '')
+    const [employeePhoto, setEmployeePhoto] = useState(editVehicle && editVehicle.photoPath 
+        ? '/src/' + editVehicle.photoPath.substring(3).replace(/\\/g, '/') 
+        : QuestionIco)
+    const [vehicleType, setVehicleType] = useState(editVehicle ? editVehicle.vehicleType : '')
     const [ vehicleTypeName, setVehicleTypeName]= useState(null)
-
-    useEffect(() => {
-        dispatch(fetchGroups());
-    }, [dispatch]);
+    
+    console.log(vehicleTypes)
 
     const handleGroupChange = (option) => {
+        
         setSelectedGroup(option.value); 
         setSelectedGroupName(option.label);
     };
 
-    const handleVehicleTypeChange = (option) => {
-        if (option) {
-            setVehicleType(option.value);
-            setVehicleTypeName(option.label);
-        } else {
-            setVehicleType(null);
-            setVehicleTypeName(null);
-        }
+    useEffect(() => {
+            dispatch(fetchGroups());
+        }, [dispatch]);
+
+        const handleVehicleTypeChange = (option) => {
+            if (option) {
+                setVehicleType(option.value); // Оновлення типу техніки за значенням
+                setVehicleTypeName(option.label); // Оновлення назви типу
+            } else {
+                setVehicleType(null);
+                setVehicleTypeName(null);
+            }
+        };
+
+    const createBlobFromImagePath = async (imagePath) => {
+        const response = await fetch(imagePath); 
+        const imageBuffer = await response.arrayBuffer(); 
+        const blob = new Blob([imageBuffer], { type: 'image/webp' });
+        return blob;
     };
 
     const convertImageToWebP = (file) => {
@@ -85,102 +99,46 @@ export default function AddVehicleModal({onClose}){
         }
     };
 
-    // const handleSave = async () => {
-        // onClose();
-        // const formData = new FormData();
-        // formData.append('groupId', selectedGroup);
-        // formData.append('vehicleType', vehicleType);
-        // formData.append('regNumber', regNumber);
-        // formData.append('info', info);
-        // formData.append('note', note);
-
-        // if (employeePhoto instanceof Blob) {
-        //     formData.append('photo', employeePhoto, 'vehicle.webp');
-        // }
-
-        // formData.append('groupId', selectedGroup || editGroupId);
-
-        // for (const [key, value] of formData.entries()) {
-        //     console.log(`${key}:`, value);
-        // }
-
-        // if (employeePhoto instanceof Blob) {
-        //     formData.append('photo', employeePhoto, 'employee.webp');
-        // } else if (typeof employeePhoto === 'string' && employeePhoto !== QuestionIco) {
-        //     const blob = await createBlobFromImagePath(employeePhoto); 
-        //     formData.append('photo', blob, 'employee.webp');
-        // }
-
-        // try {
-        //     const url = apiRoutes.addPersonnel(selectedGroup);
-        //     const response = await fetch(url, { method: 'POST', body: formData });
-
-        //     if (!response.ok) {
-        //         throw new Error('Failed to save employee');
-        //     }
-
-        //     const savedEmployee = await response.json();
-
-        //     if (editPersonId) {
-        //         const deleteUrl = apiRoutes.deletePersonnel(editGroupId, editPersonId);
-        //         const deleteResponse = await fetch(deleteUrl, { method: 'DELETE' });
-
-        //         if (!deleteResponse.ok) {
-        //             throw new Error('Failed to delete old employee');
-        //         }
-        //     }
-
-        //     dispatch(fetchGroups());
-        //     onClose();
-        // } catch (error) {
-        //     console.error('Error saving employee:', error);
-        // }
-    // };
-
     const handleSave = async () => {
-        // Закриття модалки після збереження
-        onClose();
-    
-        // Створюємо FormData для відправки на сервер
         const formData = new FormData();
         formData.append('groupId', selectedGroup); // ID групи
         formData.append('vehicleType', vehicleType); // Тип техніки
         formData.append('regNumber', regNumber); // Реєстраційний номер
-        formData.append('mark', mark); // Інформація про техніку
+        formData.append('mark', mark); // Марка
         formData.append('note', note); // Нотатки
     
-        // Якщо фото техніки є, додаємо його до FormData
+        // Додаємо фото техніки, якщо воно є
         if (employeePhoto instanceof Blob) {
-            formData.append('photo', employeePhoto, 'vehicle.webp'); // Додаємо фото як WebP
-        }
-    
-        // Логування даних для перевірки
-        for (const [key, value] of formData.entries()) {
-            console.log(`${key}:`, value);
+            formData.append('photo', employeePhoto, 'vehicle.webp');
+        } else if (typeof employeePhoto === 'string' && employeePhoto !== QuestionIco) {
+            const blob = await createBlobFromImagePath(employeePhoto);
+            formData.append('photo', blob, 'vehicle.webp');
         }
     
         try {
-            // Виконуємо POST запит на сервер для додавання техніки
-            const response = await fetch(apiRoutes.addVehicle(selectedGroup), {
-                method: 'POST',
-                body: formData
-            });
-
-            console.log(response)
+            // Створюємо нову техніку через POST
+            const url = apiRoutes.addVehicle(selectedGroup);
+            const response = await fetch(url, { method: 'POST', body: formData });
     
-            // Перевірка на успіх
             if (!response.ok) {
                 throw new Error('Не вдалося зберегти техніку');
             }
     
-            // Отримуємо результат
             const savedVehicle = await response.json();
+            console.log('Техніка успішно збережена:', savedVehicle);
     
-            // Логування успішного збереження
-            console.log('Техніка успішно додана:', savedVehicle);
+            // Якщо редагуємо техніку (editVehicleId є), видаляємо стару
+            if (editVehicleId) {
+                const deleteUrl = apiRoutes.deleteVehicle(editGroupId, editVehicleId);
+                const deleteResponse = await fetch(deleteUrl, { method: 'DELETE' });
     
-            // Можна додати додаткові дії, наприклад, оновити список техніки або груп
-            dispatch(fetchGroups()); // Оновлення груп чи техніки
+                if (!deleteResponse.ok) {
+                    throw new Error('Не вдалося видалити стару техніку');
+                }
+            }
+    
+            // Оновлюємо список груп та техніки
+            dispatch(fetchGroups());
     
             // Закриваємо модалку після успішного збереження
             onClose();
@@ -188,6 +146,8 @@ export default function AddVehicleModal({onClose}){
             console.error('Помилка при збереженні техніки:', error);
         }
     };
+    
+    
 
     return(
         <StyledWrapper onClick={handleWrapperClick}>
@@ -229,7 +189,7 @@ export default function AddVehicleModal({onClose}){
                     <StyledSubtitle>Виберіть тип техніки</StyledSubtitle>
                     <SelectComponent 
                         options={vehicleTypes} // Масив об'єктів передається у options
-                        value={vehicleType ? { value: vehicleType, label: vehicleTypeName } : null} // Передаємо об'єкт з поточним значенням
+                        value={vehicleType ? { value: vehicleType, label: vehicleTypes.find(vt => vt._id === vehicleType)?.name } : null}
                         onChange={handleVehicleTypeChange} // Оновлюємо стан при зміні вибору
                         placeholder="Оберіть тип техніки"
                     />

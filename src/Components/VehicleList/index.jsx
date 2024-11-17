@@ -28,9 +28,9 @@ export default function VehicleList(){
         dispatch(openAddGroupModal(groupId)); // Передаємо ID групи
     };
 
-    const handleOpenEditVehicleModal = (groupId, personId) => {
+    const handleOpenEditVehicleModal = (groupId, vehicleId) => {
         // Викликаємо модалку, передаючи тільки групу та id персони
-        dispatch(openAddVehicleModal({ groupId, personId }));
+        dispatch(openAddVehicleModal({ groupId, vehicleId }));
     };
 
     const handleDeleteVehicle = (groupId, vehicleId) => {
