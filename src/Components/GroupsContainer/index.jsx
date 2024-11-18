@@ -4,48 +4,40 @@ import {
     openAddGroupModal, 
     closeAddGroupModal, 
     openAddPersonalModal, 
-    closeAddPersonalModal 
+    closeAddPersonalModal,
+    openAddVehicleModal,
+    closeAddVehicleModal
 } from '../../store/modalSlice';
-import { StyledWrapper, StyledTitle, StyledBlock, StyledButton, StyledIco, StyledContainer } from './styles';
-import TriangleIco from '../../assets/ico/triangle.png';
+import { StyledWrapper, StyledTitle, StyledBlock } from './styles';
 import Button from '../Button';
 import AddGroupModal from '../AddGroupModal';
 import AddPersonalModal from '../AddPersonalModal';
-import PersonalList from '../PersonalList';
+import AddVehicleModal from '../AddVehicleModal'
+import GroupsList from '../GroupsList';
 
-export default function Personal() {
-    const [rotation, setRotation] = useState(0);
-    const [isContainerVisible, setIsContainerVisible] = useState(false);
-
+export default function GroupsContainer() {
     const dispatch = useDispatch();
     const isAddGroupModalVisible = useSelector((state) => state.modals.isAddGroupModalVisible);
     const isAddPersonalModalVisible = useSelector((state) => state.modals.isAddPersonalModalVisible);
-
-    const handleClick = () => {
-        setRotation(prev => prev + 180); 
-        setIsContainerVisible(prev => !prev);
-    };
+    const isAddVehicleModalVisible = useSelector((state) => state.modals.isAddVehicleModalVisible)
 
     return (
         <>
             <StyledWrapper>
                 <StyledBlock>
-                    <StyledTitle>Персонал</StyledTitle>
-                    <StyledButton>
-                        <StyledIco pic={TriangleIco} rotation={rotation} onClick={handleClick}></StyledIco>
-                    </StyledButton>
+                    <StyledTitle>Список груп</StyledTitle>
                 </StyledBlock>
                 <StyledBlock>
                     <Button text={'Створити групу'} onClick={() => dispatch(openAddGroupModal())} /> 
                     <Button text={'Додати працівника'} onClick={() => dispatch(openAddPersonalModal())}/>
+                    <Button text={'Додати техніку'} onClick={() => dispatch(openAddVehicleModal())}/>
                 </StyledBlock>
-
-                {isContainerVisible && <PersonalList />}
-                
+                <GroupsList />
             </StyledWrapper>
 
             {isAddGroupModalVisible && <AddGroupModal onClose={() => dispatch(closeAddGroupModal())}/>} 
             {isAddPersonalModalVisible && <AddPersonalModal onClose={() => dispatch(closeAddPersonalModal())}/>} 
+            {isAddVehicleModalVisible && <AddVehicleModal onClose={() => dispatch(closeAddVehicleModal())}/>} 
         </>
     );
 }

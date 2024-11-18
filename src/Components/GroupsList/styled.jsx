@@ -8,16 +8,25 @@ export const StyledTitle = styled.h3`
     margin: 0 8px 12px;
 `
 
+export const StyledSubTitle = styled.h4`
+    font-family: Arial, Helvetica, sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    display: block;
+    margin: 0 8px 12px;
+`
+
 export const StyledBlock = styled.div`
     width: 100%;
-    margin-bottom: 12px;
     display: flex;
     align-items: center;
     justify-content: space-between;
+    min-height: 40px;
+    padding: 0;
 `
 export const StyledButtonBlock = styled.div`
     display: flex;
-    width: 50px;
+    width: auto;
     justify-content: space-between;
 `
 export const StyledSubtitle = styled.h4`
@@ -44,6 +53,9 @@ export const StyledButton = styled.button`
     &:hover{
         border: 2px solid black;
     }
+    &:not(:first-child){
+        margin-left: 8px;
+    }
 `;
 
 export const StyledIco = styled.div`
@@ -66,6 +78,10 @@ export const StyledList = styled.ul`
 export const StyledListItem = styled.li`
     list-style: none;
     margin-bottom: 4px;
+    /* border: 1px solid black; */
+    box-sizing: border-box;
+    padding: 0;
+    border: ${({ hasBorder }) => (hasBorder ? '1px solid black' : 'none')};
 `
 
 export const StyledMainList = styled.ul`
@@ -73,8 +89,9 @@ export const StyledMainList = styled.ul`
     padding: 0 8px;
     margin: 0;
     width: 100%;
-    height: 600px;
+    height: 100%;
     overflow-y: auto;
+
 `
 
 export const StyledSpan = styled.span`
