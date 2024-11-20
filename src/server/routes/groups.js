@@ -61,7 +61,7 @@ const GroupSchema = new mongoose.Schema({
 });
 
 // Створення моделі для групи
-const Group = mongoose.model('Group', GroupSchema);
+export const Group = mongoose.model('Group', GroupSchema);
 
 // Отримання всіх груп
 router.get('/', async (req, res) => {
@@ -135,9 +135,7 @@ router.delete('/:id', async (req, res) => {
     }
 });
 
-
 // Додавання нового працівника з зображенням
-
 router.post('/:groupId/personnel', upload.single('photo'), async (req, res) => {
     try {
         const { firstName, lastName, contactNumber, note } = req.body;
@@ -321,6 +319,7 @@ router.delete('/:groupId/vehicles/:vehicleId', async (req, res) => {
         res.status(400).json({ message: 'Error deleting vehicle' });
     }
 });
+
 
 
 export default router;
