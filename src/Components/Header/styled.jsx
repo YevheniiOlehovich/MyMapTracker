@@ -8,4 +8,5 @@ export const StyledHeader = styled.header`
     width: 800px;
     height: 100px;
     background-color: rgba(0, 0, 0, 0.2);
+    display: flex;
 `

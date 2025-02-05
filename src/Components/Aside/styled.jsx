@@ -6,8 +6,8 @@ export const StyledAside = styled.aside`
     z-index: 5;
     left: 0;
     width: 300px;
-    height: 800px;
-    background: rgba(0, 0, 0, 0.5);
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.7);
     top: 50%;
     transform: translateY(-50%);
     display: flex;
