@@ -1,12 +1,13 @@
 import { configureStore } from '@reduxjs/toolkit';
-import groupsReducer from './groupSlice'; // Шлях до вашого слайсу
+import gpsReducer from './locationSlice'; // Імпортуємо редюсер для GPS
+import groupsReducer from './groupSlice';
 import modalReducer from './modalSlice';
 
 const store = configureStore({
     reducer: {
-        groups: groupsReducer, // Додаємо редюсер груп
+        gps: gpsReducer, // Додаємо редюсер GPS
+        groups: groupsReducer,
         modals: modalReducer,
-        // Інші редюсери, якщо вони є
     },
 });
 
