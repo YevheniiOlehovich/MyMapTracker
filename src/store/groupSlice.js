@@ -16,7 +16,7 @@ export const fetchGroups = createAsyncThunk('groups/fetchGroups', async () => {
         ownership: group.ownership,
         description: group.description,
         personnel: group.personnel || [], // У випадку, якщо personnel не визначено
-        vehicles: group.vehicles || []    // У випадку, якщо equipment не визначено
+        vehicles: group.vehicles || []    // У випадку, якщо vehicles не визначено
     }));
 });
 
@@ -126,6 +126,38 @@ export const deleteVehicle = createAsyncThunk('groups/deleteVehicle', async ({ g
     return vehicleId; // Повертаємо vehicleId для подальшого видалення з локального стану
 });
 
+// Асинхронний екшен для оновлення техніки
+export const updateVehicle = createAsyncThunk(
+    'groups/updateVehicle',
+    async ({ groupId, vehicleId, vehicleData }) => {
+        const formData = new FormData();
+
+        // Додаємо всі дані техніки для оновлення
+        formData.append('groupId', groupId); // ID групи
+        formData.append('vehicleType', vehicleData.vehicleType); // Тип техніки
+        formData.append('regNumber', vehicleData.regNumber); // Реєстраційний номер
+        formData.append('mark', vehicleData.mark); // Марка
+        formData.append('note', vehicleData.note); // Нотатки
+        formData.append('imei', vehicleData.imei); // IMEI
+
+        // Формуємо URL для оновлення техніки
+        const url = apiRoutes.updateVehicle(groupId, vehicleId);
+
+        console.log(`Updating vehicle with groupId: ${groupId}, vehicleId: ${vehicleId}`, url);
+
+        // Відправляємо запит на сервер
+        const response = await fetch(url, {
+            method: 'PUT',
+            body: formData, // Використовуємо formData для відправки
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to update vehicle');
+        }
+
+        return await response.json(); // Повертаємо оновлені дані техніки
+    }
+);
 
 // Створення слайсу
 const groupsSlice = createSlice({
@@ -190,6 +222,17 @@ const groupsSlice = createSlice({
                     group.vehicle = group.vehicle.filter(vehicle => vehicle._id !== vehicleId);
                 }
             })
+            .addCase(updateVehicle.fulfilled, (state, action) => {
+                const updatedVehicle = action.payload;
+                const groupIndex = state.groups.findIndex(group => group._id === updatedVehicle.groupId);
+    
+                if (groupIndex !== -1) {
+                    const vehicleIndex = state.groups[groupIndex].vehicles.findIndex(vehicle => vehicle._id === updatedVehicle._id);
+                    if (vehicleIndex !== -1) {
+                        state.groups[groupIndex].vehicles[vehicleIndex] = updatedVehicle;
+                    }
+                }
+            });
     },
 });
 

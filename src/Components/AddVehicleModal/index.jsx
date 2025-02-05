@@ -24,6 +24,7 @@ export default function AddVehicleModal({ onClose }){
     const [selectedGroup, setSelectedGroup] = useState(editVehicle ? editGroupId : null);
     const [selectedGroupName, setSelectedGroupName] = useState(editVehicle ? groups.find(group => group._id === editGroupId)?.name : null);;
     const [regNumber, setRegNumber] = useState(editVehicle ? editVehicle.regNumber : '')
+    const [imei, setImei] = useState(editVehicle ? editVehicle.imei : '')
     const [mark, setMark] = useState(editVehicle ? editVehicle.mark : '')
     const [note, setNote] = useState(editVehicle ? editVehicle.note : '')
     const [employeePhoto, setEmployeePhoto] = useState(editVehicle && editVehicle.photoPath 
@@ -106,6 +107,7 @@ export default function AddVehicleModal({ onClose }){
         formData.append('regNumber', regNumber); // Реєстраційний номер
         formData.append('mark', mark); // Марка
         formData.append('note', note); // Нотатки
+        formData.append('imei', imei); //IMEI
     
         // Додаємо фото техніки, якщо воно є
         if (employeePhoto instanceof Blob) {
@@ -208,6 +210,14 @@ export default function AddVehicleModal({ onClose }){
                     <StyledInput 
                         value={regNumber}
                         onChange={(e) => setRegNumber(e.target.value)}
+                    />
+                </StyledLabel>
+
+                <StyledLabel>
+                    <StyledSubtitle>IMEI трекера</StyledSubtitle>
+                    <StyledInput 
+                        value={imei}
+                        onChange={(e) => setImei(e.target.value)}
                     />
                 </StyledLabel>
 
