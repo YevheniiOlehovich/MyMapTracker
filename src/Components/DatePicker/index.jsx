@@ -1,68 +1,34 @@
-// import { useState, useEffect } from "react";
-// import { useDispatch, useSelector } from "react-redux"; // Імпортуємо useSelector для отримання даних з Redux store
-// import Calendar from "react-calendar";
-// import "react-calendar/dist/Calendar.css";
-// import { setSelectedDate } from "../../store/calendarSlice"; // Імпортуємо дію setSelectedDate
-
-// export default function DatePickerComponent({ onDateChange }) {
-//     const dispatch = useDispatch(); // Ініціалізація диспетчера
-//     const selectedDateFromStore = useSelector((state) => state.calendar.selectedDate); // Отримуємо дату з Redux store
-
-//     const [date, setDateState] = useState(new Date()); // Локальний стан дати
-
-//     // Якщо дата з Redux є, оновлюємо локальний стан
-//     useEffect(() => {
-//         if (selectedDateFromStore) {
-//             setDateState(selectedDateFromStore); // Встановлюємо дату з Redux
-//         }
-//     }, [selectedDateFromStore]); // Викликається при зміні selectedDate з Redux
-
-//     const handleDateChange = (newDate) => {
-//         setDateState(newDate); // Оновлення локальної дати
-
-//         // Оновлюємо дату в Redux store
-//         dispatch(setSelectedDate(newDate)); // Використовуємо правильну дію
-
-//         if (onDateChange) {
-//             onDateChange(newDate);
-//         }
-//     };
-
-//     return (
-//         <div>
-//             <Calendar 
-//                 value={date}  // Використовуємо value для відображення поточної дати
-//                 onChange={handleDateChange}
-//             />
-//         </div>
-//     );
-// }
-
-
 import { useState, useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux"; // Імпортуємо useSelector для отримання даних з Redux store
+import { useDispatch, useSelector } from "react-redux";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
-import { setSelectedDate } from "../../store/calendarSlice"; // Імпортуємо дію setSelectedDate
+import { setSelectedDate } from "../../store/calendarSlice";
 
 export default function DatePickerComponent({ onDateChange }) {
-    const dispatch = useDispatch(); // Ініціалізація диспетчера
-    const selectedDateFromStore = useSelector((state) => state.calendar.selectedDate); // Отримуємо дату з Redux store
+    const dispatch = useDispatch();
+    const selectedDateFromStore = useSelector((state) => state.calendar.selectedDate);
 
-    const [date, setDateState] = useState(new Date()); // Локальний стан дати
+    // Стан для локальної дати
+    const [date, setDateState] = useState(new Date());
 
-    // Якщо дата з Redux є, оновлюємо локальний стан
+    // Оновлюємо локальний стан, якщо дата в Redux змінюється
     useEffect(() => {
         if (selectedDateFromStore) {
-            setDateState(new Date(selectedDateFromStore)); // Перетворюємо строку назад в Date
+            setDateState(new Date(selectedDateFromStore));
         }
-    }, [selectedDateFromStore]); // Викликається при зміні selectedDate з Redux
+    }, [selectedDateFromStore]);
 
+    // Обробник зміни дати
     const handleDateChange = (newDate) => {
-        setDateState(newDate); // Оновлення локальної дати
+        setDateState(newDate);
 
-        // Оновлюємо дату в Redux store, передаючи її як строку в ISO форматі
-        dispatch(setSelectedDate(newDate.toISOString())); // Перетворюємо дату в строку
+        // Форматуємо дату без зсуву (YYYY-MM-DD)
+        const localDate = newDate.toLocaleDateString("en-CA");
+
+        // Перевіряємо, чи дата змінилася перед оновленням Redux
+        if (localDate !== selectedDateFromStore) {
+            dispatch(setSelectedDate(localDate));
+        }
 
         if (onDateChange) {
             onDateChange(newDate);
@@ -72,7 +38,7 @@ export default function DatePickerComponent({ onDateChange }) {
     return (
         <div>
             <Calendar 
-                value={date}  // Використовуємо value для відображення поточної дати
+                value={date}
                 onChange={handleDateChange}
             />
         </div>

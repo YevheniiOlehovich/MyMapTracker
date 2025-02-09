@@ -1,10 +1,9 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchGpsData } from '../../store/locationSlice'; // Імпортуємо thunk для отримання GPS
-import { MapContainer, TileLayer, Polygon, Popup, Marker } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet';
 import Styles from './styled';
 import { google_map_api } from '../../helpres';
-import { calendarSlice } from '../../store/calendarSlice';
 
 export default function Map() {
     const dispatch = useDispatch();
@@ -23,53 +22,47 @@ export default function Map() {
         }
     }, [dispatch, gpsStatus]);
 
-    // Логування GPS даних
+    // Фільтруємо GPS-дані за вибраною датою
+    const filteredGpsData = useMemo(() => {
+        if (!gpsData || !selectedDate) return [];
+        const selectedDateFormatted = selectedDate.split('T')[0]; // Отримуємо лише YYYY-MM-DD
+        return gpsData.filter(item => item.date === selectedDateFormatted);
+    }, [gpsData, selectedDate]);
+
+    // Логуємо лише при зміні відфільтрованих даних
     useEffect(() => {
-        if (gpsStatus === 'succeeded') {
-            console.log('GPS Data:', gpsData); // Вивести дані в консоль
+        if (gpsStatus === 'succeeded' && filteredGpsData.length > 0) {
+            console.log('Filtered GPS Data:', filteredGpsData);
         } else if (gpsStatus === 'failed') {
             console.log('Error fetching GPS data:', gpsError);
         }
-    }, [gpsData, gpsStatus, gpsError]);
-
-    // Дані для полігонів (ви можете додати ці дані до стану з GPS)
-    const polygonsData = [
-        {
-            coordinates: [
-                [50.68, 32.12],
-                [50.70, 32.15],
-                [50.67, 32.18],
-                [50.68, 32.12],
-            ],
-            name: 'Полігон 1',
-            description: [
-                'Перша строчка тексту',
-                'Друга строчка тексту',
-                'Третя строчка тексту',
-            ],
-            color: 'blue',
-        },
-        {
-            coordinates: [
-                [50.65, 32.10],
-                [50.66, 32.14],
-                [50.63, 32.16],
-                [50.65, 32.10],
-            ],
-            name: 'Полігон 2',
-            description: [
-                'Це опис для другого полігону',
-                'Додаткова інформація',
-                'Заключна строчка тексту',
-            ],
-            color: 'green',
-        },
-    ];
+    }, [filteredGpsData]);
 
     // Логування вибраної дати
     useEffect(() => {
-        console.log('Selected Date:', selectedDate); // Логування дати з календаря
+        console.log('Selected Date:', selectedDate);
     }, [selectedDate]);
+
+    // Функція для перевірки валідності GPS-даних
+    const isValidGpsData = (data) => {
+        return data.latitude !== 0 && data.longitude !== 0 &&
+               data.altitude !== 0 && data.angle !== 0 &&
+               data.satellites !== 0 && data.speed !== 0;
+    };
+
+    // Збираємо всі координати з фільтрованих даних, ігноруючи "биті" дані
+    const routeCoordinates = useMemo(() => {
+        if (!filteredGpsData || filteredGpsData.length === 0) return [];
+        
+        const validGpsData = filteredGpsData.flatMap(item => 
+            item.data.filter(isValidGpsData).map(gpsPoint => [gpsPoint.latitude, gpsPoint.longitude])
+        );
+
+        return validGpsData;
+    }, [filteredGpsData]);
+
+    // Останній елемент з фільтрованих даних
+    const lastGpsData = filteredGpsData.length > 0 ? filteredGpsData[filteredGpsData.length - 1].data[filteredGpsData[filteredGpsData.length - 1].data.length - 1] : null;
 
     return (
         <Styles.wrapper>
@@ -86,24 +79,20 @@ export default function Map() {
                     url={`https://{s}.google.com/maps/vt?lyrs=m&x={x}&y={y}&z={z}&key=${google_map_api}`}
                     subdomains={['mt0', 'mt1', 'mt2', 'mt3']}
                 />
-                {/* Рендеримо полігони */}
-                {polygonsData.map((polygon, index) => (
-                    <Polygon
-                        key={index}
-                        positions={polygon.coordinates}
-                        pathOptions={{ color: polygon.color }}
-                    >
+
+                {/* Якщо є координати, рендеримо маршрут */}
+                {routeCoordinates.length > 0 && (
+                    <Polyline positions={routeCoordinates} color="blue" weight={5} opacity={0.7} />
+                )}
+
+                {/* Якщо є дані, рендеримо маркер для останнього елемента */}
+                {lastGpsData && (
+                    <Marker position={[lastGpsData.latitude, lastGpsData.longitude]}>
                         <Popup>
-                            <div>
-                                <h3>{polygon.name}</h3>
-                                {polygon.description.map((line, i) => (
-                                    <p key={i}>{line}</p>
-                                ))}
-                            </div>
+                            <span>Last GPS Data: {lastGpsData.timestamp}</span>
                         </Popup>
-                    </Polygon>
-                ))}
-                {/* Додаємо маркер */}
+                    </Marker>
+                )}
             </MapContainer>
         </Styles.wrapper>
     );
