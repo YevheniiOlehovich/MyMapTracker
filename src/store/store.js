@@ -3,6 +3,7 @@ import gpsReducer from './locationSlice'; // Імпортуємо редюсер
 import groupsReducer from './groupSlice';
 import modalReducer from './modalSlice';
 import calendarReducer from "./calendarSlice";
+import vehicleReducer from './vehicleSlice'
 
 const store = configureStore({
     reducer: {
@@ -10,6 +11,7 @@ const store = configureStore({
         groups: groupsReducer,
         modals: modalReducer,
         calendar: calendarReducer,
+        vehicle: vehicleReducer,
     },
 });
 

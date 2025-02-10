@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 
 import { fetchGroups, selectAllGroups, deleteGroup, deletePersonnel, deleteVehicle } from '../../store/groupSlice'; 
 import { openAddGroupModal, openAddPersonalModal, openAddVehicleModal } from '../../store/modalSlice'; // Імпортуємо дії для відкриття модалок
+import { setImei } from '../../store/vehicleSlice';
 
 import EditIco from '../../assets/ico/edit-icon-black.png';
 import DelIco from '../../assets/ico/del-icon-black.png';
@@ -75,6 +76,11 @@ export default function GroupsList() {
         }));
     };
 
+    const handleDoubleClickVehicle = (imei) => {
+        dispatch(setImei(imei)); // Передаємо IMEI в store
+    };
+
+    
     return (
         <>
             {groups.length === 0 ? (
@@ -159,7 +165,7 @@ export default function GroupsList() {
                                                                     : QuestionIco
                                                             }
                                                         />
-                                                        <StyledListItem>{vehicle.mark}</StyledListItem>
+                                                        <StyledListItem key={vehicle._id} onDoubleClick={() => handleDoubleClickVehicle(vehicle.imei)}>{vehicle.mark}</StyledListItem>
                                                         <StyledButtonBlock>
                                                             <StyledButton
                                                                 onClick={() =>

@@ -33,8 +33,6 @@ export default function AddVehicleModal({ onClose }){
     const [vehicleType, setVehicleType] = useState(editVehicle ? editVehicle.vehicleType : '')
     const [ vehicleTypeName, setVehicleTypeName]= useState(null)
     
-    console.log(vehicleTypes)
-
     const handleGroupChange = (option) => {
         
         setSelectedGroup(option.value); 
