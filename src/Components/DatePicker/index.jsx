@@ -3,29 +3,25 @@ import { useDispatch, useSelector } from "react-redux";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import { setSelectedDate } from "../../store/calendarSlice";
+import { DatePickerWrapper, DateButton, CalendarWrapper } from './styled'
 
 export default function DatePickerComponent({ onDateChange }) {
     const dispatch = useDispatch();
     const selectedDateFromStore = useSelector((state) => state.calendar.selectedDate);
 
-    // Стан для локальної дати
     const [date, setDateState] = useState(new Date());
+    const [isOpen, setIsOpen] = useState(false);
 
-    // Оновлюємо локальний стан, якщо дата в Redux змінюється
     useEffect(() => {
         if (selectedDateFromStore) {
             setDateState(new Date(selectedDateFromStore));
         }
     }, [selectedDateFromStore]);
 
-    // Обробник зміни дати
     const handleDateChange = (newDate) => {
         setDateState(newDate);
-
-        // Форматуємо дату без зсуву (YYYY-MM-DD)
         const localDate = newDate.toLocaleDateString("en-CA");
 
-        // Перевіряємо, чи дата змінилася перед оновленням Redux
         if (localDate !== selectedDateFromStore) {
             dispatch(setSelectedDate(localDate));
         }
@@ -33,14 +29,23 @@ export default function DatePickerComponent({ onDateChange }) {
         if (onDateChange) {
             onDateChange(newDate);
         }
+
+        setIsOpen(false); // Закриваємо календар після вибору дати
     };
 
     return (
-        <div>
-            <Calendar 
-                value={date}
-                onChange={handleDateChange}
-            />
-        </div>
+        <DatePickerWrapper>
+            <DateButton onClick={() => setIsOpen(!isOpen)}>
+                {date.toLocaleDateString("en-CA")}
+            </DateButton>
+            {isOpen && (
+                <CalendarWrapper>
+                    <Calendar 
+                        value={date}
+                        onChange={handleDateChange}
+                    />
+                </CalendarWrapper>
+            )}
+        </DatePickerWrapper>
     );
 }

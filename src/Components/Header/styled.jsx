@@ -9,4 +9,5 @@ export const StyledHeader = styled.header`
     height: 100px;
     background-color: rgba(0, 0, 0, 0.2);
     display: flex;
+    padding: 0 20px;
 `
