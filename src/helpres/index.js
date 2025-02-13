@@ -10,7 +10,7 @@ export const center = {
 
 export const vehicleTypes = [
     { _id: 'car', name: 'Легковий автомобіль' },
-    { _id: 'vintage_car', name: 'Винтажний автомобіль' },
+    { _id: 'vintage_car', name: 'Вантажний автомобіль' },
     { _id: 'tractor', name: 'Трактор' },
     { _id: 'combine', name: 'Комбайн' },
     { _id: 'truck', name: 'Вантажівка' }

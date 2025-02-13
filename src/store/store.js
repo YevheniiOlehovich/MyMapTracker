@@ -4,6 +4,7 @@ import groupsReducer from './groupSlice';
 import modalReducer from './modalSlice';
 import calendarReducer from "./calendarSlice";
 import vehicleReducer from './vehicleSlice'
+// import ratesReducer from './ratesSlice'
 
 const store = configureStore({
     reducer: {
@@ -12,6 +13,7 @@ const store = configureStore({
         modals: modalReducer,
         calendar: calendarReducer,
         vehicle: vehicleReducer,
+        // rates: ratesReducer,
     },
 });
 

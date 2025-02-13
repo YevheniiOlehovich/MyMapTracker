@@ -12,6 +12,8 @@ const apiRoutes = {
     deletePersonnel: (groupId, personnelId) => `${API_BASE_URL}/groups/${groupId}/personnel/${personnelId}`,
     addVehicle: (groupId) => `${API_BASE_URL}/groups/${groupId}/vehicles`, // Додавання техніки до групи
     deleteVehicle: (groupId, vehicleId) => `${API_BASE_URL}/groups/${groupId}/vehicles/${vehicleId}`, // Видалення техніки з групи
+    getRates: `${API_BASE_URL}/rates`, // Отримати останні тарифи
+    addRates: `${API_BASE_URL}/rates`, // Додати нові тарифи
 
 };
 

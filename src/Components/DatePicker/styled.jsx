@@ -8,14 +8,24 @@ export const DatePickerWrapper = styled.div`
 `;
 
 export const DateButton = styled.button`
-    padding: 8px 12px;
-    font-size: 16px;
-    background: inherit;
-    border: 1px solid #000000;
-    border-radius: 5px;
+    width: 120px;
+    height: 40px;
+    display: block;
+    box-sizing: border-box;
+    padding: 0 4px;
+    background: black;
+    border: none;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 14px;
+    color: white;
     cursor: pointer;
-    width: 150px;
-    text-align: center;
+    border: 2px solid gray;
+    &:active{
+        transform: translateY(2px);
+    }
+    &:hover{
+        border: 2px solid white;
+    }
 `;
 
 export const CalendarWrapper = styled.div`

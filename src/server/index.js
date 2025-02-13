@@ -5,6 +5,7 @@ import bodyParser from 'body-parser';
 import dotenv from 'dotenv';
 import groupsRoutes from './routes/groups.js';
 import avlRecordsRoutes from './routes/gpsRoutes.js'; // Замість avlRecord
+import ratesRoutes from './routes/rates.js'
 
 
 dotenv.config();
@@ -27,6 +28,7 @@ app.use(bodyParser.json());
 // Використання роутів
 app.use('/groups', groupsRoutes);
 app.use('/avl_records', avlRecordsRoutes);  // Додано маршрут для avl_records
+app.use('/rates', ratesRoutes);  // Додано маршрут для avl_records
 
 // Головний маршрут
 app.get('/', (req, res) => {

@@ -10,4 +10,5 @@ export const StyledHeader = styled.header`
     background-color: rgba(0, 0, 0, 0.2);
     display: flex;
     padding: 0 20px;
+    align-items: center;
 `
