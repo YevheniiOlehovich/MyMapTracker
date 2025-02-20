@@ -16,8 +16,6 @@ export default function Map() {
 
     const [mapCenter, setMapCenter] = useState([50.68, 32.12]); // Початкові координати
 
-    console.log(mapCenter)
-
     useEffect(() => {
         if (gpsStatus === 'idle') {
             dispatch(fetchGpsData());

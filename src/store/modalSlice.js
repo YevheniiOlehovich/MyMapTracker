@@ -4,18 +4,20 @@ const modalSlice = createSlice({
     name: 'modals',
     initialState: {
         isAddGroupModalVisible: false,
-        isAddPersonalModalVisible: false, // Додаємо видимість модалки для персоналу
+        isAddPersonalModalVisible: false,
         isAddVehicleModalVisible: false,
         isAddRatesModal: false,
-        editGroupId: null, // ID редагованої 
-        editPersonId: null, // ID редагованого персоналу
+        isAddMileagleModal: false,
+        editGroupId: null,
+        editPersonId: null,
         editVehicleId: null,
-        editRates:null,
+        editRates: null,
+        editMileagle: null,
     },
     reducers: {
         openAddGroupModal: (state, action) => {
             state.isAddGroupModalVisible = true;
-            state.editGroupId = action.payload || null; // Встановлюємо ID групи, якщо передано
+            state.editGroupId = action.payload || null;
         },
         closeAddGroupModal: (state) => {
             state.isAddGroupModalVisible = false;
@@ -23,17 +25,17 @@ const modalSlice = createSlice({
         },
         openAddPersonalModal: (state, action) => {
             state.isAddPersonalModalVisible = true;
-            state.editPersonId = action.payload?.personId || null;  // Тільки персонал
-            state.editGroupId = action.payload?.groupId || null;  // Додаємо групу
+            state.editPersonId = action.payload?.personId || null;
+            state.editGroupId = action.payload?.groupId || null;
         },
         closeAddPersonalModal: (state) => {
             state.isAddPersonalModalVisible = false;
-            state.editPersonId = null; // При закритті модалки, скидаємо тільки ID персоналу
+            state.editPersonId = null;
         },
         openAddVehicleModal: (state, action) => {
             state.isAddVehicleModalVisible = true;
-            state.editVehicleId = action.payload?.vehicleId || null;  // Тільки персонал
-            state.editGroupId = action.payload?.groupId || null;  // Додаємо групу
+            state.editVehicleId = action.payload?.vehicleId || null;
+            state.editGroupId = action.payload?.groupId || null;
         },
         closeAddVehicleModal: (state) => {
             state.isAddVehicleModalVisible = false;
@@ -41,11 +43,19 @@ const modalSlice = createSlice({
         },
         openAddRatesModal: (state, action) => {
             state.isAddRatesModal = true;
-            state.editRates = action.payload || null; // Встановлюємо ID групи, якщо передано
+            state.editRates = action.payload || null;
         },
         closeAddRatesModal: (state) => {
             state.isAddRatesModal = false;
             state.editRates = null;
+        },
+        openAddMileagle: (state, action) => {
+            state.isAddMileagleModal = true;
+            state.editMileagle = action.payload || null;
+        },
+        closeAddMileagle: (state) => {
+            state.isAddMileagleModal = false;
+            state.editMileagle = null;
         },
     },
 });
@@ -58,8 +68,9 @@ export const {
     openAddVehicleModal,
     closeAddVehicleModal,
     openAddRatesModal,
-    closeAddRatesModal
+    closeAddRatesModal,
+    openAddMileagle,
+    closeAddMileagle
 } = modalSlice.actions;
 
 export default modalSlice.reducer;
-
