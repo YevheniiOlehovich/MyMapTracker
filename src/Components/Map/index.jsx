@@ -1,10 +1,60 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchGpsData } from '../../store/locationSlice';
-import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Polyline, GeoJSON, useMap, useMapEvents } from 'react-leaflet';
+import L from 'leaflet';
 import Styles from './styled';
 import { google_map_api } from '../../helpres';
 import { haversineDistance } from '../../helpres/distance';
+import fieldsData from '../../helpres/fields.json'; // Імпорт JSON даних
+import { fetchGpsData } from '../../store/locationSlice'; // Імпорт функції fetchGpsData
+
+function FieldLabel({ field, zoomLevel }) {
+    const map = useMap();
+    const [position, setPosition] = useState(null);
+
+    useEffect(() => {
+        const bounds = L.geoJSON(field).getBounds();
+        setPosition(bounds.getCenter());
+    }, [field]);
+
+    if (!position) return null;
+
+    return (
+        <Marker position={position} icon={L.divIcon({
+            className: 'field-label',
+            html: zoomLevel >= 15
+                ? `<div style="${Styles.fieldLabelContainer}">${field.properties.name} (${field.properties.area} га)</div>`
+                : `<div style="${Styles.fieldLabelDot}"></div>`,
+            iconSize: [0, 0]
+        })}>
+            <Popup>
+                <div>
+                    <strong>Назва:</strong> {field.properties.name} <br />
+                    <strong>Ключ карти:</strong> {field.properties.mapkey} <br />
+                    <strong>Площа:</strong> {field.properties.area} га <br />
+                    <strong>Код КОАТУУ:</strong> {field.properties.koatuu} <br />
+                    <strong>Примітка:</strong> {field.properties.note} <br />
+                    <strong>Культура:</strong> {field.properties.culture} <br />
+                    <strong>Сорт:</strong> {field.properties.sort} <br />
+                    <strong>Дата:</strong> {field.properties.date} <br />
+                    <strong>Урожай:</strong> {field.properties.crop} <br />
+                    <strong>Філія:</strong> {field.properties.branch} <br />
+                    <strong>Регіон:</strong> {field.properties.region}
+                </div>
+            </Popup>
+        </Marker>
+    );
+}
+
+function ZoomTracker({ setZoomLevel }) {
+    useMapEvents({
+        zoomend: (e) => {
+            setZoomLevel(e.target.getZoom());
+        },
+    });
+
+    return null;
+}
 
 export default function Map() {
     const dispatch = useDispatch();
@@ -15,6 +65,7 @@ export default function Map() {
     const selectedImei = useSelector((state) => state.vehicle.imei);
 
     const [mapCenter, setMapCenter] = useState([50.68, 32.12]); // Початкові координати
+    const [zoomLevel, setZoomLevel] = useState(13); // Початковий рівень зума
 
     useEffect(() => {
         if (gpsStatus === 'idle') {
@@ -65,7 +116,7 @@ export default function Map() {
         <Styles.wrapper>
             <MapContainer
                 center={mapCenter} // Центруємо карту на останніх координатах
-                zoom={13}
+                zoom={zoomLevel}
                 attributionControl={true}
                 doubleClickZoom={true}
                 scrollWheelZoom={true}
@@ -91,6 +142,15 @@ export default function Map() {
                         </Popup>
                     </Marker>
                 ))}
+
+                {fieldsData.map((field, index) => (
+                    <React.Fragment key={index}>
+                        <GeoJSON data={field} style={Styles.fieldPolygonStyle} />
+                        <FieldLabel field={field} zoomLevel={zoomLevel} />
+                    </React.Fragment>
+                ))}
+
+                <ZoomTracker setZoomLevel={setZoomLevel} />
             </MapContainer>
         </Styles.wrapper>
     );
