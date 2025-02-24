@@ -5,8 +5,9 @@ import L from 'leaflet';
 import Styles from './styled';
 import { google_map_api } from '../../helpres';
 import { haversineDistance } from '../../helpres/distance';
-import fieldsData from '../../helpres/fields.json'; // Імпорт JSON даних
-import { fetchGpsData } from '../../store/locationSlice'; // Імпорт функції fetchGpsData
+import { fetchGpsData } from '../../store/locationSlice';
+import { fetchFields, selectAllFields } from '../../store/fieldsSlice';
+import { fetchCadastre, selectAllCadastre } from '../../store/cadastreSlice';
 
 function FieldLabel({ field, zoomLevel }) {
     const map = useMap();
@@ -64,17 +65,38 @@ export default function Map() {
     const selectedDate = useSelector((state) => state.calendar.selectedDate);
     const selectedImei = useSelector((state) => state.vehicle.imei);
 
-    const [mapCenter, setMapCenter] = useState([50.68, 32.12]); // Початкові координати
-    const [zoomLevel, setZoomLevel] = useState(13); // Початковий рівень зума
+    const fieldsData = useSelector(selectAllFields);
+    const fieldsStatus = useSelector((state) => state.fields.status);
+    const fieldsError = useSelector((state) => state.fields.error);
+
+    const cadastreData = useSelector(selectAllCadastre);
+    const cadastreStatus = useSelector((state) => state.cadastre.status);
+    const cadastreError = useSelector((state) => state.cadastre.error);
+
+    const mapType = useSelector((state) => state.map.type); // Отримання типу карти з Redux
+
+    const [mapCenter, setMapCenter] = useState([50.68, 32.12]);
+    const [zoomLevel, setZoomLevel] = useState(13);
+    const [key, setKey] = useState(0); // Додаємо стан для ключа
 
     useEffect(() => {
         if (gpsStatus === 'idle') {
             dispatch(fetchGpsData());
         }
-    }, [dispatch, gpsStatus]);
+        if (fieldsStatus === 'idle') {
+            dispatch(fetchFields());
+        }
+        if (cadastreStatus === 'idle') {
+            dispatch(fetchCadastre());
+        }
+    }, [dispatch, gpsStatus, fieldsStatus, cadastreStatus]);
+
+    useEffect(() => {
+        setKey((prevKey) => prevKey + 1); // Оновлюємо ключ при зміні типу карти
+    }, [mapType]);
 
     const filteredGpsData = useMemo(() => {
-        if (!gpsData || !selectedDate || !selectedImei) return []; // Якщо IMEI null, повертаємо []
+        if (!gpsData || !selectedDate || !selectedImei) return [];
         const selectedDateFormatted = selectedDate.split('T')[0];
         return gpsData.filter(item => item.date === selectedDateFormatted && item.imei === selectedImei);
     }, [gpsData, selectedDate, selectedImei]);
@@ -86,7 +108,6 @@ export default function Map() {
         }).filter(point => point !== null);
     }, [filteredGpsData]);
 
-    // Оновлюємо центр карти на останніх координатах
     useEffect(() => {
         if (lastGpsPoints.length > 0) {
             const lastPoint = lastGpsPoints[lastGpsPoints.length - 1];
@@ -112,10 +133,34 @@ export default function Map() {
         }, 0).toFixed(2);
     }, [routeCoordinates]);
 
+    const renderTileLayer = () => {
+        console.log('Selected map type:', mapType); // Логування вибраного типу карти
+        switch (mapType) {
+            case 'google':
+                return (
+                    <TileLayer
+                        url={`https://{s}.google.com/maps/vt?lyrs=m&x={x}&y={y}&z={z}&key=${google_map_api}`}
+                        subdomains={['mt0', 'mt1', 'mt2', 'mt3']}
+                    />
+                );
+            case 'osm':
+                return (
+                    <TileLayer
+                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                        subdomains={['a', 'b', 'c']} // Додаємо піддомени
+                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                    />
+                );
+            default:
+                return null;
+        }
+    };
+
     return (
         <Styles.wrapper>
             <MapContainer
-                center={mapCenter} // Центруємо карту на останніх координатах
+                key={key} // Додаємо ключ для примусового ререндеру
+                center={mapCenter}
                 zoom={zoomLevel}
                 attributionControl={true}
                 doubleClickZoom={true}
@@ -123,10 +168,7 @@ export default function Map() {
                 easeLinearity={0.8}
                 style={{ height: '100vh', width: '100%' }}
             >
-                <TileLayer
-                    url={`https://{s}.google.com/maps/vt?lyrs=m&x={x}&y={y}&z={z}&key=${google_map_api}`}
-                    subdomains={['mt0', 'mt1', 'mt2', 'mt3']}
-                />
+                {renderTileLayer()}
 
                 {routeCoordinates.length > 0 && (
                     <Polyline positions={routeCoordinates} color="blue" weight={5} opacity={0.7} />

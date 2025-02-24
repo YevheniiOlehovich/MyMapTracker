@@ -3,9 +3,7 @@ import { styled, css }from 'styled-components'
 export const StyledWrapper = styled.div`
     box-sizing: border-box;
     position: relative;
-    width: 100%;
-    padding: 4px 0 4px 0;
-    
+    width: 100%;    
 `
 
 export const StyledTitle = styled.h3`

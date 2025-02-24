@@ -15,7 +15,11 @@ const apiRoutes = {
     getRates: `${API_BASE_URL}/rates`, // Отримати останні тарифи
     addRates: `${API_BASE_URL}/rates`, // Додати нові тарифи
 
+    // Додані шляхи для кадастрових даних і для полів
+    getFields: `${API_BASE_URL}/geo_data/fields`, // Отримати всі поля
+    addFields: `${API_BASE_URL}/geo_data/fields`, // Додати нові поля
+    getCadastre: `${API_BASE_URL}/geo_data/cadastre`, // Отримати всі кадастрові дані
+    addCadastre: `${API_BASE_URL}/geo_data/cadastre`, // Додати нові кадастрові дані
 };
-
 
 export default apiRoutes;

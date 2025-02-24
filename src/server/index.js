@@ -6,7 +6,7 @@ import dotenv from 'dotenv';
 import groupsRoutes from './routes/groups.js';
 import avlRecordsRoutes from './routes/gpsRoutes.js'; // Замість avlRecord
 import ratesRoutes from './routes/rates.js'
-
+import geoDataRoutes from './routes/geoDataRoutes.js'; 
 
 dotenv.config();
 
@@ -29,6 +29,7 @@ app.use(bodyParser.json());
 app.use('/groups', groupsRoutes);
 app.use('/avl_records', avlRecordsRoutes);  // Додано маршрут для avl_records
 app.use('/rates', ratesRoutes);  // Додано маршрут для avl_records
+app.use('/geo_data', geoDataRoutes); // Додано маршрут для полів
 
 // Головний маршрут
 app.get('/', (req, res) => {
