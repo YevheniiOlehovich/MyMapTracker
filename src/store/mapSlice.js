@@ -3,7 +3,7 @@ import { createSlice } from '@reduxjs/toolkit';
 const mapSlice = createSlice({
     name: 'map',
     initialState: {
-        type: 'google', // Початковий тип карти
+        type: 'osm', // Початковий тип карти
     },
     reducers: {
         setMapType: (state, action) => {

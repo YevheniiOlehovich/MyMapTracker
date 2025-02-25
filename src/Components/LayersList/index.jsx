@@ -19,20 +19,56 @@ const LayersList = () => {
 
     return (
         <Styles.wrapper isVisible={isVisible}>
-            <Styles.Title>Шари мапи</Styles.Title>
-            <Styles.showBtn onClick={toggleListHandler}>
+            <Styles.showBtn onClick={toggleListHandler} isVisible={isVisible}>
                 <Styles.showBtnImg src={arrowPic} alt="Show Layers" />
             </Styles.showBtn>
-            <div>
+
+            <Styles.Block>
+                <Styles.Title>Шари мапи</Styles.Title>
+            </Styles.Block>
+            
+            
+            <Styles.maplist>
                 <label>
                     <input
                         type="radio"
-                        value="google"
-                        checked={mapType === 'google'}
+                        value="google_roadmap"
+                        checked={mapType === 'google_roadmap'}
                         onChange={handleMapTypeChange}
                     />
                     Google Maps
                 </label>
+
+                <label>
+                    <input
+                        type="radio"
+                        value="google_satellite"
+                        checked={mapType === 'google_satellite'}
+                        onChange={handleMapTypeChange}
+                    />
+                    Google Satelite
+                </label>
+
+                <label>
+                    <input
+                        type="radio"
+                        value="google_hybrid"
+                        checked={mapType === 'google_hybrid'}
+                        onChange={handleMapTypeChange}
+                    />
+                    Google Hybrid
+                </label>
+
+                <label>
+                    <input
+                        type="radio"
+                        value="google_terrain"
+                        checked={mapType === 'google_terrain'}
+                        onChange={handleMapTypeChange}
+                    />
+                    Google Hybrid
+                </label>
+
                 <label>
                     <input
                         type="radio"
@@ -42,7 +78,27 @@ const LayersList = () => {
                     />
                     OpenStreetMap
                 </label>
-            </div>
+
+                <label>
+                    <input
+                        type="radio"
+                        value="osm_hot"
+                        checked={mapType === 'osm_hot'}
+                        onChange={handleMapTypeChange}
+                    />
+                    OpenStreetMap HOT
+                </label>
+
+                <label>
+                    <input
+                        type="radio"
+                        value="osm_topo"
+                        checked={mapType === 'osm_topo'}
+                        onChange={handleMapTypeChange}
+                    />
+                    OpenStreetMap TOPO
+                </label>
+            </Styles.maplist>
         </Styles.wrapper>
     );
 };

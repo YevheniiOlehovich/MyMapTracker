@@ -18,9 +18,10 @@ const Styles = {
         height: 20px;
         left: 5px;
         top: 50%;
-        transform: translateY(-50%);
+        transform: translateY(-50%) rotate(${({ isVisible }) => (isVisible ? '180deg' : '0deg')});
         cursor: pointer;
         border: 1px solid black;
+        transition: transform 0.3s ease-in-out;
     `,
     showBtnImg: styled.img`
         width: 100%;
@@ -34,6 +35,18 @@ const Styles = {
         display: block;
         margin: 0;
     `,
+    maplist: styled.div`
+        display: flex;
+        flex-direction: column;
+    `,
+    Block: styled.div`
+        display: flex;
+        width: 100%;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0 8px;
+        margin-bottom: 12px;
+    `
 };
 
 export default Styles;

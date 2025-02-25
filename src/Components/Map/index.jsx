@@ -1,13 +1,13 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { MapContainer, TileLayer, Marker, Popup, Polyline, GeoJSON, useMap, useMapEvents } from 'react-leaflet';
+import { MapContainer, Marker, Popup, Polyline, GeoJSON, TileLayer, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import Styles from './styled';
-import { google_map_api } from '../../helpres';
 import { haversineDistance } from '../../helpres/distance';
 import { fetchGpsData } from '../../store/locationSlice';
 import { fetchFields, selectAllFields } from '../../store/fieldsSlice';
 import { fetchCadastre, selectAllCadastre } from '../../store/cadastreSlice';
+import { getTileLayerConfig } from '../../helpres/tileLayerHelper'; // Імпорт хелпера
 
 function FieldLabel({ field, zoomLevel }) {
     const map = useMap();
@@ -133,28 +133,7 @@ export default function Map() {
         }, 0).toFixed(2);
     }, [routeCoordinates]);
 
-    const renderTileLayer = () => {
-        console.log('Selected map type:', mapType); // Логування вибраного типу карти
-        switch (mapType) {
-            case 'google':
-                return (
-                    <TileLayer
-                        url={`https://{s}.google.com/maps/vt?lyrs=m&x={x}&y={y}&z={z}&key=${google_map_api}`}
-                        subdomains={['mt0', 'mt1', 'mt2', 'mt3']}
-                    />
-                );
-            case 'osm':
-                return (
-                    <TileLayer
-                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                        subdomains={['a', 'b', 'c']} // Додаємо піддомени
-                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                    />
-                );
-            default:
-                return null;
-        }
-    };
+    const tileLayerConfig = getTileLayerConfig(mapType);
 
     return (
         <Styles.wrapper>
@@ -168,7 +147,13 @@ export default function Map() {
                 easeLinearity={0.8}
                 style={{ height: '100vh', width: '100%' }}
             >
-                {renderTileLayer()}
+                {tileLayerConfig && (
+                    <TileLayer
+                        url={tileLayerConfig.url}
+                        subdomains={tileLayerConfig.subdomains}
+                        attribution={tileLayerConfig.attribution}
+                    />
+                )}
 
                 {routeCoordinates.length > 0 && (
                     <Polyline positions={routeCoordinates} color="blue" weight={5} opacity={0.7} />
