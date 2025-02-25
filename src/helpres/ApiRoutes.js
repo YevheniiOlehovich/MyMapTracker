@@ -20,6 +20,7 @@ const apiRoutes = {
     addFields: `${API_BASE_URL}/geo_data/fields`, // Додати нові поля
     getCadastre: `${API_BASE_URL}/geo_data/cadastre`, // Отримати всі кадастрові дані
     addCadastre: `${API_BASE_URL}/geo_data/cadastre`, // Додати нові кадастрові дані
+    getGeozone: `${API_BASE_URL}/geo_data/geozone`,
 };
 
 export default apiRoutes;

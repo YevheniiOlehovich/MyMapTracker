@@ -8,6 +8,8 @@ import ratesReducer from './ratesSlice';
 import fieldsReducer from './fieldsSlice'; // Імпортуємо редюсер для полів
 import cadastreReducer from './cadastreSlice'; // Імпортуємо редюсер для кадастрових даних
 import mapReducer from './mapSlice'; // Імпортуємо редюсер для карти
+import geozoneReducer from './geozoneSlice';
+import layersReducer from './layersList'
 
 const store = configureStore({
     reducer: {
@@ -20,6 +22,8 @@ const store = configureStore({
         fields: fieldsReducer, // Додаємо редюсер для полів
         cadastre: cadastreReducer, // Додаємо редюсер для кадастрових даних
         map: mapReducer, // Додаємо редюсер для карти
+        geozone: geozoneReducer,
+        layers: layersReducer,
     },
 });
 

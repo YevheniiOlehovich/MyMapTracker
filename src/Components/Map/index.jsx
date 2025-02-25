@@ -3,46 +3,55 @@ import { useDispatch, useSelector } from 'react-redux';
 import { MapContainer, Marker, Popup, Polyline, GeoJSON, TileLayer, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import Styles from './styled';
-import { haversineDistance } from '../../helpres/distance';
+import { haversineDistance } from '../../helpres/distance'; // Імпорт функції для обчислення відстані
+import { getTileLayerConfig } from '../../helpres/tileLayerHelper'; // Імпорт хелпера
 import { fetchGpsData } from '../../store/locationSlice';
 import { fetchFields, selectAllFields } from '../../store/fieldsSlice';
 import { fetchCadastre, selectAllCadastre } from '../../store/cadastreSlice';
-import { getTileLayerConfig } from '../../helpres/tileLayerHelper'; // Імпорт хелпера
+import { fetchGeozone, selectAllGeozone } from '../../store/geozoneSlice';
+import { selectShowFields, selectShowCadastre, selectShowGeozones } from '../../store/layersList'; // Імпорт селекторів для керування шарами
 
-function FieldLabel({ field, zoomLevel }) {
+function FieldLabel({ feature, zoomLevel, type }) {
     const map = useMap();
     const [position, setPosition] = useState(null);
 
     useEffect(() => {
-        const bounds = L.geoJSON(field).getBounds();
+        const bounds = L.geoJSON(feature).getBounds();
         setPosition(bounds.getCenter());
-    }, [field]);
+    }, [feature]);
 
     if (!position) return null;
+
+    const popupContent = type === 'field' ? (
+        <div>
+            <strong>Назва:</strong> {feature.properties.name} <br />
+            <strong>Ключ карти:</strong> {feature.properties.mapkey} <br />
+            <strong>Площа:</strong> {feature.properties.area} га <br />
+            <strong>Код КОАТУУ:</strong> {feature.properties.koatuu} <br />
+            <strong>Примітка:</strong> {feature.properties.note} <br />
+            <strong>Культура:</strong> {feature.properties.culture} <br />
+            <strong>Сорт:</strong> {feature.properties.sort} <br />
+            <strong>Дата:</strong> {feature.properties.date} <br />
+            <strong>Урожай:</strong> {feature.properties.crop} <br />
+            <strong>Філія:</strong> {feature.properties.branch} <br />
+            <strong>Регіон:</strong> {feature.properties.region}
+        </div>
+    ) : (
+        <div>
+            <strong>Назва:</strong> {feature.properties.name} <br />
+            <strong>Площа:</strong> {feature.properties.area} га
+        </div>
+    );
 
     return (
         <Marker position={position} icon={L.divIcon({
             className: 'field-label',
             html: zoomLevel >= 15
-                ? `<div style="${Styles.fieldLabelContainer}">${field.properties.name} (${field.properties.area} га)</div>`
+                ? `<div style="${Styles.fieldLabelContainer}">${feature.properties.name} (${feature.properties.area} га)</div>`
                 : `<div style="${Styles.fieldLabelDot}"></div>`,
             iconSize: [0, 0]
         })}>
-            <Popup>
-                <div>
-                    <strong>Назва:</strong> {field.properties.name} <br />
-                    <strong>Ключ карти:</strong> {field.properties.mapkey} <br />
-                    <strong>Площа:</strong> {field.properties.area} га <br />
-                    <strong>Код КОАТУУ:</strong> {field.properties.koatuu} <br />
-                    <strong>Примітка:</strong> {field.properties.note} <br />
-                    <strong>Культура:</strong> {field.properties.culture} <br />
-                    <strong>Сорт:</strong> {field.properties.sort} <br />
-                    <strong>Дата:</strong> {field.properties.date} <br />
-                    <strong>Урожай:</strong> {field.properties.crop} <br />
-                    <strong>Філія:</strong> {field.properties.branch} <br />
-                    <strong>Регіон:</strong> {field.properties.region}
-                </div>
-            </Popup>
+            <Popup>{popupContent}</Popup>
         </Marker>
     );
 }
@@ -73,6 +82,14 @@ export default function Map() {
     const cadastreStatus = useSelector((state) => state.cadastre.status);
     const cadastreError = useSelector((state) => state.cadastre.error);
 
+    const geozoneData = useSelector(selectAllGeozone);
+    const geozoneStatus = useSelector((state) => state.geozone.status);
+    const geozoneError = useSelector((state) => state.geozone.error);
+
+    const showFields = useSelector(selectShowFields);
+    const showCadastre = useSelector(selectShowCadastre);
+    const showGeozones = useSelector(selectShowGeozones);
+
     const mapType = useSelector((state) => state.map.type); // Отримання типу карти з Redux
 
     const [mapCenter, setMapCenter] = useState([50.68, 32.12]);
@@ -89,7 +106,10 @@ export default function Map() {
         if (cadastreStatus === 'idle') {
             dispatch(fetchCadastre());
         }
-    }, [dispatch, gpsStatus, fieldsStatus, cadastreStatus]);
+        if (geozoneStatus === 'idle') {
+            dispatch(fetchGeozone());
+        }
+    }, [dispatch, gpsStatus, fieldsStatus, cadastreStatus, geozoneStatus]);
 
     useEffect(() => {
         setKey((prevKey) => prevKey + 1); // Оновлюємо ключ при зміні типу карти
@@ -170,10 +190,21 @@ export default function Map() {
                     </Marker>
                 ))}
 
-                {fieldsData.map((field, index) => (
+                {showFields && fieldsData.map((field, index) => (
                     <React.Fragment key={index}>
                         <GeoJSON data={field} style={Styles.fieldPolygonStyle} />
-                        <FieldLabel field={field} zoomLevel={zoomLevel} />
+                        <FieldLabel feature={field} zoomLevel={zoomLevel} type="field" />
+                    </React.Fragment>
+                ))}
+
+                {showCadastre && cadastreData.map((cadastre, index) => (
+                    <GeoJSON key={index} data={cadastre} style={Styles.cadastrePolygonStyle} />
+                ))}
+
+                {showGeozones && geozoneData.map((geozone, index) => (
+                    <React.Fragment key={index}>
+                        <GeoJSON data={geozone} style={Styles.geozonePolygonStyle} />
+                        <FieldLabel feature={geozone} zoomLevel={zoomLevel} type="geozone" />
                     </React.Fragment>
                 ))}
 
@@ -182,3 +213,5 @@ export default function Map() {
         </Styles.wrapper>
     );
 }
+
+

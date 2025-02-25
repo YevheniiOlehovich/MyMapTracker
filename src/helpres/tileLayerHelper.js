@@ -35,6 +35,5 @@ const tileLayerConfig = {
 };
 
 export const getTileLayerConfig = (mapType) => {
-    console.log('Selected map type:', mapType); // Логування вибраного типу карти
     return tileLayerConfig[mapType] || null;
 };

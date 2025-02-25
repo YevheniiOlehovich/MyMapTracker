@@ -3,11 +3,15 @@ import { useDispatch, useSelector } from 'react-redux';
 import Styles from './styles';
 import arrowPic from '../../assets/ico/arrow.svg';
 import { setMapType } from '../../store/mapSlice'; // Імпорт дії для зміни типу карти
+import { toggleFields, toggleCadastre, toggleGeozones, selectShowFields, selectShowCadastre, selectShowGeozones } from '../../store/layersList'; // Імпорт дій і селекторів для керування шарами
 
 const LayersList = () => {
     const [isVisible, setIsVisible] = useState(false);
     const dispatch = useDispatch();
     const mapType = useSelector((state) => state.map.type); // Отримання поточного типу карти з Redux
+    const showFields = useSelector(selectShowFields);
+    const showCadastre = useSelector(selectShowCadastre);
+    const showGeozones = useSelector(selectShowGeozones);
 
     const toggleListHandler = () => {
         setIsVisible(!isVisible);
@@ -15,6 +19,18 @@ const LayersList = () => {
 
     const handleMapTypeChange = (event) => {
         dispatch(setMapType(event.target.value));
+    };
+
+    const handleToggleFields = () => {
+        dispatch(toggleFields());
+    };
+
+    const handleToggleCadastre = () => {
+        dispatch(toggleCadastre());
+    };
+
+    const handleToggleGeozones = () => {
+        dispatch(toggleGeozones());
     };
 
     return (
@@ -26,7 +42,6 @@ const LayersList = () => {
             <Styles.Block>
                 <Styles.Title>Шари мапи</Styles.Title>
             </Styles.Block>
-            
             
             <Styles.maplist>
                 <label>
@@ -97,6 +112,39 @@ const LayersList = () => {
                         onChange={handleMapTypeChange}
                     />
                     OpenStreetMap TOPO
+                </label>
+            </Styles.maplist>
+            
+            <Styles.Block>
+                <Styles.Title>Шари геоданих</Styles.Title>
+            </Styles.Block>
+
+            <Styles.maplist>
+                <label>
+                    <input
+                        type="checkbox"
+                        checked={showFields}
+                        onChange={handleToggleFields}
+                    />
+                    Поля
+                </label>
+
+                <label>
+                    <input
+                        type="checkbox"
+                        checked={showCadastre}
+                        onChange={handleToggleCadastre}
+                    />
+                    Кадастр
+                </label>
+
+                <label>
+                    <input
+                        type="checkbox"
+                        checked={showGeozones}
+                        onChange={handleToggleGeozones}
+                    />
+                    Геозони
                 </label>
             </Styles.maplist>
         </Styles.wrapper>
