@@ -98,7 +98,6 @@ export default function Map() {
     const mapCenter = useSelector(selectMapCenter); // Отримання центру карти з Redux
     const zoomLevel = useSelector(selectZoomLevel); // Отримання рівня зуму з Redux
 
-    console.log(mapCenter)
 
     const [key, setKey] = useState(0); // Додаємо стан для ключа
 
