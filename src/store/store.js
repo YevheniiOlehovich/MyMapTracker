@@ -10,6 +10,7 @@ import cadastreReducer from './cadastreSlice'; // Імпортуємо редю�
 import mapReducer from './mapSlice'; // Імпортуємо редюсер для карти
 import geozoneReducer from './geozoneSlice';
 import layersReducer from './layersList'
+import mapCenterSliceReducer from './mapCenterSlice'
 
 const store = configureStore({
     reducer: {
@@ -24,6 +25,7 @@ const store = configureStore({
         map: mapReducer, // Додаємо редюсер для карти
         geozone: geozoneReducer,
         layers: layersReducer,
+        mapCenter: mapCenterSliceReducer,
     },
 });
 

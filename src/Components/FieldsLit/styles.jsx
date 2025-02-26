@@ -2,31 +2,12 @@ import styled from 'styled-components';
 
 const Styles = {
     wrapper: styled.div`
-        position: absolute;
-        top: 0;
-        right: ${({ isVisible }) => (isVisible ? '0' : '-270px')};
-        width: 300px;
-        height: 100vh;
-        background-color: rgba(0, 0, 0, 0.7);
-        z-index: 5;
-        transition: right 0.3s ease-in-out;
-        padding: 10px;
-    `,
-    showBtn: styled.div`
-        position: absolute;
-        width: 20px;
-        height: 20px;
-        left: 5px;
-        top: 50%;
-        transform: translateY(-50%) rotate(${({ isVisible }) => (isVisible ? '180deg' : '0deg')});
-        cursor: pointer;
-        border: 1px solid black;
-        transition: transform 0.3s ease-in-out;
-    `,
-    showBtnImg: styled.img`
+        position: relative;
         width: 100%;
-        height: 100%;
-        object-fit: contain;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 0 8px;
     `,
     Title: styled.h3`
         font-family: Arial, Helvetica, sans-serif;
@@ -34,26 +15,31 @@ const Styles = {
         font-size: 16px;
         display: block;
         margin: 0;
-    `,
-    maplist: styled.div`
-        display: flex;
-        flex-direction: column;
-        margin: 0 0 20px 20px;
-    `,
-    Block: styled.div`
-        display: flex;
-        width: 100%;
-        justify-content: space-between;
-        align-items: center;
-        padding: 0 8px;
         margin-bottom: 12px;
     `,
-    label: styled.label`
-        &:not(:last-child) {
+    fieldBlock: styled.div`
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
+        
+        &:not(:last-child){
             margin-bottom: 12px;
-        }
+        } 
     `,
-    btn: styled.div`
+    fieldName: styled.div`
+        font-family: Arial, Helvetica, sans-serif;
+        font-weight: 700;
+        font-size: 15px;
+        display: block;
+        margin: 0 8px 12px;
+        cursor: pointer;
+    `,
+    btnBlock: styled.div`
+        display: flex;
+        width: auto;
+        justify-content: space-between;
+    `,
+    btn: styled.button`
         width: 20px;
         height: 20px;
         border: none;
@@ -80,6 +66,20 @@ const Styles = {
         background-position: center;
         transition: 0.2s ease;
         transform: rotate(${props => props.rotation}deg);
+    `,
+    block: styled.div`
+        display: flex;
+        width: 100%;
+        justify-content: space-between;
+        
+    `,
+    list: styled.div`
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        height: 700px; 
+        overflow-y: auto; 
+        white-space: nowrap;  
     `
 };
 

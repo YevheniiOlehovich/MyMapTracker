@@ -10,6 +10,8 @@ import { fetchFields, selectAllFields } from '../../store/fieldsSlice';
 import { fetchCadastre, selectAllCadastre } from '../../store/cadastreSlice';
 import { fetchGeozone, selectAllGeozone } from '../../store/geozoneSlice';
 import { selectShowFields, selectShowCadastre, selectShowGeozones } from '../../store/layersList'; // Імпорт селекторів для керування шарами
+import { selectMapCenter, selectZoomLevel, setZoomLevel } from '../../store/mapCenterSlice'; // Імпорт селекторів і дій для керування центром карти
+import MapCenterUpdater from '../MapCenterUpdater'; // Імпорт компонента для оновлення центру карти
 
 function FieldLabel({ feature, zoomLevel, type }) {
     const map = useMap();
@@ -43,7 +45,7 @@ function FieldLabel({ feature, zoomLevel, type }) {
         </div>
     );
 
-    return (
+    return type === 'field' ? (
         <Marker position={position} icon={L.divIcon({
             className: 'field-label',
             html: zoomLevel >= 15
@@ -53,6 +55,8 @@ function FieldLabel({ feature, zoomLevel, type }) {
         })}>
             <Popup>{popupContent}</Popup>
         </Marker>
+    ) : (
+        <Popup position={position}>{popupContent}</Popup>
     );
 }
 
@@ -91,9 +95,11 @@ export default function Map() {
     const showGeozones = useSelector(selectShowGeozones);
 
     const mapType = useSelector((state) => state.map.type); // Отримання типу карти з Redux
+    const mapCenter = useSelector(selectMapCenter); // Отримання центру карти з Redux
+    const zoomLevel = useSelector(selectZoomLevel); // Отримання рівня зуму з Redux
 
-    const [mapCenter, setMapCenter] = useState([50.68, 32.12]);
-    const [zoomLevel, setZoomLevel] = useState(13);
+    console.log(mapCenter)
+
     const [key, setKey] = useState(0); // Додаємо стан для ключа
 
     useEffect(() => {
@@ -131,9 +137,9 @@ export default function Map() {
     useEffect(() => {
         if (lastGpsPoints.length > 0) {
             const lastPoint = lastGpsPoints[lastGpsPoints.length - 1];
-            setMapCenter([lastPoint.latitude, lastPoint.longitude]);
+            dispatch(setMapCenter([lastPoint.latitude, lastPoint.longitude]));
         }
-    }, [lastGpsPoints]);
+    }, [lastGpsPoints, dispatch]);
 
     const routeCoordinates = useMemo(() => {
         if (!filteredGpsData || filteredGpsData.length === 0) return [];
@@ -208,10 +214,9 @@ export default function Map() {
                     </React.Fragment>
                 ))}
 
-                <ZoomTracker setZoomLevel={setZoomLevel} />
+                <ZoomTracker setZoomLevel={(zoom) => dispatch(setZoomLevel(zoom))} />
+                <MapCenterUpdater /> {/* Додаємо компонент для оновлення центру карти */}
             </MapContainer>
         </Styles.wrapper>
     );
 }
-
-
