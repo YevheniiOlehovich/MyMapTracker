@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
 import { fetchGroups, selectAllGroups, deleteGroup, deletePersonnel, deleteVehicle } from '../../store/groupSlice'; 
 import { openAddGroupModal, openAddPersonalModal, openAddVehicleModal } from '../../store/modalSlice'; // Імпортуємо дії для відкриття модалок
-import { setImei } from '../../store/vehicleSlice';
+import { setMapCenter } from '../../store/mapCenterSlice'; // Імпорт дії для встановлення центру карти
 
 import EditIco from '../../assets/ico/edit-icon-black.png';
 import DelIco from '../../assets/ico/del-icon-black.png';
@@ -12,10 +12,11 @@ import TriangleIco from '../../assets/ico/triangle.png';
 
 import { StyledBlock, StyledSubtitle, StyledButton, StyledIco, StyledButtonBlock, StyledList, StyledListItem, StyledMainList, StyledSpan, StyledImgBlock, StyledSubTitle } from './styled';
 
-
 export default function GroupsList() {
     const dispatch = useDispatch();
     const groups = useSelector(selectAllGroups);
+    const gpsData = useSelector((state) => state.gps.data);
+    const selectedDate = useSelector((state) => state.calendar.selectedDate);
 
     const [rotation, setRotation] = useState(0);
     const [visibilityState, setVisibilityState] = useState({});
@@ -56,8 +57,6 @@ export default function GroupsList() {
     };
 
     const handleOpenEditVehicleModal = (groupId, vehicleId) => {
-        console.log(1)
-        // Викликаємо модалку, передаючи тільки групу та id персони
         dispatch(openAddVehicleModal({ groupId, vehicleId }));
     };
 
@@ -76,11 +75,26 @@ export default function GroupsList() {
         }));
     };
 
-    const handleDoubleClickVehicle = (imei) => {
-        dispatch(setImei(imei)); // Передаємо IMEI в store
+    const filteredGpsData = useMemo(() => {
+        if (!gpsData || !selectedDate) return [];
+        const selectedDateFormatted = selectedDate.split('T')[0];
+        return gpsData.filter(item => item.date === selectedDateFormatted);
+    }, [gpsData, selectedDate]);
+
+    const lastGpsPoints = useMemo(() => {
+        return filteredGpsData.map(item => {
+            const validData = item.data.filter(gpsPoint => gpsPoint.latitude !== 0 && gpsPoint.longitude !== 0);
+            return validData.length > 0 ? { ...validData[validData.length - 1], imei: item.imei } : null;
+        }).filter(point => point !== null);
+    }, [filteredGpsData]);
+
+    const handleDoubleClickVehicle = (vehicle) => {
+        const selectedVehicle = lastGpsPoints.find(point => point.imei === vehicle.imei);
+        if (selectedVehicle) {
+            dispatch(setMapCenter([selectedVehicle.latitude, selectedVehicle.longitude])); // Центруємо карту по останніх координатах транспортного засобу
+        }
     };
 
-    
     return (
         <>
             {groups.length === 0 ? (
@@ -165,7 +179,7 @@ export default function GroupsList() {
                                                                     : QuestionIco
                                                             }
                                                         />
-                                                        <StyledListItem key={vehicle._id} onDoubleClick={() => handleDoubleClickVehicle(vehicle.imei)}>{vehicle.mark}</StyledListItem>
+                                                        <StyledListItem key={vehicle._id} onDoubleClick={() => handleDoubleClickVehicle(vehicle)}>{vehicle.mark}</StyledListItem>
                                                         <StyledButtonBlock>
                                                             <StyledButton
                                                                 onClick={() =>
@@ -200,5 +214,4 @@ export default function GroupsList() {
             )}
         </>
     );
-    
 }

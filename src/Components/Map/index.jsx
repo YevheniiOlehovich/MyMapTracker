@@ -10,7 +10,8 @@ import { fetchFields, selectAllFields } from '../../store/fieldsSlice';
 import { fetchCadastre, selectAllCadastre } from '../../store/cadastreSlice';
 import { fetchGeozone, selectAllGeozone } from '../../store/geozoneSlice';
 import { selectShowFields, selectShowCadastre, selectShowGeozones } from '../../store/layersList'; // Імпорт селекторів для керування шарами
-import { selectMapCenter, selectZoomLevel, setZoomLevel } from '../../store/mapCenterSlice'; // Імпорт селекторів і дій для керування центром карти
+import { selectMapCenter, selectZoomLevel, setZoomLevel, setMapCenter } from '../../store/mapCenterSlice'; // Імпорт селекторів і дій для керування центром карти
+import { setImei, toggleShowTrack } from '../../store/vehicleSlice'; // Імпорт дій для керування транспортом
 import MapCenterUpdater from '../MapCenterUpdater'; // Імпорт компонента для оновлення центру карти
 
 function FieldLabel({ feature, zoomLevel, type }) {
@@ -77,6 +78,7 @@ export default function Map() {
     const gpsError = useSelector((state) => state.gps.error);
     const selectedDate = useSelector((state) => state.calendar.selectedDate);
     const selectedImei = useSelector((state) => state.vehicle.imei);
+    const showTrack = useSelector((state) => state.vehicle.showTrack); // Додаємо стан для відображення треку
 
     const fieldsData = useSelector(selectAllFields);
     const fieldsStatus = useSelector((state) => state.fields.status);
@@ -98,8 +100,11 @@ export default function Map() {
     const mapCenter = useSelector(selectMapCenter); // Отримання центру карти з Redux
     const zoomLevel = useSelector(selectZoomLevel); // Отримання рівня зуму з Redux
 
-
     const [key, setKey] = useState(0); // Додаємо стан для ключа
+
+    useEffect(() => {
+        console.log('Map center updated:', mapCenter); // Логування центру карти
+    }, [mapCenter]);
 
     useEffect(() => {
         if (gpsStatus === 'idle') {
@@ -121,31 +126,24 @@ export default function Map() {
     }, [mapType]);
 
     const filteredGpsData = useMemo(() => {
-        if (!gpsData || !selectedDate || !selectedImei) return [];
+        if (!gpsData || !selectedDate) return [];
         const selectedDateFormatted = selectedDate.split('T')[0];
-        return gpsData.filter(item => item.date === selectedDateFormatted && item.imei === selectedImei);
-    }, [gpsData, selectedDate, selectedImei]);
+        return gpsData.filter(item => item.date === selectedDateFormatted);
+    }, [gpsData, selectedDate]);
 
     const lastGpsPoints = useMemo(() => {
         return filteredGpsData.map(item => {
             const validData = item.data.filter(gpsPoint => gpsPoint.latitude !== 0 && gpsPoint.longitude !== 0);
-            return validData.length > 0 ? validData[validData.length - 1] : null;
+            return validData.length > 0 ? { ...validData[validData.length - 1], imei: item.imei } : null;
         }).filter(point => point !== null);
     }, [filteredGpsData]);
 
-    useEffect(() => {
-        if (lastGpsPoints.length > 0) {
-            const lastPoint = lastGpsPoints[lastGpsPoints.length - 1];
-            dispatch(setMapCenter([lastPoint.latitude, lastPoint.longitude]));
-        }
-    }, [lastGpsPoints, dispatch]);
-
     const routeCoordinates = useMemo(() => {
-        if (!filteredGpsData || filteredGpsData.length === 0) return [];
-        return filteredGpsData.flatMap(item => 
-            item.data.filter(gpsPoint => gpsPoint.latitude !== 0 && gpsPoint.longitude !== 0).map(gpsPoint => [gpsPoint.latitude, gpsPoint.longitude])
-        );
-    }, [filteredGpsData]);
+        if (!filteredGpsData || filteredGpsData.length === 0 || !selectedImei) return [];
+        const selectedVehicleData = filteredGpsData.find(item => item.imei === selectedImei);
+        if (!selectedVehicleData) return [];
+        return selectedVehicleData.data.filter(gpsPoint => gpsPoint.latitude !== 0 && gpsPoint.longitude !== 0).map(gpsPoint => [gpsPoint.latitude, gpsPoint.longitude]);
+    }, [filteredGpsData, selectedImei]);
 
     const totalDistance = useMemo(() => {
         if (routeCoordinates.length < 2) return 0;
@@ -159,6 +157,11 @@ export default function Map() {
     }, [routeCoordinates]);
 
     const tileLayerConfig = getTileLayerConfig(mapType);
+
+    const handleMarkerClick = (imei) => {
+        dispatch(setImei(imei));
+        dispatch(toggleShowTrack());
+    };
 
     return (
         <Styles.wrapper>
@@ -180,16 +183,16 @@ export default function Map() {
                     />
                 )}
 
-                {routeCoordinates.length > 0 && (
+                {showTrack && routeCoordinates.length > 0 && (
                     <Polyline positions={routeCoordinates} color="blue" weight={5} opacity={0.7} />
                 )}
 
                 {lastGpsPoints.map((point, index) => (
-                    <Marker key={index} position={[point.latitude, point.longitude]}>
+                    <Marker key={index} position={[point.latitude, point.longitude]} eventHandlers={{ click: () => handleMarkerClick(point.imei) }}>
                         <Popup>
                             <strong>Остання точка</strong> <br />
                             Час: {new Date(point.timestamp).toLocaleString()} <br />
-                            IMEI: {selectedImei || 'Всі'} <br />
+                            IMEI: {point.imei} <br />
                             Пройдено: {totalDistance} км
                         </Popup>
                     </Marker>
