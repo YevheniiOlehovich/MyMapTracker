@@ -1,345 +1,10 @@
-// // import React, { useState, useEffect } from 'react';
-// // import Styles from './styles';
-// // import closeModal from "../../helpres/closeModal";
-// // import Button from '../Button';
-// // import { useDispatch, useSelector } from 'react-redux';
-// // import { closeAddFieldsModal } from '../../store/modalSlice'; // Імпорт дії для закриття модалки
-
-// // export default function AddFieldsModal() {
-// //     const dispatch = useDispatch();
-// //     const editFieldId = useSelector((state) => state.modals.editFieldId); // Отримання ідентифікатора редагованого поля з Redux
-// //     const [groupName, setGroupName] = useState('');
-
-// //     useEffect(() => {
-// //         if (editFieldId) {
-// //             // Завантажити дані поля для редагування, якщо є editFieldId
-// //             // setGroupName(отримані дані);
-// //         }
-// //     }, [editFieldId]);
-
-// //     // const handleWrapperClick = (e) => {
-// //     //     if (e.target === e.currentTarget) {
-// //     //         dispatch(closeAddFieldsModal());
-// //     //     }
-// //     // };
-
-// //     const onClose = () => {
-// //         dispatch(closeAddFieldsModal());
-// //     };
-
-// //     return (
-// //         // <Styles.wrapper onClick={handleWrapperClick}>
-// //             <Styles.modal>
-// //                 <Styles.closeButton onClick={onClose} />
-// //                 <Styles.title>{editFieldId ? 'Редагування поля' : 'Створення нового поля'}</Styles.title>
-// //                 <Styles.label>
-// //                     <Styles.subtitle>Назва нового поля</Styles.subtitle>
-// //                     <Styles.input
-// //                         value={groupName}
-// //                         onChange={(e) => setGroupName(e.target.value)} // Зберігаємо назву поля
-// //                     />
-// //                 </Styles.label>
-// //                 <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
-// //                     <Button text={'Зберегти'} onClick={() => { /* Додати функціонал збереження */ }} />
-// //                 </div>
-// //             </Styles.modal>
-// //         // </Styles.wrapper>
-// //     );
-// // }
-
-// import React, { useState, useEffect } from 'react';
-// import Styles from './styles';
-// import Button from '../Button';
-// import { useDispatch, useSelector } from 'react-redux';
-// import { closeAddFieldsModal } from '../../store/modalSlice'; // Імпорт дії для закриття модалки
-
-// export default function AddFieldsModal() {
-//     const dispatch = useDispatch();
-//     const editFieldId = useSelector((state) => state.modals.editFieldId); // Отримання ідентифікатора редагованого поля з Redux
-//     const [groupName, setGroupName] = useState('');
-
-//     useEffect(() => {
-//         if (editFieldId) {
-//             // Завантажити дані поля для редагування, якщо є editFieldId
-//             // setGroupName(отримані дані);
-//         }
-//     }, [editFieldId]);
-
-//     const onClose = () => {
-//         dispatch(closeAddFieldsModal());
-//     };
-
-//     return (
-//         <Styles.wrapper onClick={onClose}>
-//             <Styles.modal onClick={(e) => e.stopPropagation()}>
-//                 <Styles.closeButton onClick={onClose} />
-//                 <Styles.title>{editFieldId ? 'Редагування поля' : 'Створення нового поля'}</Styles.title>
-//                 <Styles.label>
-//                     <Styles.subtitle>Назва нового поля</Styles.subtitle>
-//                     <Styles.input
-//                         value={groupName}
-//                         onChange={(e) => setGroupName(e.target.value)} // Зберігаємо назву поля
-//                     />
-//                 </Styles.label>
-//                 <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
-//                     <Button text={'Зберегти'} onClick={() => { /* Додати функціонал збереження */ }} />
-//                 </div>
-//             </Styles.modal>
-//         </Styles.wrapper>
-//     );
-// }
-
-
-// import React, { useState, useEffect } from 'react';
-// import Styles from './styles';
-// import Button from '../Button';
-// import { useDispatch, useSelector } from 'react-redux';
-// import { closeAddFieldsModal } from '../../store/modalSlice'; // Імпорт дії для закриття модалки
-// import { selectFieldById } from '../../store/fieldsSlice'; // Імпорт селектора для отримання поля за ID
-
-// export default function AddFieldsModal() {
-//     const dispatch = useDispatch();
-//     const editFieldId = useSelector((state) => state.modals.editFieldId); // Отримання ідентифікатора редагованого поля з Redux
-//     const fieldData = useSelector((state) => selectFieldById(state, editFieldId)); // Отримання даних поля за ID
-//     const [fieldName, setFieldName] = useState('');
-//     const [fieldArea, setFieldArea] = useState('');
-//     const [fieldNote, setFieldNote] = useState('');
-
-//     useEffect(() => {
-//         if (editFieldId && fieldData) {
-//             setFieldName(fieldData.properties.name);
-//             setFieldArea(fieldData.properties.area);
-//             setFieldNote(fieldData.properties.note);
-//         } else {
-//             setFieldName('');
-//             setFieldArea('');
-//             setFieldNote('');
-//         }
-//     }, [editFieldId, fieldData]);
-
-//     const onClose = () => {
-//         dispatch(closeAddFieldsModal());
-//     };
-
-//     return (
-//         <Styles.wrapper onClick={onClose}>
-//             <Styles.modal onClick={(e) => e.stopPropagation()}>
-//                 <Styles.closeButton onClick={onClose} />
-//                 <Styles.title>{editFieldId ? 'Редагування поля' : 'Створення нового поля'}</Styles.title>
-//                 <Styles.label>
-//                     <Styles.subtitle>Назва поля</Styles.subtitle>
-//                     <Styles.input
-//                         value={fieldName}
-//                         onChange={(e) => setFieldName(e.target.value)} // Зберігаємо назву поля
-//                     />
-//                 </Styles.label>
-//                 <Styles.label>
-//                     <Styles.subtitle>Площа поля (га)</Styles.subtitle>
-//                     <Styles.input
-//                         value={fieldArea}
-//                         onChange={(e) => setFieldArea(e.target.value)} // Зберігаємо площу поля
-//                     />
-//                 </Styles.label>
-//                 <Styles.label>
-//                     <Styles.subtitle>Примітка</Styles.subtitle>
-//                     <Styles.input
-//                         value={fieldNote}
-//                         onChange={(e) => setFieldNote(e.target.value)} // Зберігаємо примітку
-//                     />
-//                 </Styles.label>
-//                 <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
-//                     <Button text={'Зберегти'} onClick={() => { /* Додати функціонал збереження */ }} />
-//                 </div>
-//             </Styles.modal>
-//         </Styles.wrapper>
-//     );
-// }
-
-
-// import React, { useState, useEffect } from 'react';
-// import Styles from './styles';
-// import Button from '../Button';
-// import { useDispatch, useSelector } from 'react-redux';
-// import { closeAddFieldsModal } from '../../store/modalSlice'; // Імпорт дії для закриття модалки
-// import { selectFieldById } from '../../store/fieldsSlice'; // Імпорт селектора для отримання поля за ID
-
-// export default function AddFieldsModal() {
-//     const dispatch = useDispatch();
-//     const editFieldId = useSelector((state) => state.modals.editFieldId); // Отримання ідентифікатора редагованого поля з Redux
-//     const fieldData = useSelector((state) => selectFieldById(state, editFieldId)); // Отримання даних поля за ID
-//     const [fieldName, setFieldName] = useState('');
-//     const [fieldArea, setFieldArea] = useState('');
-//     const [fieldNote, setFieldNote] = useState('');
-
-//     useEffect(() => {
-//         if (editFieldId && fieldData) {
-//             setFieldName(fieldData.properties.name);
-//             setFieldArea(fieldData.properties.area);
-//             setFieldNote(fieldData.properties.note);
-//         } else {
-//             setFieldName('');
-//             setFieldArea('');
-//             setFieldNote('');
-//         }
-//     }, [editFieldId, fieldData]);
-
-//     const onClose = () => {
-//         dispatch(closeAddFieldsModal());
-//     };
-
-//     return (
-//         <Styles.wrapper onClick={onClose}>
-//             <Styles.modal onClick={(e) => e.stopPropagation()}>
-//                 <Styles.closeButton onClick={onClose} />
-//                 <Styles.title>{editFieldId ? 'Редагування поля' : 'Створення нового поля'}</Styles.title>
-//                 <Styles.label>
-//                     <Styles.subtitle>Назва поля</Styles.subtitle>
-//                     <Styles.input
-//                         value={fieldName}
-//                         onChange={(e) => setFieldName(e.target.value)} // Зберігаємо назву поля
-//                     />
-//                 </Styles.label>
-//                 <Styles.label>
-//                     <Styles.subtitle>Площа поля (га)</Styles.subtitle>
-//                     <Styles.input
-//                         value={fieldArea}
-//                         onChange={(e) => setFieldArea(e.target.value)} // Зберігаємо площу поля
-//                     />
-//                 </Styles.label>
-//                 <Styles.label>
-//                     <Styles.subtitle>Примітка</Styles.subtitle>
-//                     <Styles.input
-//                         value={fieldNote}
-//                         onChange={(e) => setFieldNote(e.target.value)} // Зберігаємо примітку
-//                     />
-//                 </Styles.label>
-//                 <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
-//                     <Button text={'Зберегти'} onClick={() => { /* Додати функціонал збереження */ }} />
-//                 </div>
-//             </Styles.modal>
-//         </Styles.wrapper>
-//     );
-// }
-
-
-
-// import React, { useState, useEffect } from 'react';
-// import Styles from './styles';
-// import Button from '../Button';
-
-// export default function AddFieldsModal({ field, onClose }) {
-//     const [fieldName, setFieldName] = useState('');
-//     const [fieldArea, setFieldArea] = useState('');
-//     const [fieldNote, setFieldNote] = useState('');
-
-//     useEffect(() => {
-//         if (field) {
-//             setFieldName(field.properties.name);
-//             setFieldArea(field.properties.area);
-//             setFieldNote(field.properties.note);
-//         } else {
-//             setFieldName('');
-//             setFieldArea('');
-//             setFieldNote('');
-//         }
-//     }, [field]);
-
-//     return (
-//         <Styles.wrapper onClick={onClose}>
-//             <Styles.modal onClick={(e) => e.stopPropagation()}>
-//                 <Styles.closeButton onClick={onClose} />
-//                 <Styles.title>{field ? 'Редагування поля' : 'Створення нового поля'}</Styles.title>
-//                 <Styles.label>
-//                     <Styles.subtitle>Назва поля</Styles.subtitle>
-//                     <Styles.input
-//                         value={fieldName}
-//                         onChange={(e) => setFieldName(e.target.value)} // Зберігаємо назву поля
-//                     />
-//                 </Styles.label>
-//                 <Styles.label>
-//                     <Styles.subtitle>Площа поля (га)</Styles.subtitle>
-//                     <Styles.input
-//                         value={fieldArea}
-//                         onChange={(e) => setFieldArea(e.target.value)} // Зберігаємо площу поля
-//                     />
-//                 </Styles.label>
-//                 <Styles.label>
-//                     <Styles.subtitle>Примітка</Styles.subtitle>
-//                     <Styles.input
-//                         value={fieldNote}
-//                         onChange={(e) => setFieldNote(e.target.value)} // Зберігаємо примітку
-//                     />
-//                 </Styles.label>
-//                 <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
-//                     <Button text={'Зберегти'} onClick={() => { /* Додати функціонал збереження */ }} />
-//                 </div>
-//             </Styles.modal>
-//         </Styles.wrapper>
-//     );
-// }
-
-
-// import React, { useState, useEffect } from 'react';
-// import Styles from './styles';
-// import Button from '../Button';
-
-// export default function AddFieldsModal({ field, onClose }) {
-//     const [fieldName, setFieldName] = useState('');
-//     const [fieldArea, setFieldArea] = useState('');
-//     const [fieldNote, setFieldNote] = useState('');
-
-//     useEffect(() => {
-//         if (field) {
-//             setFieldName(field.properties.name);
-//             setFieldArea(field.properties.area);
-//             setFieldNote(field.properties.note);
-//         } else {
-//             setFieldName('');
-//             setFieldArea('');
-//             setFieldNote('');
-//         }
-//     }, [field]);
-
-//     return (
-//         <Styles.wrapper onClick={onClose}>
-//             <Styles.modal onClick={(e) => e.stopPropagation()}>
-//                 <Styles.closeButton onClick={onClose} />
-//                 <Styles.title>{field ? 'Редагування поля' : 'Створення нового поля'}</Styles.title>
-//                 <Styles.label>
-//                     <Styles.subtitle>Назва поля</Styles.subtitle>
-//                     <Styles.input
-//                         value={fieldName}
-//                         onChange={(e) => setFieldName(e.target.value)} // Зберігаємо назву поля
-//                     />
-//                 </Styles.label>
-//                 <Styles.label>
-//                     <Styles.subtitle>Площа поля (га)</Styles.subtitle>
-//                     <Styles.input
-//                         value={fieldArea}
-//                         onChange={(e) => setFieldArea(e.target.value)} // Зберігаємо площу поля
-//                     />
-//                 </Styles.label>
-//                 <Styles.label>
-//                     <Styles.subtitle>Примітка</Styles.subtitle>
-//                     <Styles.input
-//                         value={fieldNote}
-//                         onChange={(e) => setFieldNote(e.target.value)} // Зберігаємо примітку
-//                     />
-//                 </Styles.label>
-//                 <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
-//                     <Button text={'Зберегти'} onClick={() => { /* Додати функціонал збереження */ }} />
-//                 </div>
-//             </Styles.modal>
-//         </Styles.wrapper>
-//     );
-// }
-
-
 import React, { useState, useEffect } from 'react';
 import Styles from './styles';
 import Button from '../Button';
 import { useDispatch } from 'react-redux';
 import { closeAddFieldsModal } from '../../store/modalSlice'; // Імпорт дії для закриття модалки
+import { fetchFields } from '../../store/fieldsSlice'; // Імпорт дії для фетчінгу всіх полів
+import apiRoutes from '../../helpres/ApiRoutes'; // Імпорт маршрутів API
 
 export default function AddFieldsModal({ field }) {
     const dispatch = useDispatch();
@@ -354,6 +19,7 @@ export default function AddFieldsModal({ field }) {
     const [crop, setCrop] = useState('');
     const [branch, setBranch] = useState('');
     const [region, setRegion] = useState('');
+    const [isEditable, setIsEditable] = useState(false); // Додаємо стан для блокування/розблокування інпутів
 
     useEffect(() => {
         if (field) {
@@ -387,6 +53,49 @@ export default function AddFieldsModal({ field }) {
         dispatch(closeAddFieldsModal());
     };
 
+    const handleSave = async () => {
+        const updatedField = {
+            properties: {
+                name: fieldName,
+                mapkey: mapKey,
+                area: fieldArea,
+                koatuu: koatuu,
+                note: note,
+                culture: culture,
+                sort: sort,
+                date: date,
+                crop: crop,
+                branch: branch,
+                region: region,
+            },
+        };
+
+        try {
+            const response = await fetch(apiRoutes.updateField(field._id), {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(updatedField),
+            });
+
+            if (!response.ok) {
+                throw new Error('Помилка при оновленні поля');
+            }
+
+            const result = await response.json();
+            console.log('Поле оновлено:', result);
+            dispatch(fetchFields()); // Запускаємо оновлення фетчінгу всіх полів
+            onClose();
+        } catch (error) {
+            console.error('Помилка:', error);
+        }
+    };
+
+    const handleEdit = () => {
+        setIsEditable(true); // Розблоковуємо інпути при натисканні на кнопку "Редагувати"
+    };
+
     return (
         <Styles.wrapper onClick={onClose}>
             <Styles.modal onClick={(e) => e.stopPropagation()}>
@@ -397,6 +106,7 @@ export default function AddFieldsModal({ field }) {
                     <Styles.input
                         value={fieldName}
                         onChange={(e) => setFieldName(e.target.value)} // Зберігаємо назву поля
+                        disabled={!isEditable} // Блокуємо інпут за замовчуванням
                     />
                 </Styles.label>
                 <Styles.label>
@@ -404,6 +114,7 @@ export default function AddFieldsModal({ field }) {
                     <Styles.input
                         value={mapKey}
                         onChange={(e) => setMapKey(e.target.value)} // Зберігаємо ключ карти
+                        disabled={!isEditable} // Блокуємо інпут за замовчуванням
                     />
                 </Styles.label>
                 <Styles.label>
@@ -411,6 +122,7 @@ export default function AddFieldsModal({ field }) {
                     <Styles.input
                         value={fieldArea}
                         onChange={(e) => setFieldArea(e.target.value)} // Зберігаємо площу поля
+                        disabled={!isEditable} // Блокуємо інпут за замовчуванням
                     />
                 </Styles.label>
                 <Styles.label>
@@ -418,6 +130,7 @@ export default function AddFieldsModal({ field }) {
                     <Styles.input
                         value={koatuu}
                         onChange={(e) => setKoatuu(e.target.value)} // Зберігаємо код КОАТУУ
+                        disabled={!isEditable} // Блокуємо інпут за замовчуванням
                     />
                 </Styles.label>
                 
@@ -426,6 +139,7 @@ export default function AddFieldsModal({ field }) {
                     <Styles.input
                         value={culture}
                         onChange={(e) => setCulture(e.target.value)} // Зберігаємо культуру
+                        disabled={!isEditable} // Блокуємо інпут за замовчуванням
                     />
                 </Styles.label>
                 <Styles.label>
@@ -433,6 +147,7 @@ export default function AddFieldsModal({ field }) {
                     <Styles.input
                         value={sort}
                         onChange={(e) => setSort(e.target.value)} // Зберігаємо сорт
+                        disabled={!isEditable} // Блокуємо інпут за замовчуванням
                     />
                 </Styles.label>
                 <Styles.label>
@@ -440,6 +155,7 @@ export default function AddFieldsModal({ field }) {
                     <Styles.input
                         value={date}
                         onChange={(e) => setDate(e.target.value)} // Зберігаємо дату
+                        disabled={!isEditable} // Блокуємо інпут за замовчуванням
                     />
                 </Styles.label>
                 <Styles.label>
@@ -447,6 +163,7 @@ export default function AddFieldsModal({ field }) {
                     <Styles.input
                         value={crop}
                         onChange={(e) => setCrop(e.target.value)} // Зберігаємо урожай
+                        disabled={!isEditable} // Блокуємо інпут за замовчуванням
                     />
                 </Styles.label>
                 <Styles.label>
@@ -454,6 +171,7 @@ export default function AddFieldsModal({ field }) {
                     <Styles.input
                         value={branch}
                         onChange={(e) => setBranch(e.target.value)} // Зберігаємо філію
+                        disabled={!isEditable} // Блокуємо інпут за замовчуванням
                     />
                 </Styles.label>
                 <Styles.label>
@@ -461,6 +179,7 @@ export default function AddFieldsModal({ field }) {
                     <Styles.input
                         value={region}
                         onChange={(e) => setRegion(e.target.value)} // Зберігаємо регіон
+                        disabled={!isEditable} // Блокуємо інпут за замовчуванням
                     />
                 </Styles.label>
 
@@ -469,11 +188,13 @@ export default function AddFieldsModal({ field }) {
                     <Styles.textarea
                         value={note}
                         onChange={(e) => setNote(e.target.value)} // Зберігаємо примітку
+                        disabled={!isEditable} // Блокуємо textarea за замовчуванням
                     />
                 </Styles.label>
 
-                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
-                    <Button text={'Зберегти'} onClick={() => { /* Додати функціонал збереження */ }} />
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px', width: `100%` }}>
+                    <Button text={'Редагувати'} onClick={handleEdit} />
+                    <Button text={'Зберегти'} onClick={handleSave} />
                 </div>
             </Styles.modal>
         </Styles.wrapper>

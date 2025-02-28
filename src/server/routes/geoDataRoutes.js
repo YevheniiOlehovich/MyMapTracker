@@ -47,6 +47,26 @@
 
 // const Cadastre = mongoose.model('Cadastre', cadastreSchema);
 
+// // Створення схеми і моделі для даних геозон
+// const geozoneSchema = new mongoose.Schema({
+//     type: String,
+//     geometry: {
+//         type: { type: String },
+//         coordinates: Array,
+//     },
+//     id: Number,
+//     properties: {
+//         name: String,
+//         branch: String,
+//         color: String,
+//         opacity: String,
+//         area: String,
+//         mapkey: String,
+//     },
+// });
+
+// const Geozone = mongoose.model('Geozone', geozoneSchema);
+
 // // Маршрут для збереження даних полів
 // router.post('/fields', async (req, res) => {
 //     try {
@@ -89,6 +109,27 @@
 //     }
 // });
 
+// // Маршрут для збереження даних геозон
+// router.post('/geozone', async (req, res) => {
+//     try {
+//         const geozoneData = req.body;
+//         await Geozone.insertMany(geozoneData);
+//         res.status(201).send('Geozone data saved successfully');
+//     } catch (error) {
+//         res.status(500).send('Error saving geozone data: ' + error.message);
+//     }
+// });
+
+// // Маршрут для отримання всіх даних геозон
+// router.get('/geozone', async (req, res) => {
+//     try {
+//         const geozoneData = await Geozone.find();
+//         res.status(200).json(geozoneData);
+//     } catch (error) {
+//         res.status(500).send('Error fetching geozone data: ' + error.message);
+//     }
+// });
+
 // export default router;
 
 
@@ -120,7 +161,7 @@ const fieldSchema = new mongoose.Schema({
     },
 });
 
-const Field = mongoose.model('Field', fieldSchema);
+const Field = mongoose.models.Field || mongoose.model('Field', fieldSchema);
 
 // Створення схеми і моделі для даних кадастру
 const cadastreSchema = new mongoose.Schema({
@@ -139,7 +180,7 @@ const cadastreSchema = new mongoose.Schema({
     },
 });
 
-const Cadastre = mongoose.model('Cadastre', cadastreSchema);
+const Cadastre = mongoose.models.Cadastre || mongoose.model('Cadastre', cadastreSchema);
 
 // Створення схеми і моделі для даних геозон
 const geozoneSchema = new mongoose.Schema({
@@ -159,7 +200,7 @@ const geozoneSchema = new mongoose.Schema({
     },
 });
 
-const Geozone = mongoose.model('Geozone', geozoneSchema);
+const Geozone = mongoose.models.Geozone || mongoose.model('Geozone', geozoneSchema);
 
 // Маршрут для збереження даних полів
 router.post('/fields', async (req, res) => {
@@ -179,6 +220,20 @@ router.get('/fields', async (req, res) => {
         res.status(200).json(fields);
     } catch (error) {
         res.status(500).send('Error fetching fields: ' + error.message);
+    }
+});
+
+// Маршрут для оновлення даних про поле
+router.put('/fields/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const updatedField = await Field.findByIdAndUpdate(id, req.body, { new: true });
+        if (!updatedField) {
+            return res.status(404).json({ message: 'Поле не знайдено' });
+        }
+        res.json(updatedField);
+    } catch (error) {
+        res.status(500).json({ message: 'Помилка сервера', error });
     }
 });
 

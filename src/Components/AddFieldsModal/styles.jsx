@@ -72,6 +72,7 @@ const Styles = {
         padding: 5px;
         font-family: Arial, sans-serif;
         font-size: 15px;
+        background-color: ${(props) => (props.disabled ? 'lightgrey' : 'white')}; // Додаємо фон для заблокованого інпуту
     `,
     textarea: styled.textarea`
         width: 100%;
@@ -80,6 +81,7 @@ const Styles = {
         resize: none; 
         word-wrap: break-word; 
         overflow: auto; 
+        background-color: ${(props) => (props.disabled ? 'lightgrey' : 'white')}; // Додаємо фон для заблокованого textarea
     `,
 };
 
