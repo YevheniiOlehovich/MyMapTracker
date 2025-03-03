@@ -1,9 +1,7 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { MapContainer, Marker, Popup, Polyline, GeoJSON, TileLayer, useMap, useMapEvents } from 'react-leaflet';
-import L from 'leaflet';
 import Styles from './styled';
-import { haversineDistance } from '../../helpres/distance'; // Імпорт функції для обчислення відстані
 import { getTileLayerConfig } from '../../helpres/tileLayerHelper'; // Імпорт хелпера
 import { fetchGpsData } from '../../store/locationSlice';
 import { fetchFields, selectAllFields } from '../../store/fieldsSlice';
@@ -11,55 +9,9 @@ import { fetchCadastre, selectAllCadastre } from '../../store/cadastreSlice';
 import { fetchGeozone, selectAllGeozone } from '../../store/geozoneSlice';
 import { selectShowFields, selectShowCadastre, selectShowGeozones } from '../../store/layersList'; // Імпорт селекторів для керування шарами
 import { selectMapCenter, selectZoomLevel, setZoomLevel, setMapCenter } from '../../store/mapCenterSlice'; // Імпорт селекторів і дій для керування центром карти
-import { setImei, toggleShowTrack } from '../../store/vehicleSlice'; // Імпорт дій для керування транспортом
 import MapCenterUpdater from '../MapCenterUpdater'; // Імпорт компонента для оновлення центру карти
-
-function FieldLabel({ feature, zoomLevel, type }) {
-    const map = useMap();
-    const [position, setPosition] = useState(null);
-
-    useEffect(() => {
-        const bounds = L.geoJSON(feature).getBounds();
-        setPosition(bounds.getCenter());
-    }, [feature]);
-
-    if (!position) return null;
-
-    const popupContent = type === 'field' ? (
-        <div>
-            <strong>Назва:</strong> {feature.properties.name} <br />
-            <strong>Ключ карти:</strong> {feature.properties.mapkey} <br />
-            <strong>Площа:</strong> {feature.properties.area} га <br />
-            <strong>Код КОАТУУ:</strong> {feature.properties.koatuu} <br />
-            <strong>Примітка:</strong> {feature.properties.note} <br />
-            <strong>Культура:</strong> {feature.properties.culture} <br />
-            <strong>Сорт:</strong> {feature.properties.sort} <br />
-            <strong>Дата:</strong> {feature.properties.date} <br />
-            <strong>Урожай:</strong> {feature.properties.crop} <br />
-            <strong>Філія:</strong> {feature.properties.branch} <br />
-            <strong>Регіон:</strong> {feature.properties.region}
-        </div>
-    ) : (
-        <div>
-            <strong>Назва:</strong> {feature.properties.name} <br />
-            <strong>Площа:</strong> {feature.properties.area} га
-        </div>
-    );
-
-    return type === 'field' ? (
-        <Marker position={position} icon={L.divIcon({
-            className: 'field-label',
-            html: zoomLevel >= 15
-                ? `<div style="${Styles.fieldLabelContainer}">${feature.properties.name} (${feature.properties.area} га)</div>`
-                : `<div style="${Styles.fieldLabelDot}"></div>`,
-            iconSize: [0, 0]
-        })}>
-            <Popup>{popupContent}</Popup>
-        </Marker>
-    ) : (
-        <Popup position={position}>{popupContent}</Popup>
-    );
-}
+import TrackMarkers from '../TrackMarkers'; // Імпорт нового компонента
+import FieldLabel from '../FieldLabel'; // Імпорт нового компонента
 
 function ZoomTracker({ setZoomLevel }) {
     useMapEvents({
@@ -125,43 +77,7 @@ export default function Map() {
         setKey((prevKey) => prevKey + 1); // Оновлюємо ключ при зміні типу карти
     }, [mapType]);
 
-    const filteredGpsData = useMemo(() => {
-        if (!gpsData || !selectedDate) return [];
-        const selectedDateFormatted = selectedDate.split('T')[0];
-        return gpsData.filter(item => item.date === selectedDateFormatted);
-    }, [gpsData, selectedDate]);
-
-    const lastGpsPoints = useMemo(() => {
-        return filteredGpsData.map(item => {
-            const validData = item.data.filter(gpsPoint => gpsPoint.latitude !== 0 && gpsPoint.longitude !== 0);
-            return validData.length > 0 ? { ...validData[validData.length - 1], imei: item.imei } : null;
-        }).filter(point => point !== null);
-    }, [filteredGpsData]);
-
-    const routeCoordinates = useMemo(() => {
-        if (!filteredGpsData || filteredGpsData.length === 0 || !selectedImei) return [];
-        const selectedVehicleData = filteredGpsData.find(item => item.imei === selectedImei);
-        if (!selectedVehicleData) return [];
-        return selectedVehicleData.data.filter(gpsPoint => gpsPoint.latitude !== 0 && gpsPoint.longitude !== 0).map(gpsPoint => [gpsPoint.latitude, gpsPoint.longitude]);
-    }, [filteredGpsData, selectedImei]);
-
-    const totalDistance = useMemo(() => {
-        if (routeCoordinates.length < 2) return 0;
-
-        return routeCoordinates.reduce((sum, coord, index, array) => {
-            if (index === 0) return sum;
-            const [lat1, lon1] = array[index - 1];
-            const [lat2, lon2] = coord;
-            return sum + haversineDistance(lat1, lon1, lat2, lon2);
-        }, 0).toFixed(2);
-    }, [routeCoordinates]);
-
     const tileLayerConfig = getTileLayerConfig(mapType);
-
-    const handleMarkerClick = (imei) => {
-        dispatch(setImei(imei));
-        dispatch(toggleShowTrack());
-    };
 
     return (
         <Styles.wrapper>
@@ -183,20 +99,12 @@ export default function Map() {
                     />
                 )}
 
-                {showTrack && routeCoordinates.length > 0 && (
-                    <Polyline positions={routeCoordinates} color="blue" weight={5} opacity={0.7} />
-                )}
-
-                {lastGpsPoints.map((point, index) => (
-                    <Marker key={index} position={[point.latitude, point.longitude]} eventHandlers={{ click: () => handleMarkerClick(point.imei) }}>
-                        <Popup>
-                            <strong>Остання точка</strong> <br />
-                            Час: {new Date(point.timestamp).toLocaleString()} <br />
-                            IMEI: {point.imei} <br />
-                            Пройдено: {totalDistance} км
-                        </Popup>
-                    </Marker>
-                ))}
+                <TrackMarkers
+                    gpsData={gpsData}
+                    selectedDate={selectedDate}
+                    selectedImei={selectedImei}
+                    showTrack={showTrack}
+                />
 
                 {showFields && fieldsData.map((field, index) => (
                     <React.Fragment key={index}>
