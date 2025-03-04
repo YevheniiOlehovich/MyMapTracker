@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { MapContainer, Marker, Popup, Polyline, GeoJSON, TileLayer, useMap, useMapEvents } from 'react-leaflet';
+import { MapContainer, GeoJSON, TileLayer, useMapEvents } from 'react-leaflet';
 import Styles from './styled';
 import { getTileLayerConfig } from '../../helpres/tileLayerHelper'; // Імпорт хелпера
 import { fetchGpsData } from '../../store/locationSlice';
@@ -107,10 +107,7 @@ export default function Map() {
                 />
 
                 {showFields && fieldsData.map((field, index) => (
-                    <React.Fragment key={index}>
-                        <GeoJSON data={field} style={Styles.fieldPolygonStyle} />
-                        <FieldLabel feature={field} zoomLevel={zoomLevel} type="field" />
-                    </React.Fragment>
+                    <FieldLabel key={index} feature={field} zoomLevel={zoomLevel} type="field" />
                 ))}
 
                 {showCadastre && cadastreData.map((cadastre, index) => (
@@ -118,10 +115,7 @@ export default function Map() {
                 ))}
 
                 {showGeozones && geozoneData.map((geozone, index) => (
-                    <React.Fragment key={index}>
-                        <GeoJSON data={geozone} style={Styles.geozonePolygonStyle} />
-                        <FieldLabel feature={geozone} zoomLevel={zoomLevel} type="geozone" />
-                    </React.Fragment>
+                    <FieldLabel key={index} feature={geozone} zoomLevel={zoomLevel} type="geozone" />
                 ))}
 
                 <ZoomTracker setZoomLevel={(zoom) => dispatch(setZoomLevel(zoom))} />
