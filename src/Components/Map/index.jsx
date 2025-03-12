@@ -12,6 +12,8 @@ import { selectMapCenter, selectZoomLevel, setZoomLevel, setMapCenter } from '..
 import MapCenterUpdater from '../MapCenterUpdater'; // Імпорт компонента для оновлення центру карти
 import TrackMarkers from '../TrackMarkers'; // Імпорт нового компонента
 import FieldLabel from '../FieldLabel'; // Імпорт нового компонента
+import AddFieldsModal from '../AddFieldsModal'; // Імпорт модального вікна
+import { openAddFieldsModal, setSelectedField } from '../../store/modalSlice'; // Імпорт дій для відкриття модалки та встановлення вибраного поля
 
 function ZoomTracker({ setZoomLevel }) {
     useMapEvents({
@@ -55,10 +57,6 @@ export default function Map() {
     const [key, setKey] = useState(0); // Додаємо стан для ключа
 
     useEffect(() => {
-        console.log('Map center updated:', mapCenter); // Логування центру карти
-    }, [mapCenter]);
-
-    useEffect(() => {
         if (gpsStatus === 'idle') {
             dispatch(fetchGpsData());
         }
@@ -78,6 +76,11 @@ export default function Map() {
     }, [mapType]);
 
     const tileLayerConfig = getTileLayerConfig(mapType);
+
+    const handleEditField = (field) => {
+        dispatch(setSelectedField(field));
+        dispatch(openAddFieldsModal());
+    };
 
     return (
         <Styles.wrapper>
@@ -107,7 +110,7 @@ export default function Map() {
                 />
 
                 {showFields && fieldsData.map((field, index) => (
-                    <FieldLabel key={index} feature={field} zoomLevel={zoomLevel} type="field" />
+                    <FieldLabel key={index} feature={field} zoomLevel={zoomLevel} type="field" onOpenModal={handleEditField} />
                 ))}
 
                 {showCadastre && cadastreData.map((cadastre, index) => (

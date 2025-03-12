@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Marker, Popup, useMap, GeoJSON } from 'react-leaflet';
+import { Marker, GeoJSON, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import Styles from './styled';
 
-function FieldLabel({ feature, zoomLevel, type }) {
+function FieldLabel({ feature, zoomLevel, type, onOpenModal }) {
     const map = useMap();
     const [position, setPosition] = useState(null);
 
@@ -14,18 +14,17 @@ function FieldLabel({ feature, zoomLevel, type }) {
 
     if (!position) return null;
 
-    const popupContent = (
-        <div>
-            <strong>Назва:</strong> {feature.properties.name} <br />
-            <strong>Площа:</strong> {feature.properties.area} га
-        </div>
-    );
-
     const style = {
         color: type === 'field' ? 'green' : 'red',
         weight: 2,
         opacity: 1,
         fillOpacity: 0.1
+    };
+
+    const handleMarkerClick = () => {
+        if (type === 'field') {
+            onOpenModal(feature);
+        }
     };
 
     return (
@@ -37,8 +36,7 @@ function FieldLabel({ feature, zoomLevel, type }) {
                     ? `<div style="${Styles.fieldLabelContainer}">${feature.properties.name} (${feature.properties.area} га)</div>`
                     : `<div style="${Styles.fieldLabelDot}"></div>`,
                 iconSize: [0, 0]
-            })}>
-                <Popup>{popupContent}</Popup>
+            })} eventHandlers={type === 'field' ? { click: handleMarkerClick } : {}}>
             </Marker>
         </>
     );
