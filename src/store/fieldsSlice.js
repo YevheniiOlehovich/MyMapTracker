@@ -18,7 +18,22 @@ const fieldsSlice = createSlice({
         status: 'idle',
         error: null,
     },
-    reducers: {},
+    reducers: {
+        toggleFieldVisibility: (state, action) => {
+            const fieldId = action.payload;
+            const field = state.items.find(field => field._id === fieldId);
+            if (field) {
+                field.visibility = !field.visibility;
+            }
+        },
+        setFieldVisibility: (state, action) => {
+            const { fieldId, isVisible } = action.payload;
+            const field = state.items.find(field => field._id === fieldId);
+            if (field) {
+                field.visibility = isVisible;
+            }
+        }
+    },
     extraReducers: (builder) => {
         builder
             .addCase(fetchFields.pending, (state) => {
@@ -26,7 +41,10 @@ const fieldsSlice = createSlice({
             })
             .addCase(fetchFields.fulfilled, (state, action) => {
                 state.status = 'succeeded';
-                state.items = action.payload;
+                state.items = action.payload.map(field => ({
+                    ...field,
+                    visibility: true, // Додаємо параметр visibility до кожного поля
+                }));
             })
             .addCase(fetchFields.rejected, (state, action) => {
                 state.status = 'failed';
@@ -37,6 +55,15 @@ const fieldsSlice = createSlice({
 
 // Селектор для отримання всіх полів
 export const selectAllFields = (state) => state.fields.items;
+
+// Селектор для отримання видимості поля
+export const selectFieldVisibility = (state, fieldId) => {
+    const field = state.fields.items.find(field => field._id === fieldId);
+    return field ? field.visibility : false;
+};
+
+// Експорт дій
+export const { toggleFieldVisibility, setFieldVisibility } = fieldsSlice.actions;
 
 // Експорт редюсера
 export default fieldsSlice.reducer;

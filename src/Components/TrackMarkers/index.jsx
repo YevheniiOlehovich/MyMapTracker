@@ -19,9 +19,9 @@ const TrackMarkers = ({ gpsData, selectedDate, selectedImei, showTrack }) => {
     const groups = useSelector(selectAllGroups);
 
     // Логування груп
-    useEffect(() => {
-        console.log('Groups:', groups);
-    }, [groups]);
+    // useEffect(() => {
+    //     console.log('Groups:', groups);
+    // }, [groups]);
 
     const getVehicleTypeByImei = (imei) => {
         if (!Array.isArray(groups)) {
@@ -103,9 +103,9 @@ const TrackMarkers = ({ gpsData, selectedDate, selectedImei, showTrack }) => {
         });
     }, [filteredGpsData, selectedImei]);
 
-    useEffect(() => {
-        console.log('Stationary Segments:', stationarySegments);
-    }, [stationarySegments]);
+    // useEffect(() => {
+    //     console.log('Stationary Segments:', stationarySegments);
+    // }, [stationarySegments]);
 
     const handleMarkerClick = (imei) => {
         dispatch(setImei(imei));
@@ -139,7 +139,7 @@ const TrackMarkers = ({ gpsData, selectedDate, selectedImei, showTrack }) => {
                 return (
                     <Marker key={index} position={[point.latitude, point.longitude]} icon={new L.Icon({
                         iconUrl: getIconByType(vehicleType),
-                        iconSize: [30, 30], // Розмір іконки
+                        iconSize: [50, 50], // Розмір іконки
                         iconAnchor: [12, 25], // Точка прив'язки іконки
                         popupAnchor: [0, -25] // Точка прив'язки попапу
                     })} zIndexOffset={1000} eventHandlers={{ click: () => handleMarkerClick(point.imei) }}>

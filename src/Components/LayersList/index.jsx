@@ -57,7 +57,7 @@ const LayersList = () => {
                 <Styles.btn onClick={toggleMapListVisibility}>
                     <Styles.btnIco
                         pic={TriangleIco}
-                        rotation={isMapListVisible ? 0 : 180} // Перевертаємо трикутник
+                        rotation={isMapListVisible ? 180 : 0} // Перевертаємо трикутник
                     />
                 </Styles.btn>
             </Styles.Block>
@@ -142,7 +142,7 @@ const LayersList = () => {
                 <Styles.btn onClick={toggleGeoDataListVisibility}>
                     <Styles.btnIco
                         pic={TriangleIco}
-                        rotation={isGeoDataListVisible ? 0 : 180} // Перевертаємо трикутник
+                        rotation={isGeoDataListVisible ? 180 : 0} // Перевертаємо трикутник
                     />
                 </Styles.btn>
             </Styles.Block>

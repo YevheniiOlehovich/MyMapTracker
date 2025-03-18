@@ -12,6 +12,7 @@ import geozoneReducer from './geozoneSlice';
 import layersReducer from './layersList'
 import mapCenterSliceReducer from './mapCenterSlice'
 
+
 const store = configureStore({
     reducer: {
         gps: gpsReducer, 

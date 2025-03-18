@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { MapContainer, GeoJSON, TileLayer, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, useMapEvents } from 'react-leaflet';
 import Styles from './styled';
 import { getTileLayerConfig } from '../../helpres/tileLayerHelper'; // Імпорт хелпера
 import { fetchGpsData } from '../../store/locationSlice';
-import { fetchFields, selectAllFields } from '../../store/fieldsSlice';
+import { fetchFields, selectAllFields } from '../../store/fieldsSlice'; // Імпорт селектора для отримання полів
 import { fetchCadastre, selectAllCadastre } from '../../store/cadastreSlice';
 import { fetchGeozone, selectAllGeozone } from '../../store/geozoneSlice';
 import { selectShowFields, selectShowCadastre, selectShowGeozones } from '../../store/layersList'; // Імпорт селекторів для керування шарами
@@ -75,6 +75,14 @@ export default function Map() {
         setKey((prevKey) => prevKey + 1); // Оновлюємо ключ при зміні типу карти
     }, [mapType]);
 
+    useEffect(() => {
+        console.log('Fields Data:', fieldsData);
+    }, [fieldsData]);
+
+    useEffect(() => {
+        console.log('Cadastre Data:', cadastreData);
+    }, [cadastreData]);
+
     const tileLayerConfig = getTileLayerConfig(mapType);
 
     const handleEditField = (field) => {
@@ -110,11 +118,13 @@ export default function Map() {
                 />
 
                 {showFields && fieldsData.map((field, index) => (
-                    <FieldLabel key={index} feature={field} zoomLevel={zoomLevel} type="field" onOpenModal={handleEditField} />
+                    field.visibility && (
+                        <FieldLabel key={index} feature={field} zoomLevel={zoomLevel} type="field" onOpenModal={handleEditField} />
+                    )
                 ))}
 
                 {showCadastre && cadastreData.map((cadastre, index) => (
-                    <GeoJSON key={index} data={cadastre} style={Styles.cadastrePolygonStyle} />
+                    <FieldLabel key={index} feature={cadastre} zoomLevel={zoomLevel} type="cadastre" />
                 ))}
 
                 {showGeozones && geozoneData.map((geozone, index) => (
