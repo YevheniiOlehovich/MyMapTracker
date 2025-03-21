@@ -12,8 +12,15 @@ import { openAddFieldsModal, setSelectedField } from '../../store/modalSlice'; /
 
 export default function FieldsLit() {
     const dispatch = useDispatch();
-    const fieldsData = useSelector(selectAllFields); // Отримання полів з Redux-стору
-    const [isFieldsListVisible, setIsFieldsListVisible] = useState(true); // Додаємо стан для видимості списку полів
+    const fieldsData = useSelector(selectAllFields);
+    const [isFieldsListVisible, setIsFieldsListVisible] = useState(true);
+
+    const fieldVisibility = useSelector((state) =>
+        fieldsData.reduce((acc, field) => {
+            acc[field._id] = selectFieldVisibility(state, field._id);
+            return acc;
+        }, {})
+    );
 
     const toggleFieldsListVisibility = () => {
         setIsFieldsListVisible(!isFieldsListVisible);
@@ -38,35 +45,31 @@ export default function FieldsLit() {
         <Styles.wrapper>
             <Styles.block>
                 <Styles.Title>Поля</Styles.Title>
-            
                 <Styles.btn onClick={toggleFieldsListVisibility}>
                     <Styles.btnIco
                         pic={TriangleIco}
-                        rotation={isFieldsListVisible ? 180 : 0} // Перевертаємо трикутник
+                        rotation={isFieldsListVisible ? 180 : 0}
                     />
                 </Styles.btn>
             </Styles.block>
-            
+
             <Styles.list>
-                {isFieldsListVisible && fieldsData.map((field, index) => {
-                    const isVisible = useSelector(state => selectFieldVisibility(state, field._id));
-                    return (
-                        <Styles.fieldBlock key={index}>
-                            <Styles.fieldName>{field.properties.name}</Styles.fieldName>
-                            <Styles.btnBlock>
-                                <Styles.btn onClick={() => handleToggleFieldVisibility(field._id)}>
-                                    <Styles.btnIco pic={isVisible ? ShowIco : HideIco} />
-                                </Styles.btn>
-                                <Styles.btn onClick={() => handleCenterMap(field)}>
-                                    <Styles.btnIco pic={LocationIco}></Styles.btnIco>
-                                </Styles.btn>
-                                <Styles.btn onClick={() => handleEditField(field)}>
-                                    <Styles.btnIco pic={EditIco}></Styles.btnIco>
-                                </Styles.btn>
-                            </Styles.btnBlock>
-                        </Styles.fieldBlock>
-                    );
-                })}
+                {isFieldsListVisible && fieldsData.map((field, index) => (
+                    <Styles.fieldBlock key={index}>
+                        <Styles.fieldName>{field.properties.name}</Styles.fieldName>
+                        <Styles.btnBlock>
+                            <Styles.btn onClick={() => handleToggleFieldVisibility(field._id)}>
+                                <Styles.btnIco pic={fieldVisibility[field._id] ? ShowIco : HideIco} />
+                            </Styles.btn>
+                            <Styles.btn onClick={() => handleCenterMap(field)}>
+                                <Styles.btnIco pic={LocationIco} />
+                            </Styles.btn>
+                            <Styles.btn onClick={() => handleEditField(field)}>
+                                <Styles.btnIco pic={EditIco} />
+                            </Styles.btn>
+                        </Styles.btnBlock>
+                    </Styles.fieldBlock>
+                ))}
             </Styles.list>
         </Styles.wrapper>
     );

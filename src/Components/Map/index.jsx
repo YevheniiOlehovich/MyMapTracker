@@ -1,18 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { MapContainer, TileLayer, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, useMapEvents, Polygon } from 'react-leaflet';
 import Styles from './styled';
 import { getTileLayerConfig } from '../../helpres/tileLayerHelper'; // Імпорт хелпера
 import { fetchGpsData } from '../../store/locationSlice';
 import { fetchFields, selectAllFields } from '../../store/fieldsSlice'; // Імпорт селектора для отримання полів
 import { fetchCadastre, selectAllCadastre } from '../../store/cadastreSlice';
 import { fetchGeozone, selectAllGeozone } from '../../store/geozoneSlice';
+import { fetchLandSquatting, selectAllLandSquatting } from '../../store/landSquattingSlice'; // Імпорт селектора для отримання даних land_squatting
 import { selectShowFields, selectShowCadastre, selectShowGeozones } from '../../store/layersList'; // Імпорт селекторів для керування шарами
-import { selectMapCenter, selectZoomLevel, setZoomLevel, setMapCenter } from '../../store/mapCenterSlice'; // Імпорт селекторів і дій для керування центром карти
+import { selectMapCenter, selectZoomLevel, setZoomLevel } from '../../store/mapCenterSlice'; // Імпорт селекторів і дій для керування центром карти
 import MapCenterUpdater from '../MapCenterUpdater'; // Імпорт компонента для оновлення центру карти
 import TrackMarkers from '../TrackMarkers'; // Імпорт нового компонента
 import FieldLabel from '../FieldLabel'; // Імпорт нового компонента
-import AddFieldsModal from '../AddFieldsModal'; // Імпорт модального вікна
 import { openAddFieldsModal, setSelectedField } from '../../store/modalSlice'; // Імпорт дій для відкриття модалки та встановлення вибраного поля
 
 function ZoomTracker({ setZoomLevel }) {
@@ -46,6 +46,10 @@ export default function Map() {
     const geozoneStatus = useSelector((state) => state.geozone.status);
     const geozoneError = useSelector((state) => state.geozone.error);
 
+    const landSquattingData = useSelector(selectAllLandSquatting); // Отримання даних land_squatting
+    const landSquattingStatus = useSelector((state) => state.landSquatting.status);
+    const landSquattingError = useSelector((state) => state.landSquatting.error);
+
     const showFields = useSelector(selectShowFields);
     const showCadastre = useSelector(selectShowCadastre);
     const showGeozones = useSelector(selectShowGeozones);
@@ -69,19 +73,18 @@ export default function Map() {
         if (geozoneStatus === 'idle') {
             dispatch(fetchGeozone());
         }
-    }, [dispatch, gpsStatus, fieldsStatus, cadastreStatus, geozoneStatus]);
+        if (landSquattingStatus === 'idle') {
+            dispatch(fetchLandSquatting());
+        }
+    }, [dispatch, gpsStatus, fieldsStatus, cadastreStatus, geozoneStatus, landSquattingStatus]);
 
     useEffect(() => {
         setKey((prevKey) => prevKey + 1); // Оновлюємо ключ при зміні типу карти
     }, [mapType]);
 
     useEffect(() => {
-        console.log('Fields Data:', fieldsData);
+        console.log('fields Data:', fieldsData); // Логування даних land_squatting
     }, [fieldsData]);
-
-    useEffect(() => {
-        console.log('Cadastre Data:', cadastreData);
-    }, [cadastreData]);
 
     const tileLayerConfig = getTileLayerConfig(mapType);
 
@@ -130,6 +133,36 @@ export default function Map() {
                 {showGeozones && geozoneData.map((geozone, index) => (
                     <FieldLabel key={index} feature={geozone} zoomLevel={zoomLevel} type="geozone" />
                 ))}
+
+                {fieldsData.map((field, index) => (
+                    field.visibility && (
+                        <React.Fragment key={index}>
+                            {/* Відображення основного поля */}
+                            <FieldLabel key={index} feature={field} zoomLevel={zoomLevel} type="field" onOpenModal={handleEditField} />
+                            
+                            {/* Відображення matching_plots (червоні) */}
+                            {field.matching_plots && field.matching_plots.map((plot, plotIndex) => (
+                                <Polygon
+                                    key={`matching-${index}-${plotIndex}`}
+                                    positions={plot.geometry.coordinates[0].map(coord => [coord[1], coord[0]])}
+                                    color="red"
+                                />
+                            ))}
+
+                            {/* Відображення not_processed (зелені) */}
+                            {field.not_processed && field.not_processed.map((plot, plotIndex) => (
+                                <Polygon
+                                    key={`not-processed-${index}-${plotIndex}`}
+                                    positions={plot.geometry.coordinates[0].map(coord => [coord[1], coord[0]])}
+                                    color="green"
+                                />
+                            ))}
+                        </React.Fragment>
+                    )
+                ))}
+
+
+                
 
                 <ZoomTracker setZoomLevel={(zoom) => dispatch(setZoomLevel(zoom))} />
                 <MapCenterUpdater /> {/* Додаємо компонент для оновлення центру карти */}

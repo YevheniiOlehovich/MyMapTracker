@@ -28,7 +28,7 @@ function FieldLabel({ feature, zoomLevel, type, onOpenModal }) {
     };
 
     const labelContent = type === 'field'
-        ? `${feature.properties.name} (${feature.properties.area} га)`
+        ? `${feature.properties.name} (${feature.properties.calculated_area} га)`
         : `${feature.properties.name} (${feature.properties.area} га)`; // Відображаємо назву та площу для геозон
 
     return (
