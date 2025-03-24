@@ -7,7 +7,11 @@ import { fetchGpsData } from '../../store/locationSlice';
 import { fetchFields, selectAllFields } from '../../store/fieldsSlice'; // Імпорт селектора для отримання полів
 import { fetchCadastre, selectAllCadastre } from '../../store/cadastreSlice';
 import { fetchGeozone, selectAllGeozone } from '../../store/geozoneSlice';
-import { fetchLandSquatting, selectAllLandSquatting } from '../../store/landSquattingSlice'; // Імпорт селектора для отримання даних land_squatting
+
+
+// Імпорт селектора для отримання даних land_squatting
+// import { fetchLandSquatting, selectAllLandSquatting } from '../../store/landSquattingSlice'; 
+
 import { selectShowFields, selectShowCadastre, selectShowGeozones } from '../../store/layersList'; // Імпорт селекторів для керування шарами
 import { selectMapCenter, selectZoomLevel, setZoomLevel } from '../../store/mapCenterSlice'; // Імпорт селекторів і дій для керування центром карти
 import MapCenterUpdater from '../MapCenterUpdater'; // Імпорт компонента для оновлення центру карти
@@ -46,9 +50,10 @@ export default function Map() {
     const geozoneStatus = useSelector((state) => state.geozone.status);
     const geozoneError = useSelector((state) => state.geozone.error);
 
-    const landSquattingData = useSelector(selectAllLandSquatting); // Отримання даних land_squatting
-    const landSquattingStatus = useSelector((state) => state.landSquatting.status);
-    const landSquattingError = useSelector((state) => state.landSquatting.error);
+    // Отримання даних land_squatting
+    // const landSquattingData = useSelector(selectAllLandSquatting); 
+    // const landSquattingStatus = useSelector((state) => state.landSquatting.status);
+    // const landSquattingError = useSelector((state) => state.landSquatting.error);
 
     const showFields = useSelector(selectShowFields);
     const showCadastre = useSelector(selectShowCadastre);
@@ -59,6 +64,24 @@ export default function Map() {
     const zoomLevel = useSelector(selectZoomLevel); // Отримання рівня зуму з Redux
 
     const [key, setKey] = useState(0); // Додаємо стан для ключа
+
+    // useEffect(() => {
+    //     if (gpsStatus === 'idle') {
+    //         dispatch(fetchGpsData());
+    //     }
+    //     if (fieldsStatus === 'idle') {
+    //         dispatch(fetchFields());
+    //     }
+    //     if (cadastreStatus === 'idle') {
+    //         dispatch(fetchCadastre());
+    //     }
+    //     if (geozoneStatus === 'idle') {
+    //         dispatch(fetchGeozone());
+    //     }
+    //     if (landSquattingStatus === 'idle') {
+    //         dispatch(fetchLandSquatting());
+    //     }
+    // }, [dispatch, gpsStatus, fieldsStatus, cadastreStatus, geozoneStatus, landSquattingStatus]);
 
     useEffect(() => {
         if (gpsStatus === 'idle') {
@@ -73,18 +96,15 @@ export default function Map() {
         if (geozoneStatus === 'idle') {
             dispatch(fetchGeozone());
         }
-        if (landSquattingStatus === 'idle') {
-            dispatch(fetchLandSquatting());
-        }
-    }, [dispatch, gpsStatus, fieldsStatus, cadastreStatus, geozoneStatus, landSquattingStatus]);
+    }, [dispatch, gpsStatus, fieldsStatus, cadastreStatus, geozoneStatus]);
 
     useEffect(() => {
         setKey((prevKey) => prevKey + 1); // Оновлюємо ключ при зміні типу карти
     }, [mapType]);
 
-    useEffect(() => {
-        console.log('fields Data:', fieldsData); // Логування даних land_squatting
-    }, [fieldsData]);
+    // useEffect(() => {
+    //     console.log('Land Squatting Data:', landSquattingData); // Логування даних land_squatting
+    // }, [landSquattingData]);
 
     const tileLayerConfig = getTileLayerConfig(mapType);
 
@@ -122,20 +142,6 @@ export default function Map() {
 
                 {showFields && fieldsData.map((field, index) => (
                     field.visibility && (
-                        <FieldLabel key={index} feature={field} zoomLevel={zoomLevel} type="field" onOpenModal={handleEditField} />
-                    )
-                ))}
-
-                {showCadastre && cadastreData.map((cadastre, index) => (
-                    <FieldLabel key={index} feature={cadastre} zoomLevel={zoomLevel} type="cadastre" />
-                ))}
-
-                {showGeozones && geozoneData.map((geozone, index) => (
-                    <FieldLabel key={index} feature={geozone} zoomLevel={zoomLevel} type="geozone" />
-                ))}
-
-                {fieldsData.map((field, index) => (
-                    field.visibility && (
                         <React.Fragment key={index}>
                             {/* Відображення основного поля */}
                             <FieldLabel key={index} feature={field} zoomLevel={zoomLevel} type="field" onOpenModal={handleEditField} />
@@ -161,8 +167,13 @@ export default function Map() {
                     )
                 ))}
 
+                {showCadastre && cadastreData.map((cadastre, index) => (
+                    <FieldLabel key={index} feature={cadastre} zoomLevel={zoomLevel} type="cadastre" />
+                ))}
 
-                
+                {showGeozones && geozoneData.map((geozone, index) => (
+                    <FieldLabel key={index} feature={geozone} zoomLevel={zoomLevel} type="geozone" />
+                ))}
 
                 <ZoomTracker setZoomLevel={(zoom) => dispatch(setZoomLevel(zoom))} />
                 <MapCenterUpdater /> {/* Додаємо компонент для оновлення центру карти */}

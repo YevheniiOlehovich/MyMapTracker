@@ -68,21 +68,21 @@ const geozoneSchema = new mongoose.Schema({
 const Geozone = mongoose.models.Geozone || mongoose.model('Geozone', geozoneSchema);
 
 // Створення схеми і моделі для даних land_squatting
-const landSquattingSchema = new mongoose.Schema({
-    type: { type: String, required: true },
-    geometry: {
-        type: { type: String, required: true },
-        coordinates: { type: Array, required: true },
-    },
-    id: { type: Number, required: true },
-    properties: {
-        name: { type: String, required: true },
-        area: { type: String, required: true },
-        uid: { type: String, required: true },
-    },
-});
+// const landSquattingSchema = new mongoose.Schema({
+//     type: { type: String, required: true },
+//     geometry: {
+//         type: { type: String, required: true },
+//         coordinates: { type: Array, required: true },
+//     },
+//     id: { type: Number, required: true },
+//     properties: {
+//         name: { type: String, required: true },
+//         area: { type: String, required: true },
+//         uid: { type: String, required: true },
+//     },
+// });
 
-const LandSquatting = mongoose.models.LandSquatting || mongoose.model('LandSquatting', landSquattingSchema);
+// const LandSquatting = mongoose.models.LandSquatting || mongoose.model('LandSquatting', landSquattingSchema);
 
 // Маршрут для збереження даних полів
 router.post('/fields', async (req, res) => {
@@ -162,24 +162,24 @@ router.get('/geozone', async (req, res) => {
 });
 
 // Маршрут для збереження даних land_squatting
-router.post('/land_squatting', async (req, res) => {
-    try {
-        const landSquattingData = req.body;
-        await LandSquatting.insertMany(landSquattingData);
-        res.status(201).send('Land squatting data saved successfully');
-    } catch (error) {
-        res.status(500).send('Error saving land squatting data: ' + error.message);
-    }
-});
+// router.post('/land_squatting', async (req, res) => {
+//     try {
+//         const landSquattingData = req.body;
+//         await LandSquatting.insertMany(landSquattingData);
+//         res.status(201).send('Land squatting data saved successfully');
+//     } catch (error) {
+//         res.status(500).send('Error saving land squatting data: ' + error.message);
+//     }
+// });
 
 // Маршрут для отримання всіх даних land_squatting
-router.get('/land_squatting', async (req, res) => {
-    try {
-        const landSquattingData = await LandSquatting.find();
-        res.status(200).json(landSquattingData);
-    } catch (error) {
-        res.status(500).send('Error fetching land squatting data: ' + error.message);
-    }
-});
+// router.get('/land_squatting', async (req, res) => {
+//     try {
+//         const landSquattingData = await LandSquatting.find();
+//         res.status(200).json(landSquattingData);
+//     } catch (error) {
+//         res.status(500).send('Error fetching land squatting data: ' + error.message);
+//     }
+// });
 
 export default router;
