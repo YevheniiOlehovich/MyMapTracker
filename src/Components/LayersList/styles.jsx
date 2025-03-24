@@ -5,12 +5,12 @@ const Styles = {
         position: absolute;
         top: 0;
         right: ${({ isVisible }) => (isVisible ? '0' : '-270px')};
-        width: 300px;
+        width: 330px;
         height: 100vh;
         background-color: rgba(0, 0, 0, 0.7);
         z-index: 5;
         transition: right 0.3s ease-in-out;
-        padding: 10px;
+        padding: 10px 10px 10px 30px;
     `,
     showBtn: styled.div`
         position: absolute;
@@ -80,7 +80,8 @@ const Styles = {
         background-position: center;
         transition: 0.2s ease;
         transform: rotate(${props => props.rotation}deg);
-    `
+    `,
+    
 };
 
 export default Styles;

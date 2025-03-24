@@ -14,6 +14,7 @@ export default function FieldsLit() {
     const dispatch = useDispatch();
     const fieldsData = useSelector(selectAllFields);
     const [isFieldsListVisible, setIsFieldsListVisible] = useState(true);
+    const [searchTerm, setSearchTerm] = useState(''); // Додаємо стан для зберігання значення пошуку
 
     const fieldVisibility = useSelector((state) =>
         fieldsData.reduce((acc, field) => {
@@ -41,6 +42,14 @@ export default function FieldsLit() {
         dispatch(toggleFieldVisibility(fieldId));
     };
 
+    const handleSearchChange = (e) => {
+        setSearchTerm(e.target.value);
+    };
+
+    const filteredFields = fieldsData.filter((field) =>
+        field.properties.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
     return (
         <Styles.wrapper>
             <Styles.block>
@@ -53,8 +62,17 @@ export default function FieldsLit() {
                 </Styles.btn>
             </Styles.block>
 
+            {isFieldsListVisible && (
+                <Styles.searchInput
+                    type="text"
+                    placeholder="Пошук поля по назві"
+                    value={searchTerm}
+                    onChange={handleSearchChange}
+                />
+            )}
+
             <Styles.list>
-                {isFieldsListVisible && fieldsData.map((field, index) => (
+                {isFieldsListVisible && filteredFields.map((field, index) => (
                     <Styles.fieldBlock key={index}>
                         <Styles.fieldName>{field.properties.name}</Styles.fieldName>
                         <Styles.btnBlock>

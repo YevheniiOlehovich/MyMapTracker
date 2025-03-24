@@ -80,6 +80,16 @@ const Styles = {
         height: 700px; 
         overflow-y: auto; 
         white-space: nowrap;  
+    `,
+    searchInput: styled.input`
+        width: 100%;
+        height: 30px;
+        padding: 4px;
+        margin-bottom: 20px;
+        &:active{
+            border: none;
+            padding: none;
+        }  
     `
 };
 
