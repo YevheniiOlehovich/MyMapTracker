@@ -1,5 +1,6 @@
 import styled from 'styled-components';
 import ClosePic from '../../assets/ico/close-icon.png'
+import ArrowIco from '../../assets/ico/arrow.svg';
 
 const Styles = {
     wrapper: styled.div`
@@ -18,7 +19,7 @@ const Styles = {
     `,
     modal: styled.div`
         width: 400px;
-        height: 750px;
+        height: auto;
         background: white;
         padding: 10px;
         display: flex;
@@ -55,7 +56,8 @@ const Styles = {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 20px;
+        margin-bottom: 15px;
+        transition: 0.4s ease-in-out;
     `,
     subtitle: styled.h5`
         font-family: Arial, sans-serif;
@@ -83,6 +85,46 @@ const Styles = {
         overflow: auto; 
         background-color: ${(props) => (props.disabled ? 'lightgrey' : 'white')}; // Додаємо фон для заблокованого textarea
     `,
+    arrowBlock: styled.div`
+        width: 50px;
+        height: 20px;
+        position: absolute;
+        top: 10px;
+        right: 40px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    `,
+    arrowBtn: styled.button`
+        width: 20px;
+        height: 20px;
+        background-image: url(${ArrowIco});
+        background-size: contain;
+        background-repeat: no-repeat; 
+        cursor: pointer;
+        background-position: center;
+        transform: ${(props) => (props.direction === 'left' ? 'rotate(180deg)' : 'rotate(0deg)')};
+    `,
+    labelBlock: styled.div`
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+    `,
+    rowBlock: styled.div`
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+    `,
+    text: styled.p`
+        display: block;
+        font-family: Arial, sans-serif;
+        font-weight: 700;
+        font-size: 15px;
+        color: black;
+        margin: 0;
+    `,
+
 };
 
 export default Styles;
