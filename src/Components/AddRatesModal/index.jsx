@@ -1,4 +1,4 @@
-import { StyledWrapper, StyledModal, StyledCloseButton, StyledTitle, StyledLabel, StyledSubtitle, StyledInput } from './styled';
+import Styles from './styled';
 import { useState, useEffect } from 'react';
 import Button from '../Button';
 import apiRoutes from '../../helpres/ApiRoutes';
@@ -48,32 +48,32 @@ export default function AddRatesModal({ onClose }) {
             console.error('Помилка при збереженні тарифів:', error);
         }
     };
-    
+
     return (
-        <StyledWrapper onClick={handleWrapperClick}>
-            <StyledModal>
-                <StyledCloseButton onClick={onClose} /> 
-                <StyledTitle>Поточна тарифна сітка</StyledTitle>
-                <StyledLabel>
-                    <StyledSubtitle>Тариф для легкового автомобілю, грн/км</StyledSubtitle>
-                    <StyledInput value={carRate} onChange={(e) => setCarRate(e.target.value)} />
-                </StyledLabel>
-                <StyledLabel>
-                    <StyledSubtitle>Тариф для вантажівки, грн/км</StyledSubtitle>
-                    <StyledInput value={truckRate} onChange={(e) => setTruckRate(e.target.value)} />
-                </StyledLabel>
-                <StyledLabel>
-                    <StyledSubtitle>Тариф для трактора, грн/км</StyledSubtitle>
-                    <StyledInput value={tracktorRate} onChange={(e) => setTracktorRate(e.target.value)} />
-                </StyledLabel>
-                <StyledLabel>
-                    <StyledSubtitle>Тариф для комбайна, грн/км</StyledSubtitle>
-                    <StyledInput value={combineRate} onChange={(e) => setCombineRate(e.target.value)} />
-                </StyledLabel>
+        <Styles.Wrapper onClick={handleWrapperClick}>
+            <Styles.Modal>
+                <Styles.CloseButton onClick={onClose} />
+                <Styles.Title>Поточна тарифна сітка</Styles.Title>
+                <Styles.Label>
+                    <Styles.Subtitle>Тариф для легкового автомобілю, грн/км</Styles.Subtitle>
+                    <Styles.Input value={carRate} onChange={(e) => setCarRate(e.target.value)} />
+                </Styles.Label>
+                <Styles.Label>
+                    <Styles.Subtitle>Тариф для вантажівки, грн/км</Styles.Subtitle>
+                    <Styles.Input value={truckRate} onChange={(e) => setTruckRate(e.target.value)} />
+                </Styles.Label>
+                <Styles.Label>
+                    <Styles.Subtitle>Тариф для трактора, грн/км</Styles.Subtitle>
+                    <Styles.Input value={tracktorRate} onChange={(e) => setTracktorRate(e.target.value)} />
+                </Styles.Label>
+                <Styles.Label>
+                    <Styles.Subtitle>Тариф для комбайна, грн/км</Styles.Subtitle>
+                    <Styles.Input value={combineRate} onChange={(e) => setCombineRate(e.target.value)} />
+                </Styles.Label>
                 <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
                     <Button text={'Зберегти'} onClick={handleSave} />
                 </div>
-            </StyledModal>
-        </StyledWrapper>
+            </Styles.Modal>
+        </Styles.Wrapper>
     );
 }

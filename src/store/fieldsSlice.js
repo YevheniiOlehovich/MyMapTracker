@@ -32,7 +32,14 @@ const fieldsSlice = createSlice({
             if (field) {
                 field.visibility = isVisible;
             }
-        }
+        },
+        updateField: (state, action) => {
+            const updatedField = action.payload;
+            const index = state.items.findIndex(field => field._id === updatedField._id);
+            if (index !== -1) {
+                state.items[index] = { ...state.items[index], ...updatedField }; // Оновлюємо поле
+            }
+        },
     },
     extraReducers: (builder) => {
         builder
@@ -63,7 +70,7 @@ export const selectFieldVisibility = (state, fieldId) => {
 };
 
 // Експорт дій
-export const { toggleFieldVisibility, setFieldVisibility } = fieldsSlice.actions;
+export const { toggleFieldVisibility, setFieldVisibility, updateField } = fieldsSlice.actions;
 
 // Експорт редюсера
 export default fieldsSlice.reducer;

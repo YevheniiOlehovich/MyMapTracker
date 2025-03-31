@@ -5,25 +5,56 @@ const router = express.Router();
 
 // Створення схеми і моделі для даних полів
 const fieldSchema = new mongoose.Schema({
-    type: String,
+    type: { type: String },
     geometry: {
         type: { type: String },
         coordinates: Array,
     },
-    id: Number,
+    id: { type: Number },
     properties: {
-        name: String,
-        mapkey: String,
-        area: String,
-        koatuu: String,
-        note: String,
-        culture: String,
-        sort: String,
-        date: String,
-        crop: String,
-        branch: String,
-        region: String,
+        name: { type: String }, // Додано поле name
+        mapkey: { type: String }, // Додано поле mapkey
+        area: { type: String }, // Додано поле area
+        koatuu: { type: String },
+        note: { type: String },
+        culture: { type: String },
+        sort: { type: String },
+        date: { type: String },
+        crop: { type: String },
+        branch: { type: String },
+        region: { type: String },
+        calculated_area: { type: Number }, // Додано поле calculated_area
     },
+    matching_plots: [
+        {
+            type: { type: String },
+            geometry: {
+                type: { type: String },
+                coordinates: Array,
+            },
+            id: { type: Number },
+            properties: {
+                uid: { type: String },
+                area: { type: String },
+                name: { type: String },
+            },
+        },
+    ],
+    not_processed: [
+        {
+            type: { type: String },
+            geometry: {
+                type: { type: String },
+                coordinates: Array,
+            },
+            id: { type: Number },
+            properties: {
+                uid: { type: String },
+                area: { type: String },
+                name: { type: String },
+            },
+        },
+    ],
 });
 
 const Field = mongoose.models.Field || mongoose.model('Field', fieldSchema);
@@ -84,17 +115,6 @@ const Geozone = mongoose.models.Geozone || mongoose.model('Geozone', geozoneSche
 
 // const LandSquatting = mongoose.models.LandSquatting || mongoose.model('LandSquatting', landSquattingSchema);
 
-// Маршрут для збереження даних полів
-router.post('/fields', async (req, res) => {
-    try {
-        const fields = req.body;
-        await Field.insertMany(fields);
-        res.status(201).send('Fields saved successfully');
-    } catch (error) {
-        res.status(500).send('Error saving fields: ' + error.message);
-    }
-});
-
 // Маршрут для отримання всіх полів
 router.get('/fields', async (req, res) => {
     try {
@@ -109,7 +129,11 @@ router.get('/fields', async (req, res) => {
 router.put('/fields/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const updatedField = await Field.findByIdAndUpdate(id, req.body, { new: true });
+        const updatedField = await Field.findByIdAndUpdate(
+            id,
+            req.body,
+            { new: true, runValidators: true }
+        );
         if (!updatedField) {
             return res.status(404).json({ message: 'Поле не знайдено' });
         }

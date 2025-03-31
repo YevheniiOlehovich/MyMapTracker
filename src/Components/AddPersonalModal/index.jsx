@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchGroups, selectAllGroups } from '../../store/groupSlice'; 
-import { StyledWrapper, StyledModal, StyledCloseButton, StyledTitle, StyledLabel, StyledSubtitle, StyledInput, StyledTextArea, StyledPhotoBlock, PhotoBlock, BlockColumn, PhotoPic, StyledButtonLabel, StyledInputFile, StyledText } from './styles';
+import Styles from './styles';
 import closeModal from "../../helpres/closeModal";
 import Button from '../Button';
 import apiRoutes from '../../helpres/ApiRoutes';
@@ -128,72 +128,140 @@ export default function AddPersonalModal({ onClose }) {
     };
     
     return (
-        <StyledWrapper onClick={handleWrapperClick}>
-            <StyledModal>
-                <StyledCloseButton onClick={onClose} />
-                <StyledTitle>{editPersonId ? 'Редагування працівника' : 'Додавання нового працівника'}</StyledTitle>
+        // <StyledWrapper onClick={handleWrapperClick}>
+        //     <StyledModal>
+        //         <StyledCloseButton onClick={onClose} />
+        //         <StyledTitle>{editPersonId ? 'Редагування працівника' : 'Додавання нового працівника'}</StyledTitle>
                 
-                <StyledPhotoBlock>
-                    <BlockColumn>
-                        <StyledSubtitle>Фото працівника</StyledSubtitle>
-                        <StyledButtonLabel>
-                            <StyledText>{editPersonId ? 'Змінити фото' : 'Додати фото'}</StyledText>
-                            <StyledInputFile 
-                                type='file' 
-                                accept="image/*" 
-                                onChange={handlePhotoChange} 
-                            />
-                        </StyledButtonLabel>
-                    </BlockColumn>
+        //         <StyledPhotoBlock>
+        //             <BlockColumn>
+        //                 <StyledSubtitle>Фото працівника</StyledSubtitle>
+        //                 <StyledButtonLabel>
+        //                     <StyledText>{editPersonId ? 'Змінити фото' : 'Додати фото'}</StyledText>
+        //                     <StyledInputFile 
+        //                         type='file' 
+        //                         accept="image/*" 
+        //                         onChange={handlePhotoChange} 
+        //                     />
+        //                 </StyledButtonLabel>
+        //             </BlockColumn>
                     
-                    <PhotoBlock>
-                        <PhotoPic src={employeePhoto instanceof Blob ? URL.createObjectURL(employeePhoto) : employeePhoto} />
-                    </PhotoBlock>
-                </StyledPhotoBlock>
+        //             <PhotoBlock>
+        //                 <PhotoPic src={employeePhoto instanceof Blob ? URL.createObjectURL(employeePhoto) : employeePhoto} />
+        //             </PhotoBlock>
+        //         </StyledPhotoBlock>
                 
-                <StyledLabel>
-                    <StyledSubtitle>Виберіть групу</StyledSubtitle>
-                    <SelectComponent 
-                        options={groups} 
-                        value={selectedGroup ? { value: selectedGroup, label: selectedGroupName } : null} 
-                        onChange={handleGroupChange} 
-                        placeholder="Оберіть групу"
-                    />
-                </StyledLabel>
+        //         <StyledLabel>
+        //             <StyledSubtitle>Виберіть групу</StyledSubtitle>
+        //             <SelectComponent 
+        //                 options={groups} 
+        //                 value={selectedGroup ? { value: selectedGroup, label: selectedGroupName } : null} 
+        //                 onChange={handleGroupChange} 
+        //                 placeholder="Оберіть групу"
+        //             />
+        //         </StyledLabel>
 
-                <StyledLabel>
-                    <StyledSubtitle>Ім'я працівника</StyledSubtitle>
-                    <StyledInput 
-                        value={firstName}
-                        onChange={(e) => setFirstName(e.target.value)}
-                    />
-                </StyledLabel>
-                <StyledLabel>
-                    <StyledSubtitle>Прізвище працівника</StyledSubtitle>
-                    <StyledInput 
-                        value={lastName} 
-                        onChange={(e) => setLastName(e.target.value)}
-                    />
-                </StyledLabel>
-                <StyledLabel>
-                    <StyledSubtitle>Контактний номер</StyledSubtitle>
-                    <StyledInput 
-                        value={contactNumber} 
-                        onChange={(e) => setContactNumber(e.target.value)}
-                    />
-                </StyledLabel>
-                <StyledLabel>
-                    <StyledTextArea
-                        maxLength={250}
-                        value={note} 
-                        onChange={(e) => setNote(e.target.value)}
-                    />
-                </StyledLabel>
+        //         <StyledLabel>
+        //             <StyledSubtitle>Ім'я працівника</StyledSubtitle>
+        //             <StyledInput 
+        //                 value={firstName}
+        //                 onChange={(e) => setFirstName(e.target.value)}
+        //             />
+        //         </StyledLabel>
+        //         <StyledLabel>
+        //             <StyledSubtitle>Прізвище працівника</StyledSubtitle>
+        //             <StyledInput 
+        //                 value={lastName} 
+        //                 onChange={(e) => setLastName(e.target.value)}
+        //             />
+        //         </StyledLabel>
+        //         <StyledLabel>
+        //             <StyledSubtitle>Контактний номер</StyledSubtitle>
+        //             <StyledInput 
+        //                 value={contactNumber} 
+        //                 onChange={(e) => setContactNumber(e.target.value)}
+        //             />
+        //         </StyledLabel>
+        //         <StyledLabel>
+        //             <StyledTextArea
+        //                 maxLength={250}
+        //                 value={note} 
+        //                 onChange={(e) => setNote(e.target.value)}
+        //             />
+        //         </StyledLabel>
                 
-                <div style={{ display: 'flex', justifyContent: 'flex-end'}}>
-                    <Button text={'Зберегти'} onClick={handleSave} />
-                </div>
-            </StyledModal>
-        </StyledWrapper>
+        //         <div style={{ display: 'flex', justifyContent: 'flex-end'}}>
+        //             <Button text={'Зберегти'} onClick={handleSave} />
+        //         </div>
+        //     </StyledModal>
+        // </StyledWrapper>
+
+        <Styles.StyledWrapper onClick={handleWrapperClick}>
+            <Styles.StyledModal>
+                {/* <Styles.StyledCloseButton onClick={onClose} /> */}
+                <Styles.StyledTitle>{editPersonId ? 'Редагування працівника' : 'Додавання нового працівника'}</Styles.StyledTitle>
+                
+                <Styles.StyledLabel>
+                    <Styles.StyledSubtitle>Ім’я</Styles.StyledSubtitle>
+                    <Styles.StyledInput 
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)} 
+                    />
+                </Styles.StyledLabel>
+                
+                <Styles.StyledLabel>
+                    <Styles.StyledSubtitle>Призвище</Styles.StyledSubtitle>
+                    <Styles.StyledInput 
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)} 
+                    />
+                </Styles.StyledLabel>
+
+                <Styles.StyledLabel>
+                    <Styles.StyledSubtitle>Номер телефону</Styles.StyledSubtitle>
+                    <Styles.StyledInput 
+                        value={contactNumber}
+                        onChange={(e) => setContactNumber(e.target.value)} 
+                    />
+                </Styles.StyledLabel>
+
+                <Styles.StyledLabel>
+                    <Styles.StyledSubtitle>Примітка</Styles.StyledSubtitle>
+                    <Styles.StyledTextArea 
+                        value={note}
+                        onChange={(e) => setNote(e.target.value)} 
+                    />
+                </Styles.StyledLabel>
+
+                <Styles.StyledLabel>
+                    <Styles.StyledSubtitle>Група</Styles.StyledSubtitle>
+                    <SelectComponent 
+                        onChange={handleGroupChange} 
+                        selectedGroup={selectedGroup} 
+                        selectedGroupName={selectedGroupName} 
+                        groups={groups}
+                    />
+                </Styles.StyledLabel>
+
+                <Styles.StyledPhotoBlock>
+                    <Styles.PhotoBlock>
+                        <Styles.PhotoPic src={employeePhoto instanceof Blob ? URL.createObjectURL(employeePhoto) : employeePhoto} alt="Employee" />
+                    </Styles.PhotoBlock>
+                    <Styles.BlockColumn>
+                        <Styles.StyledButtonLabel htmlFor="fileInput">
+                            Завантажити фото
+                            <Styles.StyledInputFile 
+                                id="fileInput"
+                                type="file"
+                                accept="image/*"
+                                onChange={handlePhotoChange}
+                            />
+                        </Styles.StyledButtonLabel>
+                    </Styles.BlockColumn>
+                </Styles.StyledPhotoBlock>
+
+                <Button onClick={handleSave}>{editPersonId ? 'Зберегти' : 'Додати'}</Button>
+            </Styles.StyledModal>
+        </Styles.StyledWrapper>
     );
 }

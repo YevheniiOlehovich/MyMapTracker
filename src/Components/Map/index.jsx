@@ -70,8 +70,6 @@ export default function Map() {
         }
     }, [dispatch, gpsStatus, fieldsStatus, cadastreStatus, geozoneStatus]);
 
-    console.log(fieldsData)
-
     useEffect(() => {
         setKey((prevKey) => prevKey + 1); // Оновлюємо ключ при зміні типу карти
     }, [mapType]);
