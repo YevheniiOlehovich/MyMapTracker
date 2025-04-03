@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { 
     openAddGroupModal, 
@@ -8,7 +8,7 @@ import {
     openAddVehicleModal,
     closeAddVehicleModal
 } from '../../store/modalSlice';
-import { StyledWrapper, StyledTitle, StyledBlock } from './styles';
+import Styles from './styles';
 import Button from '../Button';
 import AddGroupModal from '../AddGroupModal';
 import AddPersonalModal from '../AddPersonalModal';
@@ -23,17 +23,17 @@ export default function GroupsContainer() {
 
     return (
         <>
-            <StyledWrapper>
-                <StyledBlock>
-                    <StyledTitle>Список груп</StyledTitle>
-                </StyledBlock>
-                <StyledBlock>
+            <Styles.wrapper>
+                <Styles.block>
+                    <Styles.title>Список груп</Styles.title>
+                </Styles.block>
+                <Styles.block>
                     <Button text={'Створити групу'} onClick={() => dispatch(openAddGroupModal())} /> 
                     <Button text={'Додати працівника'} onClick={() => dispatch(openAddPersonalModal())}/>
                     <Button text={'Додати техніку'} onClick={() => dispatch(openAddVehicleModal())}/>
-                </StyledBlock>
+                </Styles.block>
                 <GroupsList />
-            </StyledWrapper>
+            </Styles.wrapper>
 
             {isAddGroupModalVisible && <AddGroupModal onClose={() => dispatch(closeAddGroupModal())}/>} 
             {isAddPersonalModalVisible && <AddPersonalModal onClose={() => dispatch(closeAddPersonalModal())}/>} 

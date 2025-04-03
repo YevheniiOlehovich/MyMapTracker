@@ -1,4 +1,4 @@
-import { StyledWrapper, StyledModal, StyledCloseButton } from './styles';
+import styles from './styles';
 import closeModal from "../../helpres/closeModal";
 import { useDispatch, useSelector } from 'react-redux';
 import { selectAllFields } from '../../store/fieldsSlice';
@@ -13,9 +13,9 @@ export default function LandBankModal({ onClose }) {
     const totalCalculatedArea = fieldsData.reduce((total, field) => total + parseFloat(field.properties.calculated_area || 0), 0);
     
     return (
-        <StyledWrapper onClick={handleWrapperClick}>
-            <StyledModal onClick={(e) => e.stopPropagation()}>
-                <StyledCloseButton onClick={onClose} />
+        <styles.Wrapper onClick={handleWrapperClick}>
+            <styles.Modal onClick={(e) => e.stopPropagation()}>
+                <styles.CloseButton onClick={onClose} />
                 
                 <h2>Список полів</h2>
                 {fieldsData.length > 0 ? (
@@ -38,7 +38,7 @@ export default function LandBankModal({ onClose }) {
                         <p><strong>Загальна розрахована площа:</strong> {totalCalculatedArea.toFixed(2)} га</p>
                     </div>
                 )}
-            </StyledModal>
-        </StyledWrapper>
+            </styles.Modal>
+        </styles.Wrapper>
     );
 }

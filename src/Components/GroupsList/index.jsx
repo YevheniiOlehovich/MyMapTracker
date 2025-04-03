@@ -10,7 +10,7 @@ import DelIco from '../../assets/ico/del-icon-black.png';
 import QuestionIco from '../../assets/ico/10965421.webp'
 import TriangleIco from '../../assets/ico/triangle.png';
 
-import { StyledBlock, StyledSubtitle, StyledButton, StyledIco, StyledButtonBlock, StyledList, StyledListItem, StyledMainList, StyledSpan, StyledImgBlock, StyledSubTitle } from './styled';
+import Styles from './styled';
 
 export default function GroupsList() {
     const dispatch = useDispatch();
@@ -98,50 +98,50 @@ export default function GroupsList() {
     return (
         <>
             {groups.length === 0 ? (
-                <StyledSpan>Групи не знайдено.</StyledSpan>
+                <Styles.span>Групи не знайдено.</Styles.span>
             ) : (
-                <StyledMainList>
+                <Styles.mainList>
                     {groups.map((group) => (
-                        <StyledListItem key={group._id} hasBorder={true}>
-                            <StyledBlock>
-                                <StyledSubtitle>{group.name}</StyledSubtitle>
+                        <Styles.listItem key={group._id} hasBorder={true}>
+                            <Styles.block>
+                                <Styles.subtitle>{group.name}</Styles.subtitle>
     
-                                <StyledButtonBlock>
-                                    <StyledButton onClick={() => handleOpenEditGroupModal(group._id)}>
-                                        <StyledIco pic={EditIco} />
-                                    </StyledButton>
-                                    <StyledButton onClick={() => handleDeleteGroup(group._id)}>
-                                        <StyledIco pic={DelIco} />
-                                    </StyledButton>
-                                    <StyledButton onClick={() => handleToggleVisibility(group._id)}>
-                                        <StyledIco
+                                <Styles.buttonBlock>
+                                    <Styles.button onClick={() => handleOpenEditGroupModal(group._id)}>
+                                        <Styles.ico pic={EditIco} />
+                                    </Styles.button>
+                                    <Styles.button onClick={() => handleDeleteGroup(group._id)}>
+                                        <Styles.ico pic={DelIco} />
+                                    </Styles.button>
+                                    <Styles.button onClick={() => handleToggleVisibility(group._id)}>
+                                        <Styles.ico
                                             pic={TriangleIco}
                                             rotation={visibilityState[group._id] ? 180 : 0} // Обертання трикутника
                                         />
-                                    </StyledButton>
-                                </StyledButtonBlock>
-                            </StyledBlock>
+                                    </Styles.button>
+                                </Styles.buttonBlock>
+                            </Styles.block>
     
                             {visibilityState[group._id] && (
                                 <>
                                     {group.personnel?.length > 0 ? (
                                         <>
-                                            <StyledSubTitle>Список Персоналу</StyledSubTitle>
-                                            <StyledList>
+                                            <Styles.subTitle>Список Персоналу</Styles.subTitle>
+                                            <Styles.list>
                                                 {group.personnel.map((person) => (
-                                                    <StyledBlock key={person._id}>
-                                                        <StyledImgBlock
+                                                    <Styles.block key={person._id}>
+                                                        <Styles.imgBlock
                                                             imageUrl={
                                                                 person.photoPath
                                                                     ? formatPhotoPath(person.photoPath)
                                                                     : QuestionIco
                                                             }
                                                         />
-                                                        <StyledListItem>
+                                                        <Styles.listItem>
                                                             {person.lastName} {person.firstName}
-                                                        </StyledListItem>
-                                                        <StyledButtonBlock>
-                                                            <StyledButton
+                                                        </Styles.listItem>
+                                                        <Styles.buttonBlock>
+                                                            <Styles.button
                                                                 onClick={() =>
                                                                     handleOpenEditPersonnelModal(
                                                                         group._id,
@@ -149,39 +149,39 @@ export default function GroupsList() {
                                                                     )
                                                                 }
                                                             >
-                                                                <StyledIco pic={EditIco} />
-                                                            </StyledButton>
-                                                            <StyledButton
+                                                                <Styles.ico pic={EditIco} />
+                                                            </Styles.button>
+                                                            <Styles.button
                                                                 onClick={() =>
                                                                     handleDeletePersonnel(group._id, person._id)
                                                                 }
                                                             >
-                                                                <StyledIco pic={DelIco} />
-                                                            </StyledButton>
-                                                        </StyledButtonBlock>
-                                                    </StyledBlock>
+                                                                <Styles.ico pic={DelIco} />
+                                                            </Styles.button>
+                                                        </Styles.buttonBlock>
+                                                    </Styles.block>
                                                 ))}
-                                            </StyledList>
+                                            </Styles.list>
                                         </>
                                     ) : (
-                                        <StyledSpan>Персонал не знайдено.</StyledSpan>
+                                        <Styles.span>Персонал не знайдено.</Styles.span>
                                     )}
                                     {group.vehicles?.length > 0 ? (
                                         <>
-                                            <StyledSubTitle>Список техніки</StyledSubTitle>
-                                            <StyledList>
+                                            <Styles.subTitle>Список техніки</Styles.subTitle>
+                                            <Styles.list>
                                                 {group.vehicles.map((vehicle) => (
-                                                    <StyledBlock key={vehicle._id}>
-                                                        <StyledImgBlock
+                                                    <Styles.block key={vehicle._id}>
+                                                        <Styles.imgBlock
                                                             imageUrl={
                                                                 vehicle.photoPath
                                                                     ? formatPhotoPath(vehicle.photoPath)
                                                                     : QuestionIco
                                                             }
                                                         />
-                                                        <StyledListItem key={vehicle._id} onDoubleClick={() => handleDoubleClickVehicle(vehicle)}>{vehicle.mark}</StyledListItem>
-                                                        <StyledButtonBlock>
-                                                            <StyledButton
+                                                        <Styles.listItem key={vehicle._id} onDoubleClick={() => handleDoubleClickVehicle(vehicle)}>{vehicle.mark}</Styles.listItem>
+                                                        <Styles.bButtonBlock>
+                                                            <Styles.button
                                                                 onClick={() =>
                                                                     handleOpenEditVehicleModal(
                                                                         group._id,
@@ -189,28 +189,28 @@ export default function GroupsList() {
                                                                     )
                                                                 }
                                                             >
-                                                                <StyledIco pic={EditIco} />
-                                                            </StyledButton>
-                                                            <StyledButton
+                                                                <Styles.ico pic={EditIco} />
+                                                            </Styles.button>
+                                                            <Styles.button
                                                                 onClick={() =>
                                                                     handleDeleteVehicle(group._id, vehicle._id)
                                                                 }
                                                             >
-                                                                <StyledIco pic={DelIco} />
-                                                            </StyledButton>
-                                                        </StyledButtonBlock>
-                                                    </StyledBlock>
+                                                                <Styles.ico pic={DelIco} />
+                                                            </Styles.button>
+                                                        </Styles.bButtonBlock>
+                                                    </Styles.block>
                                                 ))}
-                                            </StyledList>
+                                            </Styles.list>
                                         </>
                                     ) : (
-                                        <StyledSpan>Техніку не знайдено.</StyledSpan>
+                                        <Styles.span>Техніку не знайдено.</Styles.span>
                                     )}
                                 </>
                             )}
-                        </StyledListItem>
+                        </Styles.listItem>
                     ))}
-                </StyledMainList>
+                </Styles.mainList>
             )}
         </>
     );

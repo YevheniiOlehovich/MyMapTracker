@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import { setSelectedDate } from "../../store/calendarSlice";
-import { DatePickerWrapper, DateButton, CalendarWrapper } from './styled'
+import styles from './styled';
 
 export default function DatePickerComponent({ onDateChange }) {
     const dispatch = useDispatch();
@@ -34,18 +34,18 @@ export default function DatePickerComponent({ onDateChange }) {
     };
 
     return (
-        <DatePickerWrapper>
-            <DateButton onClick={() => setIsOpen(!isOpen)}>
+        <styles.DatePickerWrapper>
+            <styles.DateButton onClick={() => setIsOpen(!isOpen)}>
                 {date.toLocaleDateString("en-CA")}
-            </DateButton>
+            </styles.DateButton>
             {isOpen && (
-                <CalendarWrapper>
+                <styles.CalendarWrapper>
                     <Calendar 
                         value={date}
                         onChange={handleDateChange}
                     />
-                </CalendarWrapper>
+                </styles.CalendarWrapper>
             )}
-        </DatePickerWrapper>
+        </styles.DatePickerWrapper>
     );
 }
