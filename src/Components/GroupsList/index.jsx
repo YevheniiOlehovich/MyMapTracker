@@ -102,21 +102,21 @@ export default function GroupsList() {
             ) : (
                 <Styles.mainList>
                     {groups.map((group) => (
-                        <Styles.listItem key={group._id} hasBorder={true}>
+                        <Styles.listItem key={group._id} $hasBorder={true}>
                             <Styles.block>
                                 <Styles.subtitle>{group.name}</Styles.subtitle>
     
                                 <Styles.buttonBlock>
                                     <Styles.button onClick={() => handleOpenEditGroupModal(group._id)}>
-                                        <Styles.ico pic={EditIco} />
+                                        <Styles.ico $pic={EditIco} />
                                     </Styles.button>
                                     <Styles.button onClick={() => handleDeleteGroup(group._id)}>
-                                        <Styles.ico pic={DelIco} />
+                                        <Styles.ico $pic={DelIco} />
                                     </Styles.button>
                                     <Styles.button onClick={() => handleToggleVisibility(group._id)}>
                                         <Styles.ico
-                                            pic={TriangleIco}
-                                            rotation={visibilityState[group._id] ? 180 : 0} // Обертання трикутника
+                                            $pic={TriangleIco}
+                                            $rotation={visibilityState[group._id] ? 180 : 0} // Обертання трикутника
                                         />
                                     </Styles.button>
                                 </Styles.buttonBlock>
@@ -149,14 +149,14 @@ export default function GroupsList() {
                                                                     )
                                                                 }
                                                             >
-                                                                <Styles.ico pic={EditIco} />
+                                                                <Styles.ico $pic={EditIco} />
                                                             </Styles.button>
                                                             <Styles.button
                                                                 onClick={() =>
                                                                     handleDeletePersonnel(group._id, person._id)
                                                                 }
                                                             >
-                                                                <Styles.ico pic={DelIco} />
+                                                                <Styles.ico $pic={DelIco} />
                                                             </Styles.button>
                                                         </Styles.buttonBlock>
                                                     </Styles.block>
@@ -189,14 +189,14 @@ export default function GroupsList() {
                                                                     )
                                                                 }
                                                             >
-                                                                <Styles.ico pic={EditIco} />
+                                                                <Styles.ico $pic={EditIco} />
                                                             </Styles.button>
                                                             <Styles.button
                                                                 onClick={() =>
                                                                     handleDeleteVehicle(group._id, vehicle._id)
                                                                 }
                                                             >
-                                                                <Styles.ico pic={DelIco} />
+                                                                <Styles.ico $pic={DelIco} />
                                                             </Styles.button>
                                                         </Styles.bButtonBlock>
                                                     </Styles.block>

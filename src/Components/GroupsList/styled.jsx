@@ -58,11 +58,11 @@ const Styles = {
     ico: styled.div`
         width: 12px;
         height: 12px;
-        background-image: url(${props => props.pic});
+        background-image: url(${props => props.$pic});
         background-size: cover;
         background-position: center;
         transition: 0.2s ease;
-        transform: rotate(${props => props.rotation}deg);
+        transform: rotate(${props => props.$rotation}deg);
     `,
     list: styled.ul`
         list-style: none;
@@ -75,7 +75,7 @@ const Styles = {
         margin-bottom: 4px;
         box-sizing: border-box;
         padding: 0;
-        border: ${({ hasBorder }) => (hasBorder ? '1px solid black' : 'none')};
+        border: ${({ $hasBorder }) => ($hasBorder ? '1px solid black' : 'none')};
     `,
     mainList: styled.ul`
         list-style: none;

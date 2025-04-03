@@ -61,11 +61,13 @@ const Styles = {
     btnIco: styled.img`
         width: 12px;
         height: 12px;
-        background-image: url(${props => props.pic});
+        /* background-image: url(${props => props.pic}); */
+        background-image: url(${props => props.$pic});
         background-size: cover;
         background-position: center;
         transition: 0.2s ease;
-        transform: rotate(${props => props.rotation}deg);
+        /* transform: rotate(${props => props.rotation}deg); */
+        transform: rotate(${props => props.$rotation}deg);
     `,
     block: styled.div`
         display: flex;

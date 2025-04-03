@@ -4,7 +4,8 @@ const Styles = {
     wrapper: styled.div`
         position: absolute;
         top: 0;
-        right: ${({ isVisible }) => (isVisible ? '0' : '-270px')};
+        /* right: ${({ isVisible }) => (isVisible ? '0' : '-270px')}; */
+        right: ${({ $isVisible }) => ($isVisible ? '0' : '-270px')};
         width: 330px;
         height: 100vh;
         background-color: rgba(0, 0, 0, 0.7);
@@ -18,7 +19,9 @@ const Styles = {
         height: 20px;
         left: 5px;
         top: 50%;
-        transform: translateY(-50%) rotate(${({ isVisible }) => (isVisible ? '180deg' : '0deg')});
+        /* transform: translateY(-50%) rotate(${({ isVisible }) => (isVisible ? '180deg' : '0deg')}); */
+        transform: translateY(-50%) rotate(${({ $isVisible }) => ($isVisible ? '180deg' : '0deg')});
+
         cursor: pointer;
         border: 1px solid black;
         transition: transform 0.3s ease-in-out;
@@ -75,11 +78,12 @@ const Styles = {
     btnIco: styled.img`
         width: 12px;
         height: 12px;
-        background-image: url(${props => props.pic});
+        background-image: url(${props => props.$pic});
         background-size: cover;
         background-position: center;
         transition: 0.2s ease;
-        transform: rotate(${props => props.rotation}deg);
+        /* transform: rotate(${props => props.rotation}deg); */
+        transform: rotate(${props => props.$rotation}deg);
     `,
     
 };

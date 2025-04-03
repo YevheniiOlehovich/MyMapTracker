@@ -46,8 +46,8 @@ const LayersList = () => {
     };
 
     return (
-        <Styles.wrapper isVisible={isVisible}>
-            <Styles.showBtn onClick={toggleListHandler} isVisible={isVisible}>
+        <Styles.wrapper $isVisible={isVisible}>
+            <Styles.showBtn onClick={toggleListHandler} $isVisible={isVisible}>
                 <Styles.showBtnImg src={arrowPic} alt="Show Layers" />
             </Styles.showBtn>
 
@@ -56,8 +56,8 @@ const LayersList = () => {
 
                 <Styles.btn onClick={toggleMapListVisibility}>
                     <Styles.btnIco
-                        pic={TriangleIco}
-                        rotation={isMapListVisible ? 180 : 0} // Перевертаємо трикутник
+                        $pic={TriangleIco}
+                        $rotation={isMapListVisible ? 180 : 0} // Перевертаємо трикутник
                     />
                 </Styles.btn>
             </Styles.Block>
@@ -141,8 +141,8 @@ const LayersList = () => {
 
                 <Styles.btn onClick={toggleGeoDataListVisibility}>
                     <Styles.btnIco
-                        pic={TriangleIco}
-                        rotation={isGeoDataListVisible ? 180 : 0} // Перевертаємо трикутник
+                        $pic={TriangleIco}
+                        $rotation={isGeoDataListVisible ? 180 : 0} // Перевертаємо трикутник
                     />
                 </Styles.btn>
             </Styles.Block>

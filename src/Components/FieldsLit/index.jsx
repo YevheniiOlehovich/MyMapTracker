@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import Styles from './styles';
 import EditIco from '../../assets/ico/edit-icon-black.png';
@@ -6,22 +6,23 @@ import LocationIco from '../../assets/ico/location.png';
 import TriangleIco from '../../assets/ico/triangle.png';
 import ShowIco from '../../assets/ico/icon-shown.png';
 import HideIco from '../../assets/ico/icon-hidden.png';
-import { selectAllFields, toggleFieldVisibility, selectFieldVisibility } from '../../store/fieldsSlice'; // Імпорт селектора для отримання полів та дій для керування видимістю
-import { setMapCenter } from '../../store/mapCenterSlice'; // Імпорт дії для встановлення центру карти
-import { openAddFieldsModal, setSelectedField } from '../../store/modalSlice'; // Імпорт дій для відкриття модалки та встановлення вибраного поля
+import { selectAllFields, toggleFieldVisibility, selectFieldVisibility } from '../../store/fieldsSlice';
+import { setMapCenter } from '../../store/mapCenterSlice';
+import { openAddFieldsModal, setSelectedField } from '../../store/modalSlice';
 
 export default function FieldsLit() {
     const dispatch = useDispatch();
     const fieldsData = useSelector(selectAllFields);
     const [isFieldsListVisible, setIsFieldsListVisible] = useState(true);
-    const [searchTerm, setSearchTerm] = useState(''); // Додаємо стан для зберігання значення пошуку
+    const [searchTerm, setSearchTerm] = useState('');
 
-    const fieldVisibility = useSelector((state) =>
-        fieldsData.reduce((acc, field) => {
-            acc[field._id] = selectFieldVisibility(state, field._id);
+    // Мемоізуємо видимість полів
+    const fieldVisibility = useMemo(() => {
+        return fieldsData.reduce((acc, field) => {
+            acc[field._id] = selectFieldVisibility({ fields: { items: fieldsData } }, field._id); // Передаємо правильний стан
             return acc;
-        }, {})
-    );
+        }, {});
+    }, [fieldsData]);
 
     const toggleFieldsListVisibility = () => {
         setIsFieldsListVisible(!isFieldsListVisible);
@@ -46,9 +47,12 @@ export default function FieldsLit() {
         setSearchTerm(e.target.value);
     };
 
-    const filteredFields = fieldsData.filter((field) =>
-        field.properties.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    // Мемоізуємо відфільтровані поля
+    const filteredFields = useMemo(() => {
+        return fieldsData.filter((field) =>
+            field.properties.name.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+    }, [fieldsData, searchTerm]);
 
     return (
         <Styles.wrapper>
@@ -56,8 +60,8 @@ export default function FieldsLit() {
                 <Styles.Title>Поля</Styles.Title>
                 <Styles.btn onClick={toggleFieldsListVisibility}>
                     <Styles.btnIco
-                        pic={TriangleIco}
-                        rotation={isFieldsListVisible ? 180 : 0}
+                        $pic={TriangleIco}
+                        $rotation={isFieldsListVisible ? 180 : 0}
                     />
                 </Styles.btn>
             </Styles.block>
@@ -77,13 +81,13 @@ export default function FieldsLit() {
                         <Styles.fieldName>{field.properties.name}</Styles.fieldName>
                         <Styles.btnBlock>
                             <Styles.btn onClick={() => handleToggleFieldVisibility(field._id)}>
-                                <Styles.btnIco pic={fieldVisibility[field._id] ? ShowIco : HideIco} />
+                                <Styles.btnIco $pic={fieldVisibility[field._id] ? ShowIco : HideIco} />
                             </Styles.btn>
                             <Styles.btn onClick={() => handleCenterMap(field)}>
-                                <Styles.btnIco pic={LocationIco} />
+                                <Styles.btnIco $pic={LocationIco} />
                             </Styles.btn>
                             <Styles.btn onClick={() => handleEditField(field)}>
-                                <Styles.btnIco pic={EditIco} />
+                                <Styles.btnIco $pic={EditIco} />
                             </Styles.btn>
                         </Styles.btnBlock>
                     </Styles.fieldBlock>
