@@ -7,6 +7,9 @@ import groupsRoutes from './routes/groups.js';
 import avlRecordsRoutes from './routes/gpsRoutes.js'; // Замість avlRecord
 import ratesRoutes from './routes/rates.js'
 import geoDataRoutes from './routes/geoDataRoutes.js'; 
+import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
+import authRoutes from './routes/auth.js';
 
 dotenv.config();
 
@@ -30,6 +33,8 @@ app.use('/groups', groupsRoutes);
 app.use('/avl_records', avlRecordsRoutes);  // Додано маршрут для avl_records
 app.use('/rates', ratesRoutes);  // Додано маршрут для avl_records
 app.use('/geo_data', geoDataRoutes); // Додано маршрут для полів
+app.use('/auth', authRoutes); // Додано маршрут для автентифікації
+
 
 // Головний маршрут
 app.get('/', (req, res) => {

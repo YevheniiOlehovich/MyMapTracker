@@ -20,6 +20,12 @@ export default function Header() {
     const isAddMileagleModal = useSelector((state) => state.modals.isAddMileagleModal);
     const isLandBankReportModalVisible = useSelector((state) => state.modals.isLandBankReportModalVisible);
 
+    // Функція для виходу з аккаунта
+    const handleLogout = () => {
+        localStorage.removeItem('token'); // Видаляємо токен
+        window.location.reload(); // Перезавантажуємо сторінку, щоб повернутися на сторінку авторизації
+    };
+
     return (
         <>
             <StyledHeader>
@@ -27,6 +33,8 @@ export default function Header() {
                 <Button text={'Тарифи'} onClick={() => dispatch(openAddRatesModal())}/>
                 <Button text={'Пробіг'} onClick={() => dispatch(openAddMileagle())} />
                 <Button text={'Земельний банк'} onClick={() => dispatch(openLandBankReportModal())} />
+                <Button text={'Де я?'} />
+                <Button text={'Вийти'} onClick={handleLogout} />
             </StyledHeader>
 
             {isAddRatesModal && <AddRatesModal onClose={() => dispatch(closeAddRatesModal())} />} 

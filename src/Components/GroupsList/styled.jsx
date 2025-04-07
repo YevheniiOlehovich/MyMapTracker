@@ -1,13 +1,13 @@
 import { styled, css } from 'styled-components';
 
 const Styles = {
-    title: styled.h3`
-        font-family: Arial, Helvetica, sans-serif;
-        font-weight: 700;
-        font-size: 16px;
-        display: block;
-        margin: 0 8px 12px;
-    `,
+    // title: styled.h3`
+    //     font-family: Arial, Helvetica, sans-serif;
+    //     font-weight: 700;
+    //     font-size: 16px;
+    //     display: block;
+    //     margin: 0 8px 12px;
+    // `,
     subTitle: styled.h4`
         font-family: Arial, Helvetica, sans-serif;
         font-weight: 700;

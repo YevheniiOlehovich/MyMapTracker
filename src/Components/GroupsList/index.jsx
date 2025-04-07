@@ -180,7 +180,7 @@ export default function GroupsList() {
                                                             }
                                                         />
                                                         <Styles.listItem key={vehicle._id} onDoubleClick={() => handleDoubleClickVehicle(vehicle)}>{vehicle.mark}</Styles.listItem>
-                                                        <Styles.bButtonBlock>
+                                                        <Styles.buttonBlock>
                                                             <Styles.button
                                                                 onClick={() =>
                                                                     handleOpenEditVehicleModal(
@@ -198,7 +198,7 @@ export default function GroupsList() {
                                                             >
                                                                 <Styles.ico $pic={DelIco} />
                                                             </Styles.button>
-                                                        </Styles.bButtonBlock>
+                                                        </Styles.buttonBlock>
                                                     </Styles.block>
                                                 ))}
                                             </Styles.list>
