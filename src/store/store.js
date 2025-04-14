@@ -11,8 +11,7 @@ import mapReducer from './mapSlice'; // Імпортуємо редюсер дл
 import geozoneReducer from './geozoneSlice';
 import layersReducer from './layersList';
 import mapCenterSliceReducer from './mapCenterSlice';
-// Імпортуємо редюсер для land_squatting
-// import landSquattingReducer from './landSquattingSlice'; 
+import currentLocationReducer from './currentLocationSlice';
 
 const store = configureStore({
     reducer: {
@@ -28,6 +27,7 @@ const store = configureStore({
         geozone: geozoneReducer,
         layers: layersReducer,
         mapCenter: mapCenterSliceReducer,
+        currentLocation: currentLocationReducer,
         // Додаємо редюсер для land_squatting
         // landSquatting: landSquattingReducer, 
     },
