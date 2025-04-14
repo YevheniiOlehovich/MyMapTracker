@@ -22,7 +22,7 @@ export default function Header() {
 
     // Функція для виходу з аккаунта
     const handleLogout = () => {
-        localStorage.removeItem('token'); // Видаляємо токен
+        sessionStorage.removeItem('token'); // Видаляємо токен із sessionStorage
         window.location.reload(); // Перезавантажуємо сторінку, щоб повернутися на сторінку авторизації
     };
 
@@ -30,7 +30,7 @@ export default function Header() {
         <>
             <StyledHeader>
                 <DatePickerComponent />
-                <Button text={'Тарифи'} onClick={() => dispatch(openAddRatesModal())}/>
+                <Button text={'Тарифи'} onClick={() => dispatch(openAddRatesModal())} />
                 <Button text={'Пробіг'} onClick={() => dispatch(openAddMileagle())} />
                 <Button text={'Земельний банк'} onClick={() => dispatch(openLandBankReportModal())} />
                 <Button text={'Де я?'} />

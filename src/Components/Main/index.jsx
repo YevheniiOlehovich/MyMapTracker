@@ -1,22 +1,3 @@
-// import Map from "../Map"
-// import Header from "../Header"
-// import Aside from '../Aside'
-// import LayersList from "../LayersList"
-// import Modals from "../Modals"
-
-// export default function Main(){
-//     return(
-//         <>
-//             <Header />
-//             <Aside />
-//             <Map />
-//             <LayersList />
-//             <Modals />
-//         </>
-//     )
-// }
-
-
 import React, { useState, useEffect } from 'react';
 import Login from '../Login';
 import Map from '../Map';
@@ -29,8 +10,8 @@ export default function Main() {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
 
     useEffect(() => {
-        // Перевіряємо, чи є токен у localStorage
-        const token = localStorage.getItem('token');
+        // Перевіряємо, чи є токен у sessionStorage
+        const token = sessionStorage.getItem('token');
         if (token) {
             setIsAuthenticated(true);
         }

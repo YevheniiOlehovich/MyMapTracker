@@ -17,7 +17,7 @@ export default function Login({ onLogin }) {
 
             const data = await response.json();
             if (response.ok) {
-                localStorage.setItem('token', data.token); // Зберігаємо токен
+                sessionStorage.setItem('token', data.token); // Зберігаємо токен у sessionStorage
                 onLogin(); // Оновлюємо стан авторизації
             } else {
                 setError(data.message); // Відображаємо помилку
