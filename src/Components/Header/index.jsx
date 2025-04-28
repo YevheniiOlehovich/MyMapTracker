@@ -3,24 +3,15 @@ import DatePickerComponent from '../DatePicker';
 import Button from '../Button';
 import { 
     openAddRatesModal, 
-    closeAddRatesModal, 
     openAddMileagle, 
-    closeAddMileagle, 
-    openLandBankReportModal, 
-    closeLandBankReportModal 
+    openLandBankReportModal 
 } from '../../store/modalSlice';
 import { setMapCenter } from '../../store/mapCenterSlice'; // Для центру карти
 import { setCurrentLocation, setLocationError } from '../../store/currentLocationSlice'; // Для маркера поточного місцезнаходження
-import { useDispatch, useSelector } from 'react-redux';
-import AddRatesModal from '../AddRatesModal';
-import AddMileagleModal from '../AddMileagleModal';
-import LandBankModal from '../LandBankModal';
+import { useDispatch } from 'react-redux';
 
 export default function Header() {
     const dispatch = useDispatch();
-    const isAddRatesModal = useSelector((state) => state.modals.isAddRatesModal);
-    const isAddMileagleModal = useSelector((state) => state.modals.isAddMileagleModal);
-    const isLandBankReportModalVisible = useSelector((state) => state.modals.isLandBankReportModalVisible);
 
     // Функція для виходу з аккаунта
     const handleLogout = () => {
@@ -50,19 +41,13 @@ export default function Header() {
     };
 
     return (
-        <>
-            <StyledHeader>
-                <DatePickerComponent />
-                <Button text={'Тарифи'} onClick={() => dispatch(openAddRatesModal())} />
-                <Button text={'Пробіг'} onClick={() => dispatch(openAddMileagle())} />
-                <Button text={'Земельний банк'} onClick={() => dispatch(openLandBankReportModal())} />
-                <Button text={'Де я?'} onClick={handleLocateMe} /> {/* Центруємо карту та додаємо маркер */}
-                <Button text={'Вийти'} onClick={handleLogout} />
-            </StyledHeader>
-
-            {isAddRatesModal && <AddRatesModal onClose={() => dispatch(closeAddRatesModal())} />} 
-            {isAddMileagleModal && <AddMileagleModal onClose={() => dispatch(closeAddMileagle())} />} 
-            {isLandBankReportModalVisible && <LandBankModal onClose={() => dispatch(closeLandBankReportModal())} />}
-        </>
+        <StyledHeader>
+            <DatePickerComponent />
+            <Button text={'Тарифи'} onClick={() => dispatch(openAddRatesModal())} />
+            <Button text={'Пробіг'} onClick={() => dispatch(openAddMileagle())} />
+            <Button text={'Земельний банк'} onClick={() => dispatch(openLandBankReportModal())} />
+            <Button text={'Де я?'} onClick={handleLocateMe} /> {/* Центруємо карту та додаємо маркер */}
+            <Button text={'Вийти'} onClick={handleLogout} />
+        </StyledHeader>
     );
 }
