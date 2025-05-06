@@ -94,6 +94,7 @@ const Styles = {
         display: flex;
         justify-content: space-between;
         align-items: center;
+        flex-direction: row-reverse
     `,
     arrowBtn: styled.button`
         width: 20px;

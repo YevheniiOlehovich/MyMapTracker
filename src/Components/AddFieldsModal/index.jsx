@@ -1,54 +1,67 @@
 import React, { useState, useEffect } from 'react';
 import Styles from './styles';
 import Button from '../Button';
-import { useDispatch } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { useQueryClient } from '@tanstack/react-query';
+import { useFieldsData, useUpdateField } from '../../hooks/useFieldsData';
 import { closeAddFieldsModal } from '../../store/modalSlice';
-import { updateField } from '../../store/fieldsSlice';
-import apiRoutes from '../../helpres/ApiRoutes';
 
-export default function AddFieldsModal({ field }) {
+export default function AddFieldsModal() {
     const dispatch = useDispatch();
+    const queryClient = useQueryClient();
+
+    // Отримуємо всі поля через React Query
+    const { data: fields, isLoading, error } = useFieldsData();
+    const updateField = useUpdateField();
+
+    // Отримуємо fieldId із Redux Store
+    const fieldId = useSelector((state) => state.modals?.selectedField);
+
+    // Знаходимо потрібне поле за fieldId
+    const field = fields?.find((f) => f._id === fieldId);
+
     const TOTAL_SLIDES = 3; // Кількість слайдів
     const [currentSlide, setCurrentSlide] = useState(0);
     const [isEditable, setIsEditable] = useState(false);
-    const [fieldName, setFieldName] = useState('');
-    const [mapKey, setMapKey] = useState('');
-    const [fieldArea, setFieldArea] = useState('');
-    const [koatuu, setKoatuu] = useState('');
-    const [note, setNote] = useState('');
-    const [culture, setCulture] = useState('');
-    const [sort, setSort] = useState('');
-    const [date, setDate] = useState('');
-    const [crop, setCrop] = useState('');
-    const [branch, setBranch] = useState('');
-    const [region, setRegion] = useState('');
-    const [calculatedArea, setCalculatedArea] = useState('');
-    const [matchingPlots, setMatchingPlots] = useState([]);
-    const [notProcessed, setNotProcessed] = useState([]);
+
+    // Локальний стан для властивостей поля
+    const [fieldState, setFieldState] = useState({
+        fieldName: '',
+        mapKey: '',
+        fieldArea: '',
+        koatuu: '',
+        note: '',
+        culture: '',
+        sort: '',
+        date: '',
+        crop: '',
+        branch: '',
+        region: '',
+        calculatedArea: '',
+        matchingPlots: [],
+        notProcessed: [],
+    });
 
     useEffect(() => {
         if (field?.properties) {
-            setFieldName(field.properties.name || '');
-            setMapKey(field.properties.mapkey || '');
-            setFieldArea(field.properties.area || '');
-            setKoatuu(field.properties.koatuu || '');
-            setNote(field.properties.note || '');
-            setCulture(field.properties.culture || '');
-            setSort(field.properties.sort || '');
-            setDate(field.properties.date || '');
-            setCrop(field.properties.crop || '');
-            setBranch(field.properties.branch || '');
-            setRegion(field.properties.region || '');
-            setCalculatedArea(field.properties.calculated_area || '');
-            setMatchingPlots(field.matching_plots || []);
-            setNotProcessed(field.not_processed || []);
+            setFieldState({
+                fieldName: field.properties.name || '',
+                mapKey: field.properties.mapkey || '',
+                fieldArea: field.properties.area || '',
+                koatuu: field.properties.koatuu || '',
+                note: field.properties.note || '',
+                culture: field.properties.culture || '',
+                sort: field.properties.sort || '',
+                date: field.properties.date || '',
+                crop: field.properties.crop || '',
+                branch: field.properties.branch || '',
+                region: field.properties.region || '',
+                calculatedArea: field.properties.calculated_area || '',
+                matchingPlots: field.matching_plots || [],
+                notProcessed: field.not_processed || [],
+            });
         }
     }, [field]);
-
-    const onClose = (e) => {
-        e.stopPropagation();
-        dispatch(closeAddFieldsModal());
-    };
 
     const handleNextSlide = () => {
         setCurrentSlide((prevSlide) => (prevSlide + 1) % TOTAL_SLIDES);
@@ -60,91 +73,114 @@ export default function AddFieldsModal({ field }) {
 
     const handleSave = async () => {
         const fieldData = {
-            _id: field?._id, // Передаємо ID, якщо є
+            _id: fieldId,
             type: "Feature",
             properties: {
-                name: fieldName,
-                branch: branch,
-                crop: crop,
-                date: date,
-                sort: sort,
-                mapkey: mapKey,
-                area: fieldArea,
-                koatuu: koatuu,
-                note: note,
-                culture: culture,
-                region: region,
-                calculated_area: calculatedArea,
+                name: fieldState.fieldName,
+                branch: fieldState.branch,
+                crop: fieldState.crop,
+                date: fieldState.date,
+                sort: fieldState.sort,
+                mapkey: fieldState.mapKey,
+                area: fieldState.fieldArea,
+                koatuu: fieldState.koatuu,
+                note: fieldState.note,
+                culture: fieldState.culture,
+                region: fieldState.region,
+                calculated_area: fieldState.calculatedArea,
             },
             geometry: field?.geometry || { type: "Polygon", coordinates: [] },
-            matching_plots: matchingPlots,
-            not_processed: notProcessed,
+            matching_plots: fieldState.matchingPlots,
+            not_processed: fieldState.notProcessed,
         };
 
         try {
-            let response;
-            if (field?._id) {
-                response = await fetch(apiRoutes.updateField(field._id), {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(fieldData),
-                });
-            } else {
-                response = await fetch(apiRoutes.addFields, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(fieldData),
-                });
-            }
-
-            if (!response.ok) {
-                throw new Error('Не вдалося зберегти поле');
-            }
-
-            const updatedField = await response.json();
-            console.log(field?._id ? 'Поле оновлено' : 'Поле створено', updatedField);
-
-            // Оновлюємо стан полів у Redux
-            dispatch(updateField(updatedField));
-
+            await updateField.mutateAsync(fieldData);
+            // console.log('Поле оновлено');
             setIsEditable(false);
-            dispatch(closeAddFieldsModal());
+            queryClient.invalidateQueries(['fields']); // Інвалідуємо кеш
+            dispatch(closeAddFieldsModal()); // Закриваємо модалку
         } catch (error) {
             console.error('Помилка збереження:', error.message);
+            alert('Не вдалося зберегти поле. Спробуйте ще раз.');
         }
     };
 
+    // Закриття модалки
+    const handleClose = () => {
+        dispatch(closeAddFieldsModal());
+    };
+
+    // Додаємо обробку Escape
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape') {
+                handleClose();
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, []);
+
     const renderSlideContent = () => {
+        if (!field) {
+            return <p>Поле не знайдено</p>;
+        }
+
         switch (currentSlide) {
             case 0:
                 return (
                     <>
                         <Styles.label>
                             <Styles.subtitle>Назва поля</Styles.subtitle>
-                            <Styles.input value={fieldName} onChange={(e) => setFieldName(e.target.value)} disabled={!isEditable} />
+                            <Styles.input
+                                value={fieldState.fieldName}
+                                onChange={(e) => setFieldState({ ...fieldState, fieldName: e.target.value })}
+                                disabled={!isEditable}
+                            />
                         </Styles.label>
                         <Styles.label>
                             <Styles.subtitle>Ключ карти</Styles.subtitle>
-                            <Styles.input value={mapKey} onChange={(e) => setMapKey(e.target.value)} disabled={!isEditable} />
+                            <Styles.input
+                                value={fieldState.mapKey}
+                                onChange={(e) => setFieldState({ ...fieldState, mapKey: e.target.value })}
+                                disabled={!isEditable}
+                            />
                         </Styles.label>
                         <Styles.label>
                             <Styles.subtitle>Код КОАТУУ</Styles.subtitle>
-                            <Styles.input value={koatuu} onChange={(e) => setKoatuu(e.target.value)} disabled={!isEditable} />
+                            <Styles.input
+                                value={fieldState.koatuu}
+                                onChange={(e) => setFieldState({ ...fieldState, koatuu: e.target.value })}
+                                disabled={!isEditable}
+                            />
                         </Styles.label>
                         <Styles.label>
                             <Styles.subtitle>Філія</Styles.subtitle>
-                            <Styles.input value={branch} onChange={(e) => setBranch(e.target.value)} disabled={!isEditable} />
+                            <Styles.input
+                                value={fieldState.branch}
+                                onChange={(e) => setFieldState({ ...fieldState, branch: e.target.value })}
+                                disabled={!isEditable}
+                            />
                         </Styles.label>
                         <Styles.label>
                             <Styles.subtitle>Регіон</Styles.subtitle>
-                            <Styles.input value={region} onChange={(e) => setRegion(e.target.value)} disabled={!isEditable} />
+                            <Styles.input
+                                value={fieldState.region}
+                                onChange={(e) => setFieldState({ ...fieldState, region: e.target.value })}
+                                disabled={!isEditable}
+                            />
                         </Styles.label>
                         <Styles.label>
-                            <Styles.textarea value={note} onChange={(e) => setNote(e.target.value)} disabled={!isEditable} />
+                            <Styles.textarea
+                                value={fieldState.note}
+                                onChange={(e) => setFieldState({ ...fieldState, note: e.target.value })}
+                                disabled={!isEditable}
+                            />
                         </Styles.label>
                     </>
                 );
@@ -153,19 +189,35 @@ export default function AddFieldsModal({ field }) {
                     <>
                         <Styles.label>
                             <Styles.subtitle>Культура</Styles.subtitle>
-                            <Styles.input value={culture} onChange={(e) => setCulture(e.target.value)} disabled={!isEditable} />
+                            <Styles.input
+                                value={fieldState.culture}
+                                onChange={(e) => setFieldState({ ...fieldState, culture: e.target.value })}
+                                disabled={!isEditable}
+                            />
                         </Styles.label>
                         <Styles.label>
                             <Styles.subtitle>Сорт</Styles.subtitle>
-                            <Styles.input value={sort} onChange={(e) => setSort(e.target.value)} disabled={!isEditable} />
+                            <Styles.input
+                                value={fieldState.sort}
+                                onChange={(e) => setFieldState({ ...fieldState, sort: e.target.value })}
+                                disabled={!isEditable}
+                            />
                         </Styles.label>
                         <Styles.label>
                             <Styles.subtitle>Дата</Styles.subtitle>
-                            <Styles.input value={date} onChange={(e) => setDate(e.target.value)} disabled={!isEditable} />
+                            <Styles.input
+                                value={fieldState.date}
+                                onChange={(e) => setFieldState({ ...fieldState, date: e.target.value })}
+                                disabled={!isEditable}
+                            />
                         </Styles.label>
                         <Styles.label>
                             <Styles.subtitle>Урожай</Styles.subtitle>
-                            <Styles.input value={crop} onChange={(e) => setCrop(e.target.value)} disabled={!isEditable} />
+                            <Styles.input
+                                value={fieldState.crop}
+                                onChange={(e) => setFieldState({ ...fieldState, crop: e.target.value })}
+                                disabled={!isEditable}
+                            />
                         </Styles.label>
                     </>
                 );
@@ -174,16 +226,20 @@ export default function AddFieldsModal({ field }) {
                     <>
                         <Styles.label>
                             <Styles.subtitle>Площа поля (га)</Styles.subtitle>
-                            <Styles.input value={fieldArea} onChange={(e) => setFieldArea(e.target.value)} disabled={!isEditable} />
+                            <Styles.input
+                                value={fieldState.fieldArea}
+                                onChange={(e) => setFieldState({ ...fieldState, fieldArea: e.target.value })}
+                                disabled={!isEditable}
+                            />
                         </Styles.label>
                         <Styles.label>
                             <Styles.subtitle>Розрахована площа поля (га)</Styles.subtitle>
-                            <Styles.subtitle>{calculatedArea}</Styles.subtitle>
+                            <Styles.subtitle>{fieldState.calculatedArea}</Styles.subtitle>
                         </Styles.label>
                         <Styles.labelBlock>
                             <Styles.subtitle>Відповідні ділянки</Styles.subtitle>
-                            {matchingPlots.length > 0 ? (
-                                matchingPlots.map((plot, index) => (
+                            {fieldState.matchingPlots.length > 0 ? (
+                                fieldState.matchingPlots.map((plot, index) => (
                                     <Styles.rowBlock key={plot.id || index}>
                                         <Styles.text>UID: {plot.properties?.uid}</Styles.text>
                                         <Styles.text>Площа: {plot.properties?.area} га</Styles.text>
@@ -195,8 +251,8 @@ export default function AddFieldsModal({ field }) {
                         </Styles.labelBlock>
                         <Styles.labelBlock>
                             <Styles.subtitle>Неопрацьовані ділянки</Styles.subtitle>
-                            {notProcessed.length > 0 ? (
-                                notProcessed.map((plot, index) => (
+                            {fieldState.notProcessed.length > 0 ? (
+                                fieldState.notProcessed.map((plot, index) => (
                                     <Styles.rowBlock key={plot.id || index}>
                                         <Styles.text>UID: {plot?.properties?.uid}</Styles.text>
                                         <Styles.text>Площа: {plot?.properties?.area} га</Styles.text>
@@ -213,15 +269,19 @@ export default function AddFieldsModal({ field }) {
         }
     };
 
+    if (isLoading) return <p>Завантаження...</p>;
+    if (error) return <p>Помилка завантаження даних: {error.message}</p>;
+
     return (
-        <Styles.wrapper onClick={onClose}>
+        <Styles.wrapper onClick={handleClose}>
             <Styles.modal onClick={(e) => e.stopPropagation()}>
                 <Styles.arrowBlock>
                     <Styles.arrowBtn direction="left" onClick={handlePrevSlide} />
                     <Styles.arrowBtn direction="right" onClick={handleNextSlide} />
+
                 </Styles.arrowBlock>
-                <Styles.closeButton onClick={onClose} />
-                <Styles.title>{field ? 'Редагування поля' : 'Створення нового поля'}</Styles.title>
+                <Styles.closeButton onClick={handleClose} />
+                <Styles.title>Редагування поля</Styles.title>
                 <Styles.labelBlock>{renderSlideContent()}</Styles.labelBlock>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px' }}>
                     <Button text="Редагувати" onClick={() => setIsEditable(true)} />

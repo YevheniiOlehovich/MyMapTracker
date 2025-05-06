@@ -5,8 +5,8 @@ import modalReducer from './modalSlice';
 import calendarReducer from "./calendarSlice";
 import vehicleReducer from './vehicleSlice';
 import ratesReducer from './ratesSlice';
-import fieldsReducer from './fieldsSlice'; // Імпортуємо редюсер для полів
-import cadastreReducer from './cadastreSlice'; // Імпортуємо редюсер для кадастрових даних
+// import fieldsReducer from './fieldsSlice'; 
+// import cadastreReducer from './cadastreSlice'; 
 import mapReducer from './mapSlice'; // Імпортуємо редюсер для карти
 import geozoneReducer from './geozoneSlice';
 import layersReducer from './layersList';
@@ -21,8 +21,8 @@ const store = configureStore({
         calendar: calendarReducer,
         vehicle: vehicleReducer,
         rates: ratesReducer,
-        fields: fieldsReducer, // Додаємо редюсер для полів
-        cadastre: cadastreReducer, // Додаємо редюсер для кадастрових даних
+        // fields: fieldsReducer, 
+        // cadastre: cadastreReducer, 
         map: mapReducer, // Додаємо редюсер для карти
         geozone: geozoneReducer,
         layers: layersReducer,

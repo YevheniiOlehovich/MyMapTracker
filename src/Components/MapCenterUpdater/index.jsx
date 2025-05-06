@@ -7,8 +7,6 @@ const MapCenterUpdater = () => {
     const map = useMap();
     const mapCenter = useSelector(selectMapCenter);
 
-    console.log(mapCenter, 'mapCenter');
-
     useEffect(() => {
         if (mapCenter) {
             map.setView(mapCenter);

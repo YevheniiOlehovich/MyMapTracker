@@ -3,9 +3,9 @@ import { useDispatch, useSelector } from 'react-redux';
 import { MapContainer, TileLayer, useMapEvents, Polygon, Marker, Popup } from 'react-leaflet';
 import Styles from './styled';
 import { getTileLayerConfig } from '../../helpres/tileLayerHelper';
+import { useCadastreData } from '../../hooks/useCadastreData'; // Хук для кадастрових даних
+import { useFieldsData } from '../../hooks/useFieldsData'; // Хук для даних полів
 import { fetchGpsData } from '../../store/locationSlice';
-import { fetchFields, selectAllFields } from '../../store/fieldsSlice';
-import { fetchCadastre, selectAllCadastre } from '../../store/cadastreSlice';
 import { fetchGeozone, selectAllGeozone } from '../../store/geozoneSlice';
 import { selectShowFields, selectShowCadastre, selectShowGeozones } from '../../store/layersList';
 import { selectMapCenter, selectZoomLevel, setZoomLevel } from '../../store/mapCenterSlice';
@@ -35,14 +35,6 @@ export default function Map() {
     const selectedImei = useSelector((state) => state.vehicle.imei);
     const showTrack = useSelector((state) => state.vehicle.showTrack);
 
-    const fieldsData = useSelector(selectAllFields);
-    const fieldsStatus = useSelector((state) => state.fields.status);
-    const fieldsError = useSelector((state) => state.fields.error);
-
-    const cadastreData = useSelector(selectAllCadastre);
-    const cadastreStatus = useSelector((state) => state.cadastre.status);
-    const cadastreError = useSelector((state) => state.cadastre.error);
-
     const geozoneData = useSelector(selectAllGeozone);
     const geozoneStatus = useSelector((state) => state.geozone.status);
     const geozoneError = useSelector((state) => state.geozone.error);
@@ -58,20 +50,20 @@ export default function Map() {
 
     const [key, setKey] = useState(0);
 
+    // Використовуємо React Query для отримання кадастрових даних
+    const { data: cadastreData, isLoading: isCadastreLoading, error: cadastreError } = useCadastreData();
+
+    // Використовуємо React Query для отримання даних полів
+    const { data: fieldsData, isLoading: isFieldsLoading, error: fieldsError } = useFieldsData();
+
     useEffect(() => {
         if (gpsStatus === 'idle') {
             dispatch(fetchGpsData());
         }
-        if (fieldsStatus === 'idle') {
-            dispatch(fetchFields());
-        }
-        if (cadastreStatus === 'idle') {
-            dispatch(fetchCadastre());
-        }
         if (geozoneStatus === 'idle') {
             dispatch(fetchGeozone());
         }
-    }, [dispatch, gpsStatus, fieldsStatus, cadastreStatus, geozoneStatus]);
+    }, [dispatch, gpsStatus, geozoneStatus]);
 
     useEffect(() => {
         setKey((prevKey) => prevKey + 1);
@@ -80,7 +72,7 @@ export default function Map() {
     const tileLayerConfig = getTileLayerConfig(mapType);
 
     const handleEditField = (field) => {
-        dispatch(setSelectedField(field));
+        dispatch(setSelectedField(field._id));
         dispatch(openAddFieldsModal());
     };
 
@@ -89,6 +81,9 @@ export default function Map() {
         iconSize: [25, 25],
         iconAnchor: [12, 12],
     });
+
+    if (isCadastreLoading || isFieldsLoading) return <p>Loading map data...</p>;
+    if (cadastreError || fieldsError) return <p>Error loading map data: {cadastreError?.message || fieldsError?.message}</p>;
 
     return (
         <Styles.wrapper>
@@ -118,7 +113,7 @@ export default function Map() {
                 />
 
                 {showFields && fieldsData.map((field, index) => (
-                    field.visibility && (
+                    field.visible && (
                         <React.Fragment key={index}>
                             <FieldLabel key={index} feature={field} zoomLevel={zoomLevel} type="field" onOpenModal={handleEditField} />
                             {field.matching_plots && field.matching_plots.map((plot, plotIndex) => (
