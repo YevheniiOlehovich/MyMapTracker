@@ -1,3 +1,10 @@
+export const createBlobFromImagePath = async (imagePath) => {
+    const response = await fetch(imagePath);
+    const imageBuffer = await response.arrayBuffer();
+    const blob = new Blob([imageBuffer], { type: 'image/webp' });
+    return blob;
+};
+
 export const convertImageToWebP = (file) => {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -13,25 +20,13 @@ export const convertImageToWebP = (file) => {
                     if (blob) {
                         resolve(blob);
                     } else {
-                        reject(new Error('Не вдалося створити WebP Blob'));
+                        reject('Failed to create WebP Blob');
                     }
                 }, 'image/webp', 0.8);
             };
             img.src = event.target.result;
         };
-        reader.onerror = () => reject(new Error('Помилка читання файлу'));
+        reader.onerror = () => reject('Failed to read file');
         reader.readAsDataURL(file);
     });
-};
-
-export const createBlobFromImagePath = async (imagePath) => {
-    try {
-        const response = await fetch(imagePath);
-        if (!response.ok) throw new Error('Не вдалося завантажити зображення');
-        const imageBuffer = await response.arrayBuffer();
-        return new Blob([imageBuffer], { type: 'image/webp' });
-    } catch (error) {
-        console.error('Помилка створення Blob:', error);
-        throw error;
-    }
 };

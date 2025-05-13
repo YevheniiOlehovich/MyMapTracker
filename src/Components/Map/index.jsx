@@ -5,8 +5,8 @@ import Styles from './styled';
 import { getTileLayerConfig } from '../../helpres/tileLayerHelper';
 import { useCadastreData } from '../../hooks/useCadastreData'; // Хук для кадастрових даних
 import { useFieldsData } from '../../hooks/useFieldsData'; // Хук для даних полів
-import { fetchGpsData } from '../../store/locationSlice';
-import { fetchGeozone, selectAllGeozone } from '../../store/geozoneSlice';
+import { useGeozoneData } from '../../hooks/useGeozonesData'; // Хук для геозон
+import { useGpsData } from '../../hooks/useGpsData'; // Хук для GPS-даних
 import { selectShowFields, selectShowCadastre, selectShowGeozones } from '../../store/layersList';
 import { selectMapCenter, selectZoomLevel, setZoomLevel } from '../../store/mapCenterSlice';
 import { selectCurrentLocation } from '../../store/currentLocationSlice';
@@ -28,16 +28,18 @@ function ZoomTracker({ setZoomLevel }) {
 
 export default function Map() {
     const dispatch = useDispatch();
-    const gpsData = useSelector((state) => state.gps.data);
-    const gpsStatus = useSelector((state) => state.gps.status);
-    const gpsError = useSelector((state) => state.gps.error);
-    const selectedDate = useSelector((state) => state.calendar.selectedDate);
-    const selectedImei = useSelector((state) => state.vehicle.imei);
-    const showTrack = useSelector((state) => state.vehicle.showTrack);
 
-    const geozoneData = useSelector(selectAllGeozone);
-    const geozoneStatus = useSelector((state) => state.geozone.status);
-    const geozoneError = useSelector((state) => state.geozone.error);
+    // Використовуємо React Query для отримання GPS-даних
+    const { data: gpsData = [], isLoading: isGpsLoading, isError: isGpsError, error: gpsError } = useGpsData();
+
+    // Використовуємо React Query для отримання кадастрових даних
+    const { data: cadastreData, isLoading: isCadastreLoading, error: cadastreError } = useCadastreData();
+
+    // Використовуємо React Query для отримання даних полів
+    const { data: fieldsData, isLoading: isFieldsLoading, error: fieldsError } = useFieldsData();
+
+    // Використовуємо React Query для отримання геозон
+    const { data: geozoneData, isLoading: isGeozoneLoading, error: geozoneError } = useGeozoneData();
 
     const showFields = useSelector(selectShowFields);
     const showCadastre = useSelector(selectShowCadastre);
@@ -48,22 +50,11 @@ export default function Map() {
     const zoomLevel = useSelector(selectZoomLevel);
     const currentLocation = useSelector(selectCurrentLocation); // Поточне місцезнаходження
 
+    const selectedDate = useSelector((state) => state.calendar.selectedDate);
+    const selectedImei = useSelector((state) => state.vehicle.imei);
+    const showTrack = useSelector((state) => state.vehicle.showTrack);
+
     const [key, setKey] = useState(0);
-
-    // Використовуємо React Query для отримання кадастрових даних
-    const { data: cadastreData, isLoading: isCadastreLoading, error: cadastreError } = useCadastreData();
-
-    // Використовуємо React Query для отримання даних полів
-    const { data: fieldsData, isLoading: isFieldsLoading, error: fieldsError } = useFieldsData();
-
-    useEffect(() => {
-        if (gpsStatus === 'idle') {
-            dispatch(fetchGpsData());
-        }
-        if (geozoneStatus === 'idle') {
-            dispatch(fetchGeozone());
-        }
-    }, [dispatch, gpsStatus, geozoneStatus]);
 
     useEffect(() => {
         setKey((prevKey) => prevKey + 1);
@@ -82,8 +73,18 @@ export default function Map() {
         iconAnchor: [12, 12],
     });
 
-    if (isCadastreLoading || isFieldsLoading) return <p>Loading map data...</p>;
-    if (cadastreError || fieldsError) return <p>Error loading map data: {cadastreError?.message || fieldsError?.message}</p>;
+    if (isGpsLoading || isCadastreLoading || isFieldsLoading || isGeozoneLoading) {
+        return <p>Loading map data...</p>;
+    }
+
+    if (isGpsError || cadastreError || fieldsError || geozoneError) {
+        return (
+            <p>
+                Error loading map data:{' '}
+                {gpsError?.message || cadastreError?.message || fieldsError?.message || geozoneError?.message}
+            </p>
+        );
+    }
 
     return (
         <Styles.wrapper>
@@ -107,40 +108,57 @@ export default function Map() {
 
                 <TrackMarkers
                     gpsData={gpsData}
-                    selectedDate={selectedDate}
-                    selectedImei={selectedImei}
-                    showTrack={showTrack}
+                    selectedDate={selectedDate} // Якщо потрібна фільтрація за датою, додайте відповідний параметр
+                    selectedImei={selectedImei} // Якщо потрібна фільтрація за IMEI, додайте відповідний параметр
+                    showTrack={showTrack} // Якщо потрібно показувати трек
                 />
 
-                {showFields && fieldsData.map((field, index) => (
-                    field.visible && (
-                        <React.Fragment key={index}>
-                            <FieldLabel key={index} feature={field} zoomLevel={zoomLevel} type="field" onOpenModal={handleEditField} />
-                            {field.matching_plots && field.matching_plots.map((plot, plotIndex) => (
-                                <Polygon
-                                    key={`matching-${index}-${plotIndex}`}
-                                    positions={plot.geometry.coordinates[0].map(coord => [coord[1], coord[0]])}
-                                    color="red"
+                {showFields &&
+                    fieldsData.map((field, index) =>
+                        field.visible ? (
+                            <React.Fragment key={index}>
+                                <FieldLabel
+                                    key={index}
+                                    feature={field}
+                                    zoomLevel={zoomLevel}
+                                    type="field"
+                                    onOpenModal={handleEditField}
                                 />
-                            ))}
-                            {field.not_processed && field.not_processed.map((plot, plotIndex) => (
-                                <Polygon
-                                    key={`not-processed-${index}-${plotIndex}`}
-                                    positions={plot.geometry.coordinates[0].map(coord => [coord[1], coord[0]])}
-                                    color="green"
-                                />
-                            ))}
-                        </React.Fragment>
-                    )
-                ))}
+                                {field.matching_plots &&
+                                    field.matching_plots.map((plot, plotIndex) => (
+                                        <Polygon
+                                            key={`matching-${index}-${plotIndex}`}
+                                            positions={plot.geometry.coordinates[0].map((coord) => [
+                                                coord[1],
+                                                coord[0],
+                                            ])}
+                                            color="red"
+                                        />
+                                    ))}
+                                {field.not_processed &&
+                                    field.not_processed.map((plot, plotIndex) => (
+                                        <Polygon
+                                            key={`not-processed-${index}-${plotIndex}`}
+                                            positions={plot.geometry.coordinates[0].map((coord) => [
+                                                coord[1],
+                                                coord[0],
+                                            ])}
+                                            color="green"
+                                        />
+                                    ))}
+                            </React.Fragment>
+                        ) : null
+                    )}
 
-                {showCadastre && cadastreData.map((cadastre, index) => (
-                    <FieldLabel key={index} feature={cadastre} zoomLevel={zoomLevel} type="cadastre" />
-                ))}
+                {showCadastre &&
+                    cadastreData.map((cadastre, index) => (
+                        <FieldLabel key={index} feature={cadastre} zoomLevel={zoomLevel} type="cadastre" />
+                    ))}
 
-                {showGeozones && geozoneData.map((geozone, index) => (
-                    <FieldLabel key={index} feature={geozone} zoomLevel={zoomLevel} type="geozone" />
-                ))}
+                {showGeozones &&
+                    geozoneData.map((geozone, index) => (
+                        <FieldLabel key={index} feature={geozone} zoomLevel={zoomLevel} type="geozone" />
+                    ))}
 
                 {/* Додаємо маркер тільки якщо currentLocation заданий */}
                 {currentLocation && (

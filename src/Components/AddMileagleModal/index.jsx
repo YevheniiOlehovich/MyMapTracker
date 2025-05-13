@@ -1,21 +1,25 @@
-import { useDispatch, useSelector } from 'react-redux';
 import Styles from './styled';
 import Button from '../Button';
 import closeModal from "../../helpres/closeModal";
 import { months, vehicleTypes } from '../../helpres';
 import Select from 'react-select';
 import { useEffect, useState } from 'react';
-import { fetchGroups, selectAllGroups } from '../../store/groupSlice';
-import { fetchGpsData } from '../../store/locationSlice';
 import { haversineDistance } from '../../helpres/distance';
-import { fetchRates, selectRates } from '../../store/ratesSlice';
+import { useGpsData } from '../../hooks/useGpsData'; // Хук для GPS-даних
+import { useRatesData } from '../../hooks/useRatesData'; // Хук для тарифів
+import { useGroupsData } from '../../hooks/useGroupsData'; // Хук для отримання груп
 
 export default function AddMileagleModal({ onClose }) {
-    const dispatch = useDispatch();
-    const groups = useSelector(selectAllGroups);
-    const gpsData = useSelector((state) => state.gps.data);
-    const rates = useSelector(selectRates);
     const handleWrapperClick = closeModal(onClose);
+
+    // Використовуємо React Query для отримання груп
+    const { data: groups = [], isLoading: isGroupsLoading, isError: isGroupsError, error: groupsError } = useGroupsData();
+
+    // Використовуємо React Query для отримання GPS-даних
+    const { data: gpsData = [], isLoading: isGpsLoading, isError: isGpsError, error: gpsError } = useGpsData();
+
+    // Використовуємо React Query для отримання тарифів
+    const { data: rates = {}, isLoading: isRatesLoading, isError: isRatesError, error: ratesError } = useRatesData();
 
     const [selectedMonth, setSelectedMonth] = useState(null);
     const [selectedVehicle, setSelectedVehicle] = useState(null);
@@ -23,12 +27,6 @@ export default function AddMileagleModal({ onClose }) {
     const [totalDistance, setTotalDistance] = useState(0);
     const [totalCost, setTotalCost] = useState(0);
     const [selectedGpsData, setSelectedGpsData] = useState([]);
-
-    useEffect(() => {
-        dispatch(fetchGroups());
-        dispatch(fetchGpsData());
-        dispatch(fetchRates());
-    }, [dispatch]);
 
     useEffect(() => {
         if (groups.length > 0) {
@@ -82,44 +80,27 @@ export default function AddMileagleModal({ onClose }) {
             alert("Оберіть місяць та техніку!");
             return;
         }
-    
+
         let totalDistance = 0;
-        const dailyDistances = {}; // Об'єкт для збереження пробігу по днях
-    
+
         selectedGpsData.forEach((data) => {
-            if (!data.data || !Array.isArray(data.data)) {
-                console.error(`Помилка у data.data:`, data);
-                return;
-            }
-    
-            const gpsDate = new Date(data.date).toISOString().split('T')[0]; // Отримуємо лише дату (РРРР-ММ-ДД)
-            dailyDistances[gpsDate] = 0; // Ініціалізуємо запис для дня
-    
             const coordinates = data.data.map(coord => [coord.latitude, coord.longitude]);
-    
+
             for (let i = 1; i < coordinates.length; i++) {
                 const [lat1, lon1] = coordinates[i - 1];
                 const [lat2, lon2] = coordinates[i];
-    
-                if (lat1 == null || lon1 == null || lat2 == null || lon2 == null) {
-                    console.error(`Некоректні координати:`, coordinates[i - 1], coordinates[i]);
-                    continue;
-                }
-    
+
                 const distance = haversineDistance(lat1, lon1, lat2, lon2);
                 totalDistance += distance;
-                dailyDistances[gpsDate] += distance;
             }
         });
-    
-        // Розрахунок вартості пробігу
+
         const vehicleType = vehicleTypes.find(type => type._id === selectedVehicle.type);
         if (!vehicleType) {
-            console.error('Тип транспортного засобу не знайдено:', selectedVehicle.type);
             alert("Невідомий тип транспортного засобу!");
             return;
         }
-    
+
         let rate = 0;
         switch (vehicleType._id) {
             case 'car':
@@ -138,16 +119,18 @@ export default function AddMileagleModal({ onClose }) {
                 rate = rates.truckRate;
                 break;
             default:
-                console.error('Невідомий тип транспортного засобу:', vehicleType._id);
                 alert("Невідомий тип транспортного засобу!");
                 return;
         }
-    
+
         const totalCost = (totalDistance * rate).toFixed(2);
-    
+
         setTotalDistance(totalDistance);
         setTotalCost(totalCost);
     };
+
+    if (isGroupsLoading || isGpsLoading || isRatesLoading) return <p>Завантаження даних...</p>;
+    if (isGroupsError || isGpsError || isRatesError) return <p>Помилка завантаження даних: {groupsError?.message || gpsError?.message || ratesError?.message}</p>;
 
     return (
         <Styles.Wrapper onClick={handleWrapperClick}>
@@ -172,7 +155,7 @@ export default function AddMileagleModal({ onClose }) {
                         onChange={handleVehicleChange}
                         options={vehicles}
                         placeholder="Оберіть техніку"
-                        isLoading={groups.length === 0}
+                        isLoading={isGroupsLoading}
                     />
                 </div>
 

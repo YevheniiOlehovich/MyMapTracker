@@ -1,23 +1,29 @@
 import { Styles } from './styles';
 import closeModal from "../../helpres/closeModal";
-import { useEffect, useState } from 'react';
-import { fetchGroups, selectAllGroups } from '../../store/groupSlice'; 
-import { useDispatch, useSelector } from 'react-redux';
+import { useState } from 'react';
 import SelectComponent from '../Select';
 import Button from '../Button';
 import QuestionIco from '../../assets/ico/10965421.webp';
 import { vehicleTypes } from '../../helpres';
-import apiRoutes from '../../helpres/ApiRoutes';
-import { convertImageToWebP, createBlobFromImagePath } from '../../helpres/imageUtils';
+import { createBlobFromImagePath, convertImageToWebP } from '../../helpres/imageUtils';
+import { useGroupsData, useDeleteVehicle, useSaveVehicle } from '../../hooks/useGroupsData'; // Хуки для роботи з групами та технікою
+import { useSelector } from 'react-redux';
 
 export default function AddVehicleModal({ onClose }) {
-    const dispatch = useDispatch();
-    const editVehicleId = useSelector(state => state.modals.editVehicleId);
-    const editGroupId = useSelector(state => state.modals.editGroupId);
-    const groups = useSelector(selectAllGroups);
-
-    const editVehicle = groups.flatMap(group => group.vehicles).find(vehicle => vehicle._id === editVehicleId);
+    const { editGroupId, editVehicleId } = useSelector((state) => state.modals);
+    const saveVehicle = useSaveVehicle();
+    
     const handleWrapperClick = closeModal(onClose);
+
+    // Отримуємо дані груп через React Query
+    const { data: groups = [] } = useGroupsData();
+
+    // Хуки для оновлення та видалення техніки
+    const deleteVehicle = useDeleteVehicle();
+
+    const editVehicle = groups
+        .flatMap(group => group.vehicles)
+        .find(vehicle => vehicle._id === editVehicleId);
 
     const [selectedGroup, setSelectedGroup] = useState(editVehicle ? editGroupId : null);
     const [selectedGroupName, setSelectedGroupName] = useState(editVehicle ? groups.find(group => group._id === editGroupId)?.name : '');
@@ -27,10 +33,6 @@ export default function AddVehicleModal({ onClose }) {
     const [note, setNote] = useState(editVehicle?.note || '');
     const [vehicleType, setVehicleType] = useState(editVehicle?.vehicleType || '');
     const [employeePhoto, setEmployeePhoto] = useState(editVehicle?.photoPath ? `/src/${editVehicle.photoPath.substring(3).replace(/\\/g, '/')}` : QuestionIco);
-
-    useEffect(() => {
-        dispatch(fetchGroups());
-    }, [dispatch]);
 
     const handleGroupChange = (option) => {
         setSelectedGroup(option.value);
@@ -58,28 +60,26 @@ export default function AddVehicleModal({ onClose }) {
             formData.append('mark', mark);
             formData.append('note', note);
             formData.append('imei', imei);
-
+    
             if (employeePhoto instanceof Blob) {
                 formData.append('photo', employeePhoto, 'vehicle.webp');
             } else if (typeof employeePhoto === 'string' && employeePhoto !== QuestionIco) {
                 const blob = await createBlobFromImagePath(employeePhoto);
                 formData.append('photo', blob, 'vehicle.webp');
             }
-
-            const url = apiRoutes.addVehicle(selectedGroup);
-            const response = await fetch(url, { method: 'POST', body: formData });
-            console.log(response)
-
-            if (!response.ok) throw new Error('Не вдалося зберегти техніку');
-            const savedVehicle = await response.json();
-            console.log('Техніка успішно збережена:', savedVehicle);
-
+    
             if (editVehicleId) {
-                const deleteUrl = apiRoutes.deleteVehicle(editGroupId, editVehicleId);
-                await fetch(deleteUrl, { method: 'DELETE' });
+                // Видалення старих даних через хук
+                await deleteVehicle.mutateAsync({ groupId: editGroupId, vehicleId: editVehicleId });
+                console.log(`Стара техніка з ID ${editVehicleId} успішно видалена.`);
             }
-
-            dispatch(fetchGroups());
+    
+            // Збереження нових даних через хук
+            saveVehicle.mutate({
+                groupId: selectedGroup,
+                vehicleData: formData,
+            });
+    
             onClose();
         } catch (error) {
             console.error('Помилка при збереженні техніки:', error);
@@ -89,7 +89,7 @@ export default function AddVehicleModal({ onClose }) {
     return (
         <Styles.wrapper onClick={handleWrapperClick}>
             <Styles.modal>
-                <Styles.title>Додавання нової техніки</Styles.title>
+                <Styles.title>{editVehicleId ? 'Редагування техніки' : 'Додавання нової техніки'}</Styles.title>
                 <Styles.closeButton onClick={onClose} />
                 <Styles.styledPhotoBlock>
                     <Styles.blockColumn>
@@ -105,7 +105,7 @@ export default function AddVehicleModal({ onClose }) {
                 </Styles.styledPhotoBlock>
                 <Styles.lable>
                     <Styles.subtitle>Виберіть групу</Styles.subtitle>
-                    <SelectComponent 
+                    <SelectComponent  
                         options={groups} 
                         value={selectedGroup ? { value: selectedGroup, label: selectedGroupName } : null} 
                         onChange={handleGroupChange} 
@@ -118,7 +118,7 @@ export default function AddVehicleModal({ onClose }) {
                         options={vehicleTypes} 
                         value={vehicleType ? { value: vehicleType, label: vehicleTypes.find(vt => vt._id === vehicleType)?.name } : null} 
                         onChange={handleVehicleTypeChange} 
-                        placeholder="Оберіть тип техніки" 
+                        placeholder="Оберіть тип техніки"
                     />
                 </Styles.lable>
                 <Styles.lable>

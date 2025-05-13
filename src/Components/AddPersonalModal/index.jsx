@@ -1,77 +1,43 @@
-import { useState, useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { fetchGroups, selectAllGroups } from '../../store/groupSlice'; 
+import { useState } from 'react';
 import Styles from './styles';
 import closeModal from "../../helpres/closeModal";
 import Button from '../Button';
-import apiRoutes from '../../helpres/ApiRoutes';
 import QuestionIco from '../../assets/ico/10965421.webp';
-import SelectComponent from '../Select'; 
+import SelectComponent from '../Select';
+import { useGroupsData, useDeletePersonnel, useSavePersonnel } from '../../hooks/useGroupsData'; // Хуки для роботи з групами та персоналом
+import { useSelector } from 'react-redux';
+import { createBlobFromImagePath, convertImageToWebP } from '../../helpres/imageUtils';
 
-export default function AddPersonalModal({ onClose }) { 
-    const dispatch = useDispatch();
-    const editGroupId = useSelector(state => state.modals.editGroupId);
-    const editPersonId = useSelector(state => state.modals.editPersonId);
-    const groups = useSelector(selectAllGroups);
-
-    const editPerson = groups.flatMap(group => group.personnel).find(person => person._id === editPersonId);
+export default function AddPersonalModal({ onClose }) {
+    const { editGroupId, editPersonId } = useSelector((state) => state.modals);
 
     const handleWrapperClick = closeModal(onClose);
 
+    const savePersonnel = useSavePersonnel(); // Хук для збереження персоналу
+
+    // Отримуємо дані груп через React Query
+    const { data: groups = [] } = useGroupsData();
+
+    // Хуки для оновлення та видалення персоналу
+    const deletePersonnel = useDeletePersonnel();
+
+    const editPerson = groups
+        .flatMap(group => group.personnel)
+        .find(person => person._id === editPersonId);
+
     const [firstName, setFirstName] = useState(editPerson ? editPerson.firstName : '');
     const [lastName, setLastName] = useState(editPerson ? editPerson.lastName : '');
-    const [contactNumber, setContactNumber] = useState(editPerson ? editPerson.contactNumber : ''); 
+    const [contactNumber, setContactNumber] = useState(editPerson ? editPerson.contactNumber : '');
     const [note, setNote] = useState(editPerson ? editPerson.note : '');
-    const [employeePhoto, setEmployeePhoto] = useState(editPerson && editPerson.photoPath 
-        ? '/src/' + editPerson.photoPath.substring(3).replace(/\\/g, '/') 
+    const [employeePhoto, setEmployeePhoto] = useState(editPerson && editPerson.photoPath
+        ? '/src/' + editPerson.photoPath.substring(3).replace(/\\/g, '/')
         : QuestionIco);
     const [selectedGroup, setSelectedGroup] = useState(editPerson ? editGroupId : null);
     const [selectedGroupName, setSelectedGroupName] = useState(editPerson ? groups.find(group => group._id === editGroupId)?.name : null);
 
-
-    console.log('selectedGroup', selectedGroup)
-    console.log('selectedGroupName', selectedGroupName)
-
     const handleGroupChange = (option) => {
-        setSelectedGroup(option.value); 
+        setSelectedGroup(option.value);
         setSelectedGroupName(option.label);
-    };
-
-    useEffect(() => {
-        dispatch(fetchGroups());
-    }, [dispatch]);
-
-    const createBlobFromImagePath = async (imagePath) => {
-        const response = await fetch(imagePath); 
-        const imageBuffer = await response.arrayBuffer(); 
-        const blob = new Blob([imageBuffer], { type: 'image/webp' });
-        return blob;
-    };
-
-    const convertImageToWebP = (file) => {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                const img = new Image();
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    canvas.width = img.width;
-                    canvas.height = img.height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0);
-                    canvas.toBlob((blob) => {
-                        if (blob) {
-                            resolve(blob);
-                        } else {
-                            reject('Failed to create WebP Blob');
-                        }
-                    }, 'image/webp', 0.8); 
-                };
-                img.src = event.target.result;
-            };
-            reader.onerror = () => reject('Failed to read file');
-            reader.readAsDataURL(file);
-        });
     };
 
     const handlePhotoChange = async (e) => {
@@ -87,180 +53,105 @@ export default function AddPersonalModal({ onClose }) {
     };
 
     const handleSave = async () => {
-        const formData = new FormData();
-        formData.append('firstName', firstName);
-        formData.append('lastName', lastName);
-        formData.append('contactNumber', contactNumber);
-        formData.append('note', note);
-        formData.append('groupId', selectedGroup || editGroupId);
-
-        if (employeePhoto instanceof Blob) {
-            formData.append('photo', employeePhoto, 'employee.webp');
-        } else if (typeof employeePhoto === 'string' && employeePhoto !== QuestionIco) {
-            const blob = await createBlobFromImagePath(employeePhoto); 
-            formData.append('photo', blob, 'employee.webp');
-        }
-
         try {
-            const url = apiRoutes.addPersonnel(selectedGroup);
-            const response = await fetch(url, { method: 'POST', body: formData });
-
-            if (!response.ok) {
-                throw new Error('Failed to save employee');
+            const formData = new FormData();
+            formData.append('firstName', firstName);
+            formData.append('lastName', lastName);
+            formData.append('contactNumber', contactNumber);
+            formData.append('note', note);
+            formData.append('groupId', selectedGroup || editGroupId);
+    
+            if (employeePhoto instanceof Blob) {
+                formData.append('photo', employeePhoto, 'employee.webp');
+            } else if (typeof employeePhoto === 'string' && employeePhoto !== QuestionIco) {
+                const blob = await createBlobFromImagePath(employeePhoto);
+                formData.append('photo', blob, 'employee.webp');
             }
-
-            const savedEmployee = await response.json();
-
+    
             if (editPersonId) {
-                const deleteUrl = apiRoutes.deletePersonnel(editGroupId, editPersonId);
-                const deleteResponse = await fetch(deleteUrl, { method: 'DELETE' });
-
-                if (!deleteResponse.ok) {
-                    throw new Error('Failed to delete old employee');
-                }
+                // Видалення старого працівника через хук
+                await deletePersonnel.mutateAsync({ groupId: editGroupId, personnelId: editPersonId });
+                console.log(`Старий працівник з ID ${editPersonId} успішно видалений.`);
             }
-
-            dispatch(fetchGroups());
+    
+            // Збереження нового працівника через хук
+            savePersonnel.mutate({
+                groupId: selectedGroup,
+                personnelData: formData,
+            });
+    
             onClose();
         } catch (error) {
-            console.error('Error saving employee:', error);
+            console.error('Помилка при збереженні працівника:', error);
         }
     };
-    
+
     return (
-        // <StyledWrapper onClick={handleWrapperClick}>
-        //     <StyledModal>
-        //         <StyledCloseButton onClick={onClose} />
-        //         <StyledTitle>{editPersonId ? 'Редагування працівника' : 'Додавання нового працівника'}</StyledTitle>
-                
-        //         <StyledPhotoBlock>
-        //             <BlockColumn>
-        //                 <StyledSubtitle>Фото працівника</StyledSubtitle>
-        //                 <StyledButtonLabel>
-        //                     <StyledText>{editPersonId ? 'Змінити фото' : 'Додати фото'}</StyledText>
-        //                     <StyledInputFile 
-        //                         type='file' 
-        //                         accept="image/*" 
-        //                         onChange={handlePhotoChange} 
-        //                     />
-        //                 </StyledButtonLabel>
-        //             </BlockColumn>
-                    
-        //             <PhotoBlock>
-        //                 <PhotoPic src={employeePhoto instanceof Blob ? URL.createObjectURL(employeePhoto) : employeePhoto} />
-        //             </PhotoBlock>
-        //         </StyledPhotoBlock>
-                
-        //         <StyledLabel>
-        //             <StyledSubtitle>Виберіть групу</StyledSubtitle>
-        //             <SelectComponent 
-        //                 options={groups} 
-        //                 value={selectedGroup ? { value: selectedGroup, label: selectedGroupName } : null} 
-        //                 onChange={handleGroupChange} 
-        //                 placeholder="Оберіть групу"
-        //             />
-        //         </StyledLabel>
-
-        //         <StyledLabel>
-        //             <StyledSubtitle>Ім'я працівника</StyledSubtitle>
-        //             <StyledInput 
-        //                 value={firstName}
-        //                 onChange={(e) => setFirstName(e.target.value)}
-        //             />
-        //         </StyledLabel>
-        //         <StyledLabel>
-        //             <StyledSubtitle>Прізвище працівника</StyledSubtitle>
-        //             <StyledInput 
-        //                 value={lastName} 
-        //                 onChange={(e) => setLastName(e.target.value)}
-        //             />
-        //         </StyledLabel>
-        //         <StyledLabel>
-        //             <StyledSubtitle>Контактний номер</StyledSubtitle>
-        //             <StyledInput 
-        //                 value={contactNumber} 
-        //                 onChange={(e) => setContactNumber(e.target.value)}
-        //             />
-        //         </StyledLabel>
-        //         <StyledLabel>
-        //             <StyledTextArea
-        //                 maxLength={250}
-        //                 value={note} 
-        //                 onChange={(e) => setNote(e.target.value)}
-        //             />
-        //         </StyledLabel>
-                
-        //         <div style={{ display: 'flex', justifyContent: 'flex-end'}}>
-        //             <Button text={'Зберегти'} onClick={handleSave} />
-        //         </div>
-        //     </StyledModal>
-        // </StyledWrapper>
-
         <Styles.StyledWrapper onClick={handleWrapperClick}>
             <Styles.StyledModal>
-                {/* <Styles.StyledCloseButton onClick={onClose} /> */}
+                <Styles.StyledCloseButton onClick={onClose} />
                 <Styles.StyledTitle>{editPersonId ? 'Редагування працівника' : 'Додавання нового працівника'}</Styles.StyledTitle>
                 
-                <Styles.StyledLabel>
-                    <Styles.StyledSubtitle>Ім’я</Styles.StyledSubtitle>
-                    <Styles.StyledInput 
-                        value={firstName}
-                        onChange={(e) => setFirstName(e.target.value)} 
-                    />
-                </Styles.StyledLabel>
-                
-                <Styles.StyledLabel>
-                    <Styles.StyledSubtitle>Призвище</Styles.StyledSubtitle>
-                    <Styles.StyledInput 
-                        value={lastName}
-                        onChange={(e) => setLastName(e.target.value)} 
-                    />
-                </Styles.StyledLabel>
-
-                <Styles.StyledLabel>
-                    <Styles.StyledSubtitle>Номер телефону</Styles.StyledSubtitle>
-                    <Styles.StyledInput 
-                        value={contactNumber}
-                        onChange={(e) => setContactNumber(e.target.value)} 
-                    />
-                </Styles.StyledLabel>
-
-                <Styles.StyledLabel>
-                    <Styles.StyledSubtitle>Примітка</Styles.StyledSubtitle>
-                    <Styles.StyledTextArea 
-                        value={note}
-                        onChange={(e) => setNote(e.target.value)} 
-                    />
-                </Styles.StyledLabel>
-
-                <Styles.StyledLabel>
-                    <Styles.StyledSubtitle>Група</Styles.StyledSubtitle>
-                    <SelectComponent 
-                        onChange={handleGroupChange} 
-                        selectedGroup={selectedGroup} 
-                        selectedGroupName={selectedGroupName} 
-                        groups={groups}
-                    />
-                </Styles.StyledLabel>
-
                 <Styles.StyledPhotoBlock>
-                    <Styles.PhotoBlock>
-                        <Styles.PhotoPic src={employeePhoto instanceof Blob ? URL.createObjectURL(employeePhoto) : employeePhoto} alt="Employee" />
-                    </Styles.PhotoBlock>
                     <Styles.BlockColumn>
-                        <Styles.StyledButtonLabel htmlFor="fileInput">
-                            Завантажити фото
+                        <Styles.StyledSubtitle>Фото працівника</Styles.StyledSubtitle>
+                        <Styles.StyledButtonLabel>
+                            <Styles.StyledText>{editPersonId ? 'Змінити фото' : 'Додати фото'}</Styles.StyledText>
                             <Styles.StyledInputFile 
-                                id="fileInput"
-                                type="file"
-                                accept="image/*"
-                                onChange={handlePhotoChange}
+                                type='file' 
+                                accept="image/*" 
+                                onChange={handlePhotoChange} 
                             />
                         </Styles.StyledButtonLabel>
                     </Styles.BlockColumn>
+                    
+                    <Styles.PhotoBlock>
+                        <Styles.PhotoPic src={employeePhoto instanceof Blob ? URL.createObjectURL(employeePhoto) : employeePhoto} />
+                    </Styles.PhotoBlock>
                 </Styles.StyledPhotoBlock>
+                
+                <Styles.StyledLabel>
+                    <Styles.StyledSubtitle>Виберіть групу</Styles.StyledSubtitle>
+                    <SelectComponent 
+                        options={groups} 
+                        value={selectedGroup ? { value: selectedGroup, label: selectedGroupName } : null} 
+                        onChange={handleGroupChange} 
+                        placeholder="Оберіть групу"
+                    />
+                </Styles.StyledLabel>
 
-                <Button onClick={handleSave}>{editPersonId ? 'Зберегти' : 'Додати'}</Button>
+                <Styles.StyledLabel>
+                    <Styles.StyledSubtitle>Ім'я працівника</Styles.StyledSubtitle>
+                    <Styles.StyledInput 
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
+                    />
+                </Styles.StyledLabel>
+                <Styles.StyledLabel>
+                    <Styles.StyledSubtitle>Прізвище працівника</Styles.StyledSubtitle>
+                    <Styles.StyledInput 
+                        value={lastName} 
+                        onChange={(e) => setLastName(e.target.value)}
+                    />
+                </Styles.StyledLabel>
+                <Styles.StyledLabel>
+                    <Styles.StyledSubtitle>Контактний номер</Styles.StyledSubtitle>
+                    <Styles.StyledInput 
+                        value={contactNumber} 
+                        onChange={(e) => setContactNumber(e.target.value)}
+                    />
+                </Styles.StyledLabel>
+                <Styles.StyledLabel>
+                    <Styles.StyledTextArea
+                        maxLength={250}
+                        value={note} 
+                        onChange={(e) => setNote(e.target.value)}
+                    />
+                </Styles.StyledLabel>
+                
+                <div style={{ display: 'flex', justifyContent: 'flex-end'}}>
+                    <Button text={'Зберегти'} onClick={handleSave} />
+                </div>
             </Styles.StyledModal>
         </Styles.StyledWrapper>
     );

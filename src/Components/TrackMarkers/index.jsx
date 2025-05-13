@@ -2,7 +2,7 @@ import React, { useMemo, useEffect, useState } from 'react';
 import { Marker, Polyline, Popup } from 'react-leaflet';
 import { useDispatch, useSelector } from 'react-redux';
 import { setImei, toggleShowTrack } from '../../store/vehicleSlice';
-import { selectAllGroups } from '../../store/groupSlice';
+import { useGroupsData } from '../../hooks/useGroupsData';
 import { haversineDistance } from '../../helpres/distance';
 import L from 'leaflet';
 import parkingIco from '../../assets/ico/parking-ico.png';
@@ -15,13 +15,11 @@ const TrackMarkers = ({ gpsData, selectedDate, selectedImei, showTrack }) => {
     const dispatch = useDispatch();
     const [showParkingMarkers, setShowParkingMarkers] = useState(false);
 
-    // Отримуємо дані груп з Redux
-    const groups = useSelector(selectAllGroups);
+    // Отримуємо дані груп з 
+    const { data: groups = [], isLoading: isGroupsLoading, isError: isGroupsError, error: groupsError } = useGroupsData();
 
-    // Логування груп
-    // useEffect(() => {
-    //     console.log('Groups:', groups);
-    // }, [groups]);
+    if (isGroupsLoading) return <p>Завантаження груп...</p>;
+    if (isGroupsError) return <p>Помилка завантаження груп: {groupsError.message}</p>;
 
     const getVehicleTypeByImei = (imei) => {
         if (!Array.isArray(groups)) {
@@ -102,10 +100,6 @@ const TrackMarkers = ({ gpsData, selectedDate, selectedImei, showTrack }) => {
             return segment.map(point => ({ ...point, duration }));
         });
     }, [filteredGpsData, selectedImei]);
-
-    // useEffect(() => {
-    //     console.log('Stationary Segments:', stationarySegments);
-    // }, [stationarySegments]);
 
     const handleMarkerClick = (imei) => {
         dispatch(setImei(imei));
