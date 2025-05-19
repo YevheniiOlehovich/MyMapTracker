@@ -12,7 +12,7 @@ export const StyledAside = styled.aside`
     transform: translateY(-50%);
     display: flex;
     flex-direction: column;
-    justify-content: flex-start;
+    justify-content: space-between;
     align-items: center;
 
 `

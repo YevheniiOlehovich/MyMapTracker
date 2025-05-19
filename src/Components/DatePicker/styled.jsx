@@ -27,14 +27,21 @@ const styles = {
     `,
     
     CalendarWrapper: styled.div`
-        position: absolute;
+        /* position: absolute;
         top: 100%;
         left: 0;
         z-index: 10;
         background: white;
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         border-radius: 4px;
+        overflow: hidden; */
+        position: relative;
+        width: 300px;
+        box-sizing: border-box;
         overflow: hidden;
+        background: white;
+        border: 2px solid gray;
+        height: auto;
     `,
 };
 

@@ -24,9 +24,9 @@ export default function GroupsContainer() {
     return (
         <>
             <Styles.wrapper>
-                <Styles.block>
+                {/* <Styles.block>
                     <Styles.title>Список груп</Styles.title>
-                </Styles.block>
+                </Styles.block> */}
                 <Styles.block>
                     <Button text={'Створити групу'} onClick={() => dispatch(openAddGroupModal())} /> 
                     <Button text={'Додати працівника'} onClick={() => dispatch(openAddPersonalModal())}/>

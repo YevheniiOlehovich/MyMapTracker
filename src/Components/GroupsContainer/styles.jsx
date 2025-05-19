@@ -5,6 +5,7 @@ const Styles = {
         box-sizing: border-box;
         position: relative;
         width: 100%;
+        max-height: calc(100% - 320px);
     `,
     title: styled.h3`
         font-family: Arial, Helvetica, sans-serif;

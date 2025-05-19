@@ -82,8 +82,9 @@ const Styles = {
         padding: 0 8px;
         margin: 0;
         width: 100%;
-        height: 100%;
+        height: calc(100% - 52px);
         overflow-y: auto;
+        
     `,
     span: styled.span`
         margin: 0 0 8px 0;

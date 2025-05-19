@@ -1,5 +1,5 @@
 import { StyledHeader } from './styled'; 
-import DatePickerComponent from '../DatePicker';
+// import DatePickerComponent from '../DatePicker';
 import Button from '../Button';
 import { 
     openAddRatesModal, 
@@ -42,7 +42,8 @@ export default function Header() {
 
     return (
         <StyledHeader>
-            <DatePickerComponent />
+            {/* <DatePickerComponent /> */}
+            <Button text={'Завдання'}></Button>
             <Button text={'Тарифи'} onClick={() => dispatch(openAddRatesModal())} />
             <Button text={'Пробіг'} onClick={() => dispatch(openAddMileagle())} />
             <Button text={'Земельний банк'} onClick={() => dispatch(openLandBankReportModal())} />
