@@ -9,9 +9,11 @@ import {
 import { setMapCenter } from '../../store/mapCenterSlice'; // Для центру карти
 import { setCurrentLocation, setLocationError } from '../../store/currentLocationSlice'; // Для маркера поточного місцезнаходження
 import { useDispatch } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 
 export default function Header() {
     const dispatch = useDispatch();
+    const navigate = useNavigate();
 
     // Функція для виходу з аккаунта
     const handleLogout = () => {
@@ -40,10 +42,14 @@ export default function Header() {
         }
     };
 
+    const handleNavigateToTasks = () => {
+        navigate('/tasks'); // Переходимо на сторінку Tasks
+    };
+
     return (
         <StyledHeader>
             {/* <DatePickerComponent /> */}
-            <Button text={'Завдання'}></Button>
+            <Button text={'Завдання'} onClick={handleNavigateToTasks} />
             <Button text={'Тарифи'} onClick={() => dispatch(openAddRatesModal())} />
             <Button text={'Пробіг'} onClick={() => dispatch(openAddMileagle())} />
             <Button text={'Земельний банк'} onClick={() => dispatch(openLandBankReportModal())} />
@@ -52,3 +58,8 @@ export default function Header() {
         </StyledHeader>
     );
 }
+
+
+
+
+

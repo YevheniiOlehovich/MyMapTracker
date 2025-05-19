@@ -1,7 +1,9 @@
 import Main from "./Components/Main";
+import TaskManager from "./Components/TaskManager";
 import { createGlobalStyle } from 'styled-components';
 import { Provider } from 'react-redux'; // Імпортуємо Provider
 import store from './store/store'; // Імпортуємо ваш store
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'; // Імпортуємо React Router
 
 const GlobalStyle = createGlobalStyle`
   * {
@@ -23,7 +25,13 @@ function App() {
   return (
     <Provider store={store}> {/* Обгортаємо ваш компонент в Provider */}
       <GlobalStyle />
-      <Main />
+      {/* <Main /> */}
+      <Router> {/* Додаємо Router */}
+        <Routes>
+          <Route path="/" element={<Main />} /> {/* Головна сторінка */}
+          <Route path="/tasks" element={<TaskManager />} /> {/* Сторінка Tasks */}
+        </Routes>
+      </Router>
     </Provider>
   );
 }
