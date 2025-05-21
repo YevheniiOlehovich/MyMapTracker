@@ -37,6 +37,23 @@ const vehicleStorage = multer.diskStorage({
 });
 const vehicleUpload = multer({ storage: vehicleStorage });
 
+// Налаштування multer для збереження фотографій техніки в окрему папку
+const techniqueStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        const dir = '../uploads/techniques'; // Вказуємо папку для збереження техніки
+        if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true }); // Створюємо папку, якщо вона не існує
+        }
+        cb(null, dir);
+    },
+    filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+        cb(null, uniqueSuffix + path.extname(file.originalname)); // Генеруємо унікальне ім'я файлу
+    },
+});
+
+const techniqueUpload = multer({ storage: techniqueStorage }); // Ініціалізуємо multer із налаштуваннями
+
 const upload = multer({ storage });
 
 // Схема для групи з шляхом до фото в базі даних
@@ -58,6 +75,16 @@ const GroupSchema = new mongoose.Schema({
         note: { type: String },
         photoPath: { type: String }, 
         imei: { type: String },
+    }],
+    techniques: [{ // Додаємо масив для техніки
+        name: { type: String, required: true }, // Назва техніки
+        rfid: { type: String, required: true }, // RFID мітка
+        uniqNum: { type: String }, // Унікальний номер
+        width: { type: Number }, // Ширина
+        speed: { type: Number }, // Максимальна швидкість
+        note: { type: String }, // Нотатки
+        fieldOperation: { type: String }, // Операція з полями
+        photoPath: { type: String }, // Шлях до фото
     }],
 });
 
@@ -322,6 +349,100 @@ router.delete('/:groupId/vehicles/:vehicleId', async (req, res) => {
     }
 });
 
+// Додавання нової техніки до групи з фотографією
+router.post('/:groupId/techniques', techniqueUpload.single('photo'), async (req, res) => {
+    try {
+        const { name, rfid, uniqNum, width, speed, note, fieldOperation } = req.body;
 
+        // Перевірка, чи всі необхідні дані надані
+        if (!name || !rfid) {
+            return res.status(400).json({ message: 'Name and RFID are required.' });
+        }
+
+        // Знаходимо групу за groupId
+        const group = await Group.findById(req.params.groupId);
+        if (!group) {
+            return res.status(404).json({ message: 'Group not found' });
+        }
+
+        // Логування шляху до фото
+        const photoPath = req.file ? req.file.path : null;
+        if (photoPath) {
+            console.log('Technique image uploaded to: ', photoPath); // Логування шляху до зображення
+        }
+
+        // Створення нової техніки
+        const newTechnique = {
+            name,
+            rfid,
+            uniqNum,
+            width,
+            speed,
+            note,
+            fieldOperation,
+            photoPath, // Зберігаємо шлях до фото
+        };
+
+        // Додавання техніки до масиву techniques групи
+        group.techniques.push(newTechnique);
+
+        // Збереження оновленої групи
+        await group.save();
+
+        // Відправка лише нової техніки в відповіді
+        res.status(201).json(newTechnique);
+    } catch (error) {
+        console.error('Error saving technique:', error);
+        res.status(500).json({ message: 'Error saving technique', error: error.message });
+    }
+});
+
+// Видалення техніки з групи разом із зображенням
+router.delete('/:groupId/techniques/:techniqueId', async (req, res) => {
+    try {
+        const { groupId, techniqueId } = req.params;
+
+        // Знаходимо групу
+        const group = await Group.findById(groupId);
+        if (!group) {
+            return res.status(404).json({ message: 'Group not found' });
+        }
+
+        // Знаходимо техніку в групі
+        const techniqueIndex = group.techniques.findIndex(technique => technique.id === techniqueId);
+        if (techniqueIndex === -1) {
+            return res.status(404).json({ message: 'Technique not found' });
+        }
+
+        // Отримуємо шлях до фото техніки
+        const technique = group.techniques[techniqueIndex];
+        const photoPath = technique.photoPath;
+
+        // Якщо фото є, видаляємо його з файлової системи
+        if (photoPath) {
+            const dir = path.resolve('../uploads/techniques'); // Отримуємо абсолютний шлях до директорії
+            const formattedPath = path.join(dir, path.basename(photoPath)); // Отримуємо шлях до конкретного фото
+
+            try {
+                // Перевірка на існування файлу та його видалення
+                await fs.promises.stat(formattedPath); // Перевіряємо, чи існує файл
+                await fs.promises.unlink(formattedPath); // Видаляємо файл
+                console.log('Technique photo deleted successfully:', formattedPath);
+            } catch (err) {
+                console.error('Error with technique photo deletion:', err);
+                return res.status(500).json({ message: 'Error deleting technique photo' });
+            }
+        }
+
+        // Видаляємо техніку з масиву techniques
+        group.techniques.splice(techniqueIndex, 1);
+        await group.save(); // Зберігаємо зміни в базі даних
+
+        res.status(200).json({ message: 'Technique deleted', group }); // Повертаємо оновлену групу
+    } catch (error) {
+        console.error('Error deleting technique:', error);
+        res.status(400).json({ message: 'Error deleting technique' });
+    }
+});
 
 export default router;

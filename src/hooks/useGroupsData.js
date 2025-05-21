@@ -8,6 +8,8 @@ import {
     saveVehicleApi,
     savePersonnelApi,
     saveGroupApi,
+    deleteTechniqueApi,
+    saveTechniqueApi
 } from '../api/groupsApi';
 
 // Хук для отримання груп
@@ -124,6 +126,39 @@ export const useSaveGroup = () => {
         },
         onError: (error) => {
             console.error('Помилка при створенні групи:', error.message);
+        },
+    });
+};
+
+
+// Хук для додавання техніки
+export const useSaveTechnique = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: saveTechniqueApi, // Функція для виконання мутації
+        onSuccess: () => {
+            console.log('Техніка успішно додана.');
+            queryClient.invalidateQueries(['groups']); // Оновлюємо кеш груп після успішного додавання
+        },
+        onError: (error) => {
+            console.error('Помилка при додаванні техніки:', error.message);
+        },
+    });
+};
+
+// Хук для видалення техніки
+export const useDeleteTechnique = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: deleteTechniqueApi, // Функція для виконання мутації
+        onSuccess: (deletedTechniqueId) => {
+            console.log(`Техніка з ID ${deletedTechniqueId} успішно видалена.`);
+            queryClient.invalidateQueries(['groups']); // Оновлюємо кеш груп після успішного видалення
+        },
+        onError: (error) => {
+            console.error('Помилка при видаленні техніки:', error.message);
         },
     });
 };

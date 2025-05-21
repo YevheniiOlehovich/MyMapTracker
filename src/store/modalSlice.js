@@ -6,10 +6,13 @@ const modalSlice = createSlice({
         isAddGroupModalVisible: false,
         isAddPersonalModalVisible: false,
         isAddVehicleModalVisible: false,
+        isAddTechniqueModalVisble: false,
         isAddRatesModal: false,
         isAddMileagleModal: false,
         isAddFieldsModalVisible: false, // Додаємо стан для модалки з полями
         isLandBankReportModalVisible: false, // Додаємо стан для модалки звіту земельного банку
+        
+        editTechniqueId: null,
         editGroupId: null,
         editPersonId: null,
         editVehicleId: null,
@@ -43,6 +46,15 @@ const modalSlice = createSlice({
         closeAddVehicleModal: (state) => {
             state.isAddVehicleModalVisible = false;
             state.editVehicleId = null;
+        },
+        openAddTechniqueModal: (state, action) => {
+            state.isAddTechniqueModalVisble = true;
+            state.editTechniqueId = action.payload?.techniqueId || null;
+            state.editGroupId = action.payload?.groupId || null;
+        },
+        closeAddTechniqueModal: (state) => {
+            state.isAddTechniqueModalVisble = false;
+            state.editTechniqueId = null;
         },
         openAddRatesModal: (state, action) => {
             state.isAddRatesModal = true;
@@ -96,6 +108,9 @@ export const {
     setSelectedField,
     openLandBankReportModal, // Експортуємо дію для відкриття модалки звіту земельного банку
     closeLandBankReportModal, // Експортуємо дію для закриття модалки звіту земельного банку
+    openAddTechniqueModal,
+    closeAddTechniqueModal
+
 } = modalSlice.actions;
 
 export default modalSlice.reducer;

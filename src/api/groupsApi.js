@@ -142,3 +142,33 @@ export const saveGroupApi = async (groupData) => {
 
     return savedGroup;
 };
+
+
+// Додавання техніки
+export const saveTechniqueApi = async ({ groupId, techniqueData }) => {
+    // Створення нової техніки
+    const url = apiRoutes.addTechnique(groupId);
+    const response = await fetch(url, { method: 'POST', body: techniqueData });
+
+    if (!response.ok) {
+        throw new Error('Не вдалося створити техніку');
+    }
+
+    const savedTechnique = await response.json();
+    console.log('Нова техніка створена:', savedTechnique);
+
+    return savedTechnique;
+};
+
+// Видалення техніки
+export const deleteTechniqueApi = async ({ groupId, techniqueId }) => {
+    const url = apiRoutes.deleteTechnique(groupId, techniqueId);
+    const response = await fetch(url, { method: 'DELETE' });
+
+    if (!response.ok) {
+        throw new Error('Не вдалося видалити техніку');
+    }
+
+    console.log(`Техніка з ID ${techniqueId} успішно видалена.`);
+    return techniqueId; // Повертаємо ID видаленої техніки
+};

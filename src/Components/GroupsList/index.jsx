@@ -1,9 +1,9 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useGroupsData, useDeleteGroup, useDeletePersonnel, useDeleteVehicle } from '../../hooks/useGroupsData';
+import { useGroupsData, useDeleteGroup, useDeletePersonnel, useDeleteVehicle, useDeleteTechnique } from '../../hooks/useGroupsData';
 import { useGpsData } from '../../hooks/useGpsData';
 import { setMapCenter } from '../../store/mapCenterSlice';
-import { openAddGroupModal, openAddPersonalModal, openAddVehicleModal } from '../../store/modalSlice';
+import { openAddGroupModal, openAddPersonalModal, openAddVehicleModal, openAddTechniqueModal } from '../../store/modalSlice';
 import EditIco from '../../assets/ico/edit-icon-black.png';
 import DelIco from '../../assets/ico/del-icon-black.png';
 import QuestionIco from '../../assets/ico/10965421.webp';
@@ -21,6 +21,7 @@ export default function GroupsList() {
     const deleteGroup = useDeleteGroup();
     const deletePersonnel = useDeletePersonnel();
     const deleteVehicle = useDeleteVehicle();
+    const deleteTechnique = useDeleteTechnique();
 
     const selectedDate = useSelector((state) => state.calendar.selectedDate);
 
@@ -47,6 +48,12 @@ export default function GroupsList() {
         });
     };
 
+    const handleDeleteTechnique = (groupId, techniqueId) => {
+        deleteTechnique.mutate({ groupId, techniqueId }, {
+            onError: (error) => console.error('Помилка при видаленні техніки:', error),
+        });
+    };
+
     const handleOpenEditGroupModal = (groupId) => {
         dispatch(openAddGroupModal(groupId));
     };
@@ -58,6 +65,10 @@ export default function GroupsList() {
 
     const handleOpenEditVehicleModal = (groupId, vehicleId) => {
         dispatch(openAddVehicleModal({ groupId, vehicleId }));
+    };
+
+    const handleOpenEditTechniqueModal = (groupId, techniqueId) => {
+        dispatch(openAddTechniqueModal({ groupId, techniqueId }));
     };
 
     const handleToggleVisibility = (groupId) => {
@@ -176,7 +187,7 @@ export default function GroupsList() {
                                     )}
                                     {group.vehicles?.length > 0 ? (
                                         <>
-                                            <Styles.subTitle>Список техніки</Styles.subTitle>
+                                            <Styles.subTitle>Список транспортних засобів</Styles.subTitle>
                                             <Styles.list>
                                                 {group.vehicles.map((vehicle) => (
                                                     <Styles.block key={vehicle._id}>
@@ -216,7 +227,51 @@ export default function GroupsList() {
                                             </Styles.list>
                                         </>
                                     ) : (
-                                        <Styles.span>Техніку не знайдено.</Styles.span>
+                                        <Styles.span>Транспорт не знайдено.</Styles.span>
+                                    )}
+                                    {group.techniques?.length > 0 ? (
+                                        <>
+                                            <Styles.subTitle>Список техніки</Styles.subTitle>
+                                            <Styles.list>
+                                                {group.techniques.map((technique) => (
+                                                    <Styles.block key={technique._id}>
+                                                        <Styles.imgBlock
+                                                            imageUrl={
+                                                                technique.photoPath
+                                                                    ? formatPhotoPath(technique.photoPath)
+                                                                    : QuestionIco
+                                                            }
+                                                        />
+                                                        <Styles.listItem
+                                                            // onDoubleClick={() => handleDoubleClickVehicle(vehicle)}
+                                                        >
+                                                            {technique.name}
+                                                        </Styles.listItem>
+                                                        <Styles.buttonBlock>
+                                                            <Styles.button
+                                                                onClick={() =>
+                                                                    handleOpenEditTechniqueModal(
+                                                                        group._id,
+                                                                        technique._id
+                                                                    )
+                                                                }
+                                                            >
+                                                                <Styles.ico $pic={EditIco} />
+                                                            </Styles.button>
+                                                            <Styles.button
+                                                                onClick={() =>
+                                                                    handleDeleteTechnique(group._id, technique._id)
+                                                                }
+                                                            >
+                                                                <Styles.ico $pic={DelIco} />
+                                                            </Styles.button>
+                                                        </Styles.buttonBlock>
+                                                    </Styles.block>
+                                                ))}
+                                            </Styles.list>
+                                        </>
+                                    ) : (
+                                        <Styles.span>Транспорт не знайдено.</Styles.span>
                                     )}
                                 </>
                             )}
