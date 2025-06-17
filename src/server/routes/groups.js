@@ -75,6 +75,7 @@ const GroupSchema = new mongoose.Schema({
         note: { type: String },
         photoPath: { type: String }, 
         imei: { type: String },
+        sim: { type: String }, // Додаємо поле для SIM карти
     }],
     techniques: [{ // Додаємо масив для техніки
         name: { type: String, required: true }, // Назва техніки
@@ -258,7 +259,7 @@ router.delete('/:groupId/personnel/:personId', async (req, res) => {
 // Додавання нового транспортного засобу до групи з фотографією
 router.post('/:groupId/vehicles', vehicleUpload.single('photo'), async (req, res) => {
     try {
-        const { vehicleType, regNumber, mark, note, imei } = req.body;
+        const { vehicleType, regNumber, mark, note, imei, sim } = req.body;
 
         // Перевірка, чи всі необхідні дані надані
         if (!vehicleType || !regNumber) {
@@ -285,6 +286,7 @@ router.post('/:groupId/vehicles', vehicleUpload.single('photo'), async (req, res
             note,
             photoPath,
             imei, // Зберігаємо шлях до фото
+            sim,
         };
 
         // Додавання техніки до масиву vehicle групи

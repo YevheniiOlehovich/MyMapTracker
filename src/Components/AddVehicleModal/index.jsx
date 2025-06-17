@@ -29,6 +29,7 @@ export default function AddVehicleModal({ onClose }) {
     const [selectedGroupName, setSelectedGroupName] = useState(editVehicle ? groups.find(group => group._id === editGroupId)?.name : '');
     const [regNumber, setRegNumber] = useState(editVehicle?.regNumber || '');
     const [imei, setImei] = useState(editVehicle?.imei || '');
+    const [sim, setSim] = useState(editVehicle?.sim || '');
     const [mark, setMark] = useState(editVehicle?.mark || '');
     const [note, setNote] = useState(editVehicle?.note || '');
     const [vehicleType, setVehicleType] = useState(editVehicle?.vehicleType || '');
@@ -60,6 +61,7 @@ export default function AddVehicleModal({ onClose }) {
             formData.append('mark', mark);
             formData.append('note', note);
             formData.append('imei', imei);
+            formData.append('sim', sim);
     
             if (employeePhoto instanceof Blob) {
                 formData.append('photo', employeePhoto, 'vehicle.webp');
@@ -132,6 +134,10 @@ export default function AddVehicleModal({ onClose }) {
                 <Styles.lable>
                     <Styles.subtitle>IMEI трекера</Styles.subtitle>
                     <Styles.input value={imei} onChange={(e) => setImei(e.target.value)} />
+                </Styles.lable>
+                <Styles.lable>
+                    <Styles.subtitle>Номер Sim-карти</Styles.subtitle>
+                    <Styles.input value={sim} onChange={(e) => setSim(e.target.value)} />
                 </Styles.lable>
                 <Styles.lable>
                     <Styles.textarea maxLength={250} value={note} onChange={(e) => setNote(e.target.value)} />

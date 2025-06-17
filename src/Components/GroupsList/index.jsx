@@ -8,6 +8,7 @@ import EditIco from '../../assets/ico/edit-icon-black.png';
 import DelIco from '../../assets/ico/del-icon-black.png';
 import QuestionIco from '../../assets/ico/10965421.webp';
 import TriangleIco from '../../assets/ico/triangle.png';
+import LocationIco from '../../assets/ico/location.png';
 
 import Styles from './styled';
 
@@ -104,7 +105,7 @@ export default function GroupsList() {
             .filter((point) => point !== null);
     }, [filteredGpsData]);
 
-    const handleDoubleClickVehicle = (vehicle) => {
+    const showVehicleLocation = (vehicle) => {
         const selectedVehicle = lastGpsPoints.find((point) => point.imei === vehicle.imei);
         if (selectedVehicle) {
             dispatch(setMapCenter([selectedVehicle.latitude, selectedVehicle.longitude]));
@@ -198,12 +199,15 @@ export default function GroupsList() {
                                                                     : QuestionIco
                                                             }
                                                         />
-                                                        <Styles.listItem
-                                                            onDoubleClick={() => handleDoubleClickVehicle(vehicle)}
-                                                        >
+                                                        <Styles.listItem>
                                                             {vehicle.mark}
                                                         </Styles.listItem>
                                                         <Styles.buttonBlock>
+                                                            <Styles.button
+                                                                onClick={() => showVehicleLocation(vehicle)} // Центрування по кнопці
+                                                            >
+                                                                <Styles.ico $pic={LocationIco} />
+                                                            </Styles.button>
                                                             <Styles.button
                                                                 onClick={() =>
                                                                     handleOpenEditVehicleModal(

@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { MapContainer, TileLayer, useMapEvents, Polygon, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, useMapEvents, Polygon, Marker, Popup, useMap } from 'react-leaflet';
 import Styles from './styled';
 import { getTileLayerConfig } from '../../helpres/tileLayerHelper';
 import { useCadastreData } from '../../hooks/useCadastreData'; // Хук для кадастрових даних
 import { useFieldsData } from '../../hooks/useFieldsData'; // Хук для даних полів
 import { useGeozoneData } from '../../hooks/useGeozonesData'; // Хук для геозон
 import { useGpsData } from '../../hooks/useGpsData'; // Хук для GPS-даних
-import { selectShowFields, selectShowCadastre, selectShowGeozones } from '../../store/layersList';
+import reducer, { selectShowFields, selectShowCadastre, selectShowGeozones } from '../../store/layersList';
 import { selectMapCenter, selectZoomLevel, setZoomLevel } from '../../store/mapCenterSlice';
 import { selectCurrentLocation } from '../../store/currentLocationSlice';
 import MapCenterUpdater from '../MapCenterUpdater';
@@ -15,6 +15,8 @@ import TrackMarkers from '../TrackMarkers';
 import FieldLabel from '../FieldLabel';
 import { openAddFieldsModal, setSelectedField } from '../../store/modalSlice';
 import L from 'leaflet';
+import RedMarker from '../../assets/ico/redmarker.png';
+
 
 function ZoomTracker({ setZoomLevel }) {
     useMapEvents({
@@ -68,7 +70,7 @@ export default function Map() {
     };
 
     const currentLocationIcon = L.icon({
-        iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684908.png',
+        iconUrl: RedMarker,
         iconSize: [25, 25],
         iconAnchor: [12, 12],
     });
