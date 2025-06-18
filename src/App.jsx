@@ -1,5 +1,6 @@
 import Main from "./Components/Main";
 import TaskManager from "./Components/TaskManager";
+import Libraries from "./Components/Libraries";
 import { createGlobalStyle } from 'styled-components';
 import { Provider } from 'react-redux'; // Імпортуємо Provider
 import store from './store/store'; // Імпортуємо ваш store
@@ -30,6 +31,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Main />} /> {/* Головна сторінка */}
           <Route path="/tasks" element={<TaskManager />} /> {/* Сторінка Tasks */}
+          <Route path="/libraries" element={<Libraries />} /> {/* Сторінка Libraries */}
         </Routes>
       </Router>
     </Provider>

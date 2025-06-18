@@ -7,6 +7,7 @@ import SelectComponent from '../Select';
 import { useGroupsData, useDeletePersonnel, useSavePersonnel } from '../../hooks/useGroupsData'; // Хуки для роботи з групами та персоналом
 import { useSelector } from 'react-redux';
 import { createBlobFromImagePath, convertImageToWebP } from '../../helpres/imageUtils';
+import { personalFunctions } from '../../helpres/index'; // Імпортуємо функції персоналу
 
 export default function AddPersonalModal({ onClose }) {
     const { editGroupId, editPersonId } = useSelector((state) => state.modals);
@@ -28,7 +29,10 @@ export default function AddPersonalModal({ onClose }) {
     const [firstName, setFirstName] = useState(editPerson ? editPerson.firstName : '');
     const [lastName, setLastName] = useState(editPerson ? editPerson.lastName : '');
     const [contactNumber, setContactNumber] = useState(editPerson ? editPerson.contactNumber : '');
+    const [rfid, setRfid] = useState(editPerson ? editPerson.rfid : '');
     const [note, setNote] = useState(editPerson ? editPerson.note : '');
+    const [personnelFunction, setPersonnelFunction] = useState(editPerson ? editPerson.function : '');
+    
     const [employeePhoto, setEmployeePhoto] = useState(editPerson && editPerson.photoPath
         ? '/src/' + editPerson.photoPath.substring(3).replace(/\\/g, '/')
         : QuestionIco);
@@ -59,8 +63,10 @@ export default function AddPersonalModal({ onClose }) {
             formData.append('lastName', lastName);
             formData.append('contactNumber', contactNumber);
             formData.append('note', note);
+            formData.append('rfid', rfid);
             formData.append('groupId', selectedGroup || editGroupId);
-    
+            formData.append('function', personnelFunction);
+            
             if (employeePhoto instanceof Blob) {
                 formData.append('photo', employeePhoto, 'employee.webp');
             } else if (typeof employeePhoto === 'string' && employeePhoto !== QuestionIco) {
@@ -134,6 +140,27 @@ export default function AddPersonalModal({ onClose }) {
                         onChange={(e) => setLastName(e.target.value)}
                     />
                 </Styles.StyledLabel>
+                <Styles.StyledLabel>
+                    <Styles.StyledSubtitle>Rfid мітка</Styles.StyledSubtitle>
+                    <Styles.StyledInput 
+                        value={rfid} 
+                        onChange={(e) => setRfid(e.target.value)}
+                    />
+                </Styles.StyledLabel>
+
+                <Styles.StyledLabel>
+                    <Styles.StyledSubtitle>Посада працівника</Styles.StyledSubtitle>
+                    <SelectComponent 
+                        options={personalFunctions}
+                        value={personnelFunction 
+                            ? { value: personnelFunction, label: personalFunctions.find(f => f._id === personnelFunction)?.name } 
+                            : null
+                        }
+                        onChange={option => setPersonnelFunction(option.value)} // <-- використовуємо option.value (це _id)
+                        placeholder="Оберіть посаду"
+                    />
+                </Styles.StyledLabel>
+
                 <Styles.StyledLabel>
                     <Styles.StyledSubtitle>Контактний номер</Styles.StyledSubtitle>
                     <Styles.StyledInput 

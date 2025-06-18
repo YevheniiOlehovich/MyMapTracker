@@ -67,6 +67,8 @@ const GroupSchema = new mongoose.Schema({
         contactNumber: { type: String, required: true },
         note: { type: String },
         photoPath: { type: String }, // Шлях до фото замість Buffer
+        rfid: { type: String }, // Додаємо поле для RFID
+        function: { type: String },
     }],
     vehicles: [{
         vehicleType: { type: String, required: true },
@@ -165,43 +167,78 @@ router.delete('/:id', async (req, res) => {
 });
 
 // Додавання нового працівника з зображенням
+// router.post('/:groupId/personnel', upload.single('photo'), async (req, res) => {
+//     try {
+//         const { firstName, lastName, contactNumber, note, rfid } = req.body;
+
+//         // Перевірка, чи всі необхідні дані надані
+//         if (!firstName || !lastName || !contactNumber) {
+//             return res.status(400).json({ message: 'First name, last name, and contact number are required.' });
+//         }
+
+//         // Знаходимо групу за groupId
+//         const group = await Group.findById(req.params.groupId);
+//         if (!group) {
+//             return res.status(404).json({ message: 'Group not found' });
+//         }
+
+//         // Логування шляху до фото
+//         const photoPath = req.file ? req.file.path : null;
+//         if (photoPath) {
+//             console.log('Image uploaded to: ', photoPath); // Логування шляху до зображення
+//         }
+
+//         // Створення нового працівника
+//         const newPersonnel = {
+//             firstName,
+//             lastName,
+//             contactNumber,
+//             note,
+//             photoPath, // Зберігаємо шлях до фото
+//             rfid
+//         };
+
+//         // Додавання працівника в масив personnel групи
+//         group.personnel.push(newPersonnel);
+
+//         // Збереження оновленої групи
+//         await group.save();
+
+//         // Відправка лише нового працівника в відповіді
+//         res.status(201).json(newPersonnel);
+//     } catch (error) {
+//         console.error('Error saving employee:', error);
+//         res.status(500).json({ message: 'Error saving employee', error: error.message });
+//     }
+// });
 router.post('/:groupId/personnel', upload.single('photo'), async (req, res) => {
     try {
-        const { firstName, lastName, contactNumber, note } = req.body;
+        const { firstName, lastName, contactNumber, note, rfid, function: personnelFunction } = req.body;
 
-        // Перевірка, чи всі необхідні дані надані
         if (!firstName || !lastName || !contactNumber) {
             return res.status(400).json({ message: 'First name, last name, and contact number are required.' });
         }
 
-        // Знаходимо групу за groupId
         const group = await Group.findById(req.params.groupId);
         if (!group) {
             return res.status(404).json({ message: 'Group not found' });
         }
 
-        // Логування шляху до фото
         const photoPath = req.file ? req.file.path : null;
-        if (photoPath) {
-            console.log('Image uploaded to: ', photoPath); // Логування шляху до зображення
-        }
 
-        // Створення нового працівника
         const newPersonnel = {
             firstName,
             lastName,
             contactNumber,
             note,
-            photoPath, // Зберігаємо шлях до фото
+            photoPath,
+            rfid,
+            function: personnelFunction, // ✅ Додаємо сюди
         };
 
-        // Додавання працівника в масив personnel групи
         group.personnel.push(newPersonnel);
-
-        // Збереження оновленої групи
         await group.save();
 
-        // Відправка лише нового працівника в відповіді
         res.status(201).json(newPersonnel);
     } catch (error) {
         console.error('Error saving employee:', error);

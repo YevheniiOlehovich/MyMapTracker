@@ -10,11 +10,8 @@ export default function TaskManager() {
     };
 
     return (
-        <div>
-            {/* <Header /> */}
-            <Button text={'Головна'} onClick={handleNavigateToTasks} />
-            <h1>Task Manager</h1>
-            <p>Manage your tasks here.</p>
-        </div>
+        <>
+            <Header/>
+        </>
     );
 }

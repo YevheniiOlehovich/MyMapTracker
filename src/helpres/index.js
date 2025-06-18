@@ -15,6 +15,12 @@ export const vehicleTypes = [
     { _id: 'truck', name: 'Вантажівка' }
 ];
 
+export const personalFunctions = [
+    { _id: 'driver', name: 'Водій'},
+    { _id: 'tractordriver', name: 'Тракторист'},
+    { _id: 'combineoperator', name: 'Комбайнер'},
+]
+
 export const months = [
     { _id: '1', name_ua: 'Січень', name_eng: 'January' },
     { _id: '2', name_ua: 'Лютий', name_eng: 'February' },

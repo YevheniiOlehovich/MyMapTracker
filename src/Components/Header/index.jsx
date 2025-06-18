@@ -46,9 +46,15 @@ export default function Header() {
         navigate('/tasks'); // Переходимо на сторінку Tasks
     };
 
+    const handleNavigateToLibraries = () => {
+        navigate('/libraries'); // Переходимо на сторінку Libraries     
+    };
+
     return (
         <StyledHeader>
             {/* <DatePickerComponent /> */}
+            <Button text={'Карта'} onClick={() => navigate('/')} />
+            <Button text={'Бібліотеки'} onClick={handleNavigateToLibraries} />
             <Button text={'Завдання'} onClick={handleNavigateToTasks} />
             <Button text={'Тарифи'} onClick={() => dispatch(openAddRatesModal())} />
             <Button text={'Пробіг'} onClick={() => dispatch(openAddMileagle())} />
