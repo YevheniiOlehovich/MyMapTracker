@@ -96,7 +96,7 @@ export default function AddFieldsModal() {
 
         try {
             await updateField.mutateAsync(fieldData);
-            // console.log('Поле оновлено');
+            console.log('Поле оновлено');
             setIsEditable(false);
             queryClient.invalidateQueries(['fields']); // Інвалідуємо кеш
             dispatch(closeAddFieldsModal()); // Закриваємо модалку

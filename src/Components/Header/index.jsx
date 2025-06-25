@@ -1,5 +1,4 @@
 import { StyledHeader } from './styled'; 
-// import DatePickerComponent from '../DatePicker';
 import Button from '../Button';
 import { 
     openAddRatesModal, 
@@ -28,7 +27,6 @@ export default function Header() {
                 (position) => {
                     const { latitude, longitude } = position.coords;
                     const coordinates = [latitude, longitude];
-                    console.log(`Поточне місцезнаходження: широта ${latitude}, довгота ${longitude}`);
                     dispatch(setMapCenter(coordinates)); // Центруємо карту
                     dispatch(setCurrentLocation(coordinates)); // Додаємо маркер поточного місцезнаходження
                 },
@@ -64,8 +62,3 @@ export default function Header() {
         </StyledHeader>
     );
 }
-
-
-
-
-

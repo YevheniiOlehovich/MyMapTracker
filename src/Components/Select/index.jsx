@@ -7,7 +7,7 @@ export default function SelectComponent({ options, value, onChange, placeholder 
         value: group._id,
         label: group.name
     }));
-    console.log(value);
+    
     return (
         <div style={{ width: '300px', margin: '0 auto' }}>
             <Select 

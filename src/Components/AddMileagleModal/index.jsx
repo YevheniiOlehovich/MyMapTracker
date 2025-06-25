@@ -7,13 +7,13 @@ import { useEffect, useState } from 'react';
 import { haversineDistance } from '../../helpres/distance';
 import { useGpsData } from '../../hooks/useGpsData'; // Хук для GPS-даних
 import { useRatesData } from '../../hooks/useRatesData'; // Хук для тарифів
-import { useGroupsData } from '../../hooks/useGroupsData'; // Хук для отримання груп
+import { useVehiclesData } from '../../hooks/useVehiclesData';
 
 export default function AddMileagleModal({ onClose }) {
     const handleWrapperClick = closeModal(onClose);
 
-    // Використовуємо React Query для отримання груп
-    const { data: groups = [], isLoading: isGroupsLoading, isError: isGroupsError, error: groupsError } = useGroupsData();
+    const { data: vehiclesData = [], isLoading: isVehiclesLoading, isError: isVehiclesError, error: vehiclesError } = useVehiclesData();
+
 
     // Використовуємо React Query для отримання GPS-даних
     const { data: gpsData = [], isLoading: isGpsLoading, isError: isGpsError, error: gpsError } = useGpsData();
@@ -29,18 +29,16 @@ export default function AddMileagleModal({ onClose }) {
     const [selectedGpsData, setSelectedGpsData] = useState([]);
 
     useEffect(() => {
-        if (groups.length > 0) {
-            const allVehicles = groups.flatMap(group =>
-                group.vehicles.map(vehicle => ({
-                    value: vehicle.regNumber,
-                    label: `${vehicle.mark} (${vehicle.regNumber})`,
-                    imei: vehicle.imei,
-                    type: vehicle.vehicleType,
-                }))
-            );
+        if (vehiclesData.length > 0) {
+            const allVehicles = vehiclesData.map(vehicle => ({
+                value: vehicle.regNumber,
+                label: `${vehicle.mark} (${vehicle.regNumber})`,
+                imei: vehicle.imei,
+                type: vehicle.vehicleType,
+            }));
             setVehicles(allVehicles);
         }
-    }, [groups]);
+    }, [vehiclesData]);
 
     const filterGpsData = (month, vehicle) => {
         const selectedMonthValue = month.value;
@@ -129,8 +127,8 @@ export default function AddMileagleModal({ onClose }) {
         setTotalCost(totalCost);
     };
 
-    if (isGroupsLoading || isGpsLoading || isRatesLoading) return <p>Завантаження даних...</p>;
-    if (isGroupsError || isGpsError || isRatesError) return <p>Помилка завантаження даних: {groupsError?.message || gpsError?.message || ratesError?.message}</p>;
+    if (isVehiclesLoading || isGpsLoading || isRatesLoading) return <p>Завантаження даних...</p>;
+    if (isVehiclesError || isGpsError || isRatesError) return <p>Помилка завантаження даних: {vehiclesError?.message || gpsError?.message || ratesError?.message}</p>;
 
     return (
         <Styles.Wrapper onClick={handleWrapperClick}>
@@ -155,7 +153,7 @@ export default function AddMileagleModal({ onClose }) {
                         onChange={handleVehicleChange}
                         options={vehicles}
                         placeholder="Оберіть техніку"
-                        isLoading={isGroupsLoading}
+                        isLoading={isVehiclesLoading}
                     />
                 </div>
 

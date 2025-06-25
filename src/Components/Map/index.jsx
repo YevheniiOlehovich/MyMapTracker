@@ -29,6 +29,7 @@ function ZoomTracker({ setZoomLevel }) {
 }
 
 export default function Map() {
+    
     const dispatch = useDispatch();
 
     // Використовуємо React Query для отримання GPS-даних
@@ -99,6 +100,7 @@ export default function Map() {
                 scrollWheelZoom={true}
                 easeLinearity={0.8}
                 style={{ height: '100vh', width: '100%' }}
+                zoomControl={false}
             >
                 {tileLayerConfig && (
                     <TileLayer

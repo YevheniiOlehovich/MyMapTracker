@@ -4,6 +4,9 @@ import cors from 'cors';
 import bodyParser from 'body-parser';
 import dotenv from 'dotenv';
 import groupsRoutes from './routes/groups.js';
+import personnelRoutes from './routes/personnel.js'; // Додано маршрут для персоналу
+import vehiclesRoutes from './routes/vehicles.js'; // Додано маршрут для техніки
+import techniquesRoutes from './routes/technique.js'
 import avlRecordsRoutes from './routes/gpsRoutes.js'; // Замість avlRecord
 import ratesRoutes from './routes/rates.js'
 import geoDataRoutes from './routes/geoDataRoutes.js'; 
@@ -30,6 +33,9 @@ app.use(bodyParser.json());
 
 // Використання роутів
 app.use('/groups', groupsRoutes);
+app.use('/personnel', personnelRoutes); // Додано маршрут для персоналу
+app.use('/vehicles', vehiclesRoutes); // Додано маршрут для техніки
+app.use('/techniques', techniquesRoutes); // Додано маршрут для техніки
 app.use('/avl_records', avlRecordsRoutes);  // Додано маршрут для avl_records
 app.use('/rates', ratesRoutes);  // Додано маршрут для avl_records
 app.use('/geo_data', geoDataRoutes); // Додано маршрут для полів

@@ -6,6 +6,7 @@ import { setMapType } from '../../store/mapSlice'; // Імпорт дії для
 import { toggleFields, toggleCadastre, toggleGeozones, selectShowFields, selectShowCadastre, selectShowGeozones } from '../../store/layersList'; // Імпорт дій і селекторів для керування шарами
 import FieldsLit from '../FieldsLit';
 import TriangleIco from '../../assets/ico/triangle.png';
+import DatePickerComponent from '../DatePicker';
 
 const LayersList = () => {
     const [isVisible, setIsVisible] = useState(false);
@@ -16,6 +17,7 @@ const LayersList = () => {
     const showFields = useSelector(selectShowFields);
     const showCadastre = useSelector(selectShowCadastre);
     const showGeozones = useSelector(selectShowGeozones);
+    
 
     const toggleListHandler = () => {
         setIsVisible(!isVisible);
@@ -178,6 +180,7 @@ const LayersList = () => {
                 </Styles.maplist>
             )}
             <FieldsLit />
+            {/* <DatePickerComponent /> */}
         </Styles.wrapper>
     );
 };

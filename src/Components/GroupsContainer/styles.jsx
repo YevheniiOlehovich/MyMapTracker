@@ -4,24 +4,37 @@ const Styles = {
     wrapper: styled.div`
         box-sizing: border-box;
         position: relative;
-        width: 100%;
-        max-height: calc(100% - 320px);
-    `,
-    title: styled.h3`
-        font-family: Arial, Helvetica, sans-serif;
-        font-weight: 700;
-        font-size: 16px;
-        display: block;
-        margin: 0;
-    `,
-    block: styled.div`
+        width: 60px;
+        height: 200px;
+        background: rgba(0, 0, 0, 0.2);
+        padding: 10px;
         display: flex;
-        width: 100%;
+        flex-direction: column;
+        align-items: center;    
         justify-content: space-between;
-        align-items: center;
-        padding: 0 8px;
-        margin-bottom: 12px;
     `,
+    
+    button: styled.button`
+        width: 40px;
+        height: 40px;
+        display: block;
+        background: ${({ $bgImage }) => `url(${$bgImage}) no-repeat center/contain`};
+        border: none;
+
+        ${({ $active }) =>
+            $active &&
+            `
+            border: 2px solid #000;
+            border-radius: 20%;
+            background-color: rgba(0, 0, 0, 0.1);
+            `}
+
+        &:hover {
+            background-color: rgba(0, 0, 0, 0.1);
+            border: 1px solid black;
+            border-radius: 20%;
+        }
+    `
 }
 
 export default Styles;

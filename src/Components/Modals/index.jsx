@@ -4,10 +4,18 @@ import AddFieldsModal from '../AddFieldsModal'; // Імпорт модалки �
 import AddRatesModal from '../AddRatesModal'; // Імпорт модалки для тарифів
 import AddMileagleModal from '../AddMileagleModal'; // Імпорт модалки для пробігу
 import LandBankModal from '../LandBankModal'; // Імпорт модалки для земельного банку
+import AddGroupModal from '../AddGroupModal';
+import AddPersonalModal from '../AddPersonalModal';
+import AddVehicleModal from '../AddVehicleModal'; // Імпорт модалки для додавання транспортного засобу
+import AddTechniqueModal from '../AddTechniqueModal'; // Імпорт модалки для додавання техніки
 import { 
     closeAddRatesModal, 
     closeAddMileagle, 
-    closeLandBankReportModal 
+    closeLandBankReportModal,
+    closeAddGroupModal,
+    closeAddPersonalModal,
+    closeAddVehicleModal,
+    closeAddTechniqueModal, 
 } from '../../store/modalSlice'; // Actions для закриття модалок
 
 const Modals = () => {
@@ -17,7 +25,11 @@ const Modals = () => {
     const isAddRatesModal = useSelector((state) => state.modals.isAddRatesModal); // Видимість модалки для тарифів
     const isAddMileagleModal = useSelector((state) => state.modals.isAddMileagleModal); // Видимість модалки для пробігу
     const isLandBankReportModalVisible = useSelector((state) => state.modals.isLandBankReportModalVisible); // Видимість модалки для земельного банку
-
+    const isAddGroupModalVisible = useSelector((state) => state.modals.isAddGroupModalVisible); // Видимість модалки для груп
+    const isAddPersonalModalVisible = useSelector((state) => state.modals.isAddPersonalModalVisible); // Видимість модалки для персоналу 
+    const isAddVehicleModalVisible = useSelector((state) => state.modals.isAddVehicleModalVisible); // Видимість модалки для додавання транспортного засобу   
+    const isAddTechniqueModalVisible = useSelector((state) => state.modals.isAddTechniqueModalVisible); // Видимість модалки для додавання техніки
+    
     return (
         <>
             {isAddFieldsModalVisible && selectedField && (
@@ -31,6 +43,18 @@ const Modals = () => {
             )}
             {isLandBankReportModalVisible && (
                 <LandBankModal onClose={() => dispatch(closeLandBankReportModal())} /> // Відображення модалки для земельного банку
+            )}
+            {isAddGroupModalVisible && (
+                <AddGroupModal onClose={() => dispatch(closeAddGroupModal())} /> // Відображення модалки для груп
+            )}
+            {isAddPersonalModalVisible && (
+                <AddPersonalModal onClose={() => dispatch(closeAddPersonalModal())} /> // Відображення модалки для персоналу
+            )}
+            {isAddVehicleModalVisible && (
+                <AddVehicleModal onClose={() => dispatch(closeAddVehicleModal())} /> // Відображення модалки для додавання транспортного засобу
+            )}
+            {isAddTechniqueModalVisible && (
+                <AddTechniqueModal onClose={() => dispatch(closeAddTechniqueModal())} /> // Відображення модалки для додавання техніки
             )}
         </>
     );

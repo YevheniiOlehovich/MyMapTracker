@@ -14,6 +14,7 @@ const Styles = {
         display: flex;
         justify-content: center;
         align-items: center;
+        z-index: 10;
     `,
 
     StyledModal: styled.div`

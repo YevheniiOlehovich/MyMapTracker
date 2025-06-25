@@ -2,7 +2,8 @@ import React, { useMemo, useEffect, useState } from 'react';
 import { Marker, Polyline, Popup } from 'react-leaflet';
 import { useDispatch, useSelector } from 'react-redux';
 import { setImei, toggleShowTrack } from '../../store/vehicleSlice';
-import { useGroupsData } from '../../hooks/useGroupsData';
+// import { useGroupsData } from '../../hooks/useGroupsData';
+import { useVehiclesData } from '../../hooks/useVehiclesData';
 import { haversineDistance } from '../../helpres/distance';
 import L from 'leaflet';
 import parkingIco from '../../assets/ico/parking-ico.png';
@@ -16,24 +17,30 @@ const TrackMarkers = ({ gpsData, selectedDate, selectedImei, showTrack }) => {
     const [showParkingMarkers, setShowParkingMarkers] = useState(false);
 
     // Отримуємо дані груп з 
-    const { data: groups = [], isLoading: isGroupsLoading, isError: isGroupsError, error: groupsError } = useGroupsData();
+    // const { data: groups = [], isLoading: isGroupsLoading, isError: isGroupsError, error: groupsError } = useGroupsData();
+    const { data: vehicles = [] } = useVehiclesData();
 
-    if (isGroupsLoading) return <p>Завантаження груп...</p>;
-    if (isGroupsError) return <p>Помилка завантаження груп: {groupsError.message}</p>;
+    // if (isGroupsLoading) return <p>Завантаження груп...</p>;
+    // if (isGroupsError) return <p>Помилка завантаження груп: {groupsError.message}</p>;
+
+    // const getVehicleTypeByImei = (imei) => {
+    //     if (!Array.isArray(groups)) {
+    //         console.error('Groups is not an array:', groups);
+    //         return 'car'; // Тип за замовчуванням
+    //     }
+
+    //     for (const group of groups) {
+    //         const vehicle = group.vehicles.find((v) => v.imei === imei);
+    //         if (vehicle) {
+    //             return vehicle.vehicleType;
+    //         }
+    //     }
+    //     return 'car'; // Тип за замовчуванням
+    // };
 
     const getVehicleTypeByImei = (imei) => {
-        if (!Array.isArray(groups)) {
-            console.error('Groups is not an array:', groups);
-            return 'car'; // Тип за замовчуванням
-        }
-
-        for (const group of groups) {
-            const vehicle = group.vehicles.find((v) => v.imei === imei);
-            if (vehicle) {
-                return vehicle.vehicleType;
-            }
-        }
-        return 'car'; // Тип за замовчуванням
+        const vehicle = vehicles.find((v) => v.imei === imei);
+        return vehicle?.vehicleType || 'car';
     };
 
     const filteredGpsData = useMemo(() => {

@@ -86,6 +86,14 @@ const Styles = {
         margin: 0 0 8px 0;
         display: block;
     `,
+    imgBlock: styled.div`
+        width: 32px;
+        height: 32px;
+        margin-right: 12px;
+        background-size: cover;
+        background-position: center;
+        background-image: ${({ $imageUrl }) => ($imageUrl ? `url(${$imageUrl})` : 'none')};
+    `,
 };
 
 export default Styles;

@@ -6,7 +6,7 @@ const modalSlice = createSlice({
         isAddGroupModalVisible: false,
         isAddPersonalModalVisible: false,
         isAddVehicleModalVisible: false,
-        isAddTechniqueModalVisble: false,
+        isAddTechniqueModalVisible: false,
         isAddRatesModal: false,
         isAddMileagleModal: false,
         isAddFieldsModalVisible: false, // Додаємо стан для модалки з полями
@@ -48,12 +48,12 @@ const modalSlice = createSlice({
             state.editVehicleId = null;
         },
         openAddTechniqueModal: (state, action) => {
-            state.isAddTechniqueModalVisble = true;
+            state.isAddTechniqueModalVisible = true;
             state.editTechniqueId = action.payload?.techniqueId || null;
             state.editGroupId = action.payload?.groupId || null;
         },
         closeAddTechniqueModal: (state) => {
-            state.isAddTechniqueModalVisble = false;
+            state.isAddTechniqueModalVisible  = false;
             state.editTechniqueId = null;
         },
         openAddRatesModal: (state, action) => {

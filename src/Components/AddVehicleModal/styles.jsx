@@ -14,6 +14,7 @@ export const Styles = {
         display: flex;
         justify-content: center;
         align-items: center;
+        z-index: 10;
     `,
     modal: styled.div`
         width: 400px;
