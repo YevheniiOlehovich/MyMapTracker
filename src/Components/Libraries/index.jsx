@@ -3,15 +3,18 @@ import Header from "../Header";
 import Styles from "./styled";
 import Button from "../Button";
 import UnitTab from "../UnitTab";
+import PersonnelTab from "../PersonnellTab";
+import VehicleTab from "../VehicleTab";
 // Імпортуйте компоненти таблиць для кожного табу
 // import PersonnelTable from "../PersonnelTable";
 // import VehiclesTable from "../VehiclesTable";
 // ...інші таблиці
+import Modals from "../Modals";
 
 const tabs = [
   { key: "groups", label: "Підрозділи", component: <UnitTab /> },
-  { key: "personnel", label: "Співробтники", component: <div>Тут буде таблиця співробітників</div> },
-  { key: "vehicles", label: "Транспорт", component: <div>Тут буде таблиця транспорту</div> },
+  { key: "personnel", label: "Співробтники", component: <PersonnelTab /> },
+  { key: "vehicles", label: "Транспорт", component: <VehicleTab /> },
   { key: "trailers", label: "Причепи", component: <div>Тут буде таблиця причепів</div> },
   { key: "fields", label: "Поля", component: <div>Тут буде таблиця полів</div> },
   { key: "operations", label: "Операції", component: <div>Тут буде таблиця операцій</div> },
@@ -40,6 +43,7 @@ export default function Libraries() {
           {tabs.find(tab => tab.key === activeTab)?.component}
         </Styles.block>
       </Styles.wrapper>
+      <Modals />
     </>
   );
 }
