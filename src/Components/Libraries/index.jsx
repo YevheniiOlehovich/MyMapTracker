@@ -5,18 +5,16 @@ import Button from "../Button";
 import UnitTab from "../UnitTab";
 import PersonnelTab from "../PersonnellTab";
 import VehicleTab from "../VehicleTab";
-// Імпортуйте компоненти таблиць для кожного табу
-// import PersonnelTable from "../PersonnelTable";
-// import VehiclesTable from "../VehiclesTable";
-// ...інші таблиці
+import TechniqeTab from "../TechniqueTab";
+import FieldsTab from "../FieldsTab";
 import Modals from "../Modals";
 
 const tabs = [
   { key: "groups", label: "Підрозділи", component: <UnitTab /> },
   { key: "personnel", label: "Співробтники", component: <PersonnelTab /> },
   { key: "vehicles", label: "Транспорт", component: <VehicleTab /> },
-  { key: "trailers", label: "Причепи", component: <div>Тут буде таблиця причепів</div> },
-  { key: "fields", label: "Поля", component: <div>Тут буде таблиця полів</div> },
+  { key: "trailers", label: "Причепи", component: <TechniqeTab /> },
+  { key: "fields", label: "Поля", component: <FieldsTab /> },
   { key: "operations", label: "Операції", component: <div>Тут буде таблиця операцій</div> },
   { key: "crops", label: "Культури", component: <div>Тут буде таблиця культур</div> },
   { key: "sorts", label: "Сорти", component: <div>Тут буде таблиця сортів</div> },
