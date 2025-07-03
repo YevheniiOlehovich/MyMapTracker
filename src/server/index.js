@@ -11,6 +11,7 @@ import avlRecordsRoutes from './routes/gpsRoutes.js'; // Замість avlRecor
 import ratesRoutes from './routes/rates.js'
 import geoDataRoutes from './routes/geoDataRoutes.js'; 
 import operationRoutes from './routes/operation.js'; // Додано маршрут для технологічних операцій
+import cropsRoutes from './routes/crop.js'; // Додано маршрут для культур
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import authRoutes from './routes/auth.js';
@@ -42,7 +43,7 @@ app.use('/rates', ratesRoutes);  // Додано маршрут для avl_recor
 app.use('/geo_data', geoDataRoutes); // Додано маршрут для полів
 app.use('/auth', authRoutes); // Додано маршрут для автентифікації
 app.use('/operations', operationRoutes); // Додано маршрут для технологічних операцій
-
+app.use('/crops', cropsRoutes); // Додано маршрут для культур
 // Головний маршрут
 app.get('/', (req, res) => {
     res.send('Сервер працює!');

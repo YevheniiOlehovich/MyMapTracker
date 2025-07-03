@@ -41,6 +41,12 @@ const apiRoutes = {
     addOperation: `${API_BASE_URL}/operations`,
     updateOperation: (id) => `${API_BASE_URL}/operations/${id}`,
     deleteOperation: (id) => `${API_BASE_URL}/operations/${id}`,
+
+    // 🌾 Культури
+    getCrops: `${API_BASE_URL}/crops`,
+    addCrop: `${API_BASE_URL}/crops`,
+    updateCrop: (id) => `${API_BASE_URL}/crops/${id}`,
+    deleteCrop: (id) => `${API_BASE_URL}/crops/${id}`,
 };
 
 export default apiRoutes;
