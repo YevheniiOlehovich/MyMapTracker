@@ -7,6 +7,7 @@ import PersonnelTab from "../PersonnellTab";
 import VehicleTab from "../VehicleTab";
 import TechniqeTab from "../TechniqueTab";
 import FieldsTab from "../FieldsTab";
+import OperationsTab from "../OperationsTab";
 import Modals from "../Modals";
 
 const tabs = [
@@ -15,7 +16,7 @@ const tabs = [
   { key: "vehicles", label: "Транспорт", component: <VehicleTab /> },
   { key: "trailers", label: "Причепи", component: <TechniqeTab /> },
   { key: "fields", label: "Поля", component: <FieldsTab /> },
-  { key: "operations", label: "Операції", component: <div>Тут буде таблиця операцій</div> },
+  { key: "operations", label: "Операції", component: <OperationsTab />},
   { key: "crops", label: "Культури", component: <div>Тут буде таблиця культур</div> },
   { key: "sorts", label: "Сорти", component: <div>Тут буде таблиця сортів</div> },
 ];

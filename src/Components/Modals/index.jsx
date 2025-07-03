@@ -8,6 +8,7 @@ import AddGroupModal from '../AddGroupModal';
 import AddPersonalModal from '../AddPersonalModal';
 import AddVehicleModal from '../AddVehicleModal'; // Імпорт модалки для додавання транспортного засобу
 import AddTechniqueModal from '../AddTechniqueModal'; // Імпорт модалки для додавання техніки
+import AddOperaionModal from '../AddOperationModal';
 import { 
     closeAddRatesModal, 
     closeAddMileagle, 
@@ -16,6 +17,7 @@ import {
     closeAddPersonalModal,
     closeAddVehicleModal,
     closeAddTechniqueModal, 
+    closeAddOperationModal
 } from '../../store/modalSlice'; // Actions для закриття модалок
 
 const Modals = () => {
@@ -29,7 +31,8 @@ const Modals = () => {
     const isAddPersonalModalVisible = useSelector((state) => state.modals.isAddPersonalModalVisible); // Видимість модалки для персоналу 
     const isAddVehicleModalVisible = useSelector((state) => state.modals.isAddVehicleModalVisible); // Видимість модалки для додавання транспортного засобу   
     const isAddTechniqueModalVisible = useSelector((state) => state.modals.isAddTechniqueModalVisible); // Видимість модалки для додавання техніки
-    
+    const isAddOperationModalVisible = useSelector((state) => state.modals.isAddOperationModalVisible); // Видимість модалки для операцій
+
     return (
         <>
             {isAddFieldsModalVisible && selectedField && (
@@ -55,6 +58,9 @@ const Modals = () => {
             )}
             {isAddTechniqueModalVisible && (
                 <AddTechniqueModal onClose={() => dispatch(closeAddTechniqueModal())} /> // Відображення модалки для додавання техніки
+            )}
+            {isAddOperationModalVisible && (
+                <AddOperaionModal onClose={() => dispatch(closeAddOperationModal())} /> // Відображення модалки для операцій
             )}
         </>
     );

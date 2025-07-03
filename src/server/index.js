@@ -10,6 +10,7 @@ import techniquesRoutes from './routes/technique.js'
 import avlRecordsRoutes from './routes/gpsRoutes.js'; // Замість avlRecord
 import ratesRoutes from './routes/rates.js'
 import geoDataRoutes from './routes/geoDataRoutes.js'; 
+import operationRoutes from './routes/operation.js'; // Додано маршрут для технологічних операцій
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import authRoutes from './routes/auth.js';
@@ -40,7 +41,7 @@ app.use('/avl_records', avlRecordsRoutes);  // Додано маршрут дл�
 app.use('/rates', ratesRoutes);  // Додано маршрут для avl_records
 app.use('/geo_data', geoDataRoutes); // Додано маршрут для полів
 app.use('/auth', authRoutes); // Додано маршрут для автентифікації
-
+app.use('/operations', operationRoutes); // Додано маршрут для технологічних операцій
 
 // Головний маршрут
 app.get('/', (req, res) => {
