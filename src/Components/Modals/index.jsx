@@ -10,6 +10,7 @@ import AddVehicleModal from '../AddVehicleModal'; // Імпорт модалки
 import AddTechniqueModal from '../AddTechniqueModal'; // Імпорт модалки для додавання техніки
 import AddOperaionModal from '../AddOperationModal';
 import AddCropsModal from '../AddCropsModal'; // Імпорт модалки для додавання культур
+import AddVarietiesModal from '../AddVarietiesModal'
 import { 
     closeAddRatesModal, 
     closeAddMileagle, 
@@ -20,6 +21,7 @@ import {
     closeAddTechniqueModal, 
     closeAddOperationModal,
     closeAddCropModal,
+    closeAddVarietyModal
 } from '../../store/modalSlice'; // Actions для закриття модалок
 
 const Modals = () => {
@@ -35,6 +37,7 @@ const Modals = () => {
     const isAddTechniqueModalVisible = useSelector((state) => state.modals.isAddTechniqueModalVisible); // Видимість модалки для додавання техніки
     const isAddOperationModalVisible = useSelector((state) => state.modals.isAddOperationModalVisible); // Видимість модалки для операцій
     const isAddCropModalVisible = useSelector((state) => state.modals.isAddCropModalVisible); // Видимість модалки для додавання культур
+    const isAddVarietyModalVisible = useSelector((state) => state.modals.isAddVarietyModalVisible); // Видимість модалки для додавання сортів
     return (
         <>
             {isAddFieldsModalVisible && selectedField && (
@@ -66,6 +69,9 @@ const Modals = () => {
             )}
             {isAddCropModalVisible && (
                 <AddCropsModal onClose={() => dispatch(closeAddCropModal())} />
+            )}
+            {isAddVarietyModalVisible && (
+                <AddVarietiesModal onClose={() => dispatch(closeAddVarietyModal())} />
             )}
         </>
     );

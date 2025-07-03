@@ -9,6 +9,7 @@ import TechniqeTab from "../TechniqueTab";
 import FieldsTab from "../FieldsTab";
 import OperationsTab from "../OperationsTab";
 import CropsTab from "../CropsTab";
+import VarietiesTab from "../VarietiesTab";
 import Modals from "../Modals";
 
 const tabs = [
@@ -19,7 +20,7 @@ const tabs = [
   { key: "fields", label: "Поля", component: <FieldsTab /> },
   { key: "operations", label: "Операції", component: <OperationsTab />},
   { key: "crops", label: "Культури", component: <CropsTab /> },
-  { key: "sorts", label: "Сорти", component: <div>Тут буде таблиця сортів</div> },
+  { key: "sorts", label: "Сорти", component: <VarietiesTab /> },
 ];
 
 export default function Libraries() {

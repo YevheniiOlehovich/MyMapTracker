@@ -13,6 +13,7 @@ const modalSlice = createSlice({
         isLandBankReportModalVisible: false, // Додаємо стан для модалки звіту земельного банку
         isAddOperationModalVisible: false,
         isAddCropModalVisible: false,
+        isAddVarietyModalVisible: false,
 
         editTechniqueId: null,
         editGroupId: null,
@@ -23,6 +24,7 @@ const modalSlice = createSlice({
         selectedField: null, // Додаємо стан для вибраного поля
         editOperationId: null,
         editCropId: null,
+        editVarietyId: null,
     },
     reducers: {
         openAddGroupModal: (state, action) => {
@@ -109,6 +111,14 @@ const modalSlice = createSlice({
             state.isAddCropModalVisible = false;
             state.editCropId = null;
         },
+        openAddVarietyModal: (state, action) => {
+            state.isAddVarietyModalVisible = true;
+            state.editVarietyId = action.payload || null;
+        },
+        closeAddVarietyModal: (state) => {
+            state.isAddVarietyModalVisible = false;
+            state.editVarietyId = null;
+        },
     },
 });
 
@@ -134,6 +144,8 @@ export const {
     closeAddOperationModal,
     openAddCropModal,
     closeAddCropModal,
+    openAddVarietyModal,
+    closeAddVarietyModal,
 
 } = modalSlice.actions;
 

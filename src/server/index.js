@@ -12,6 +12,7 @@ import ratesRoutes from './routes/rates.js'
 import geoDataRoutes from './routes/geoDataRoutes.js'; 
 import operationRoutes from './routes/operation.js'; // Додано маршрут для технологічних операцій
 import cropsRoutes from './routes/crop.js'; // Додано маршрут для культур
+import varietyRoutes from './routes/variety.js'
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import authRoutes from './routes/auth.js';
@@ -44,6 +45,7 @@ app.use('/geo_data', geoDataRoutes); // Додано маршрут для по�
 app.use('/auth', authRoutes); // Додано маршрут для автентифікації
 app.use('/operations', operationRoutes); // Додано маршрут для технологічних операцій
 app.use('/crops', cropsRoutes); // Додано маршрут для культур
+app.use('/varieties', varietyRoutes); // Додано маршрут для сортів
 // Головний маршрут
 app.get('/', (req, res) => {
     res.send('Сервер працює!');
