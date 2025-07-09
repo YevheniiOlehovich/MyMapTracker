@@ -5,7 +5,10 @@ const layersSlice = createSlice({
     initialState: {
         showFields: true,
         showCadastre: false,
-        showGeozones: true,
+        showGeozones: false,
+        showUnits: true,
+        showRent: false,
+        showProperty: false,
     },
     reducers: {
         toggleFields: (state) => {
@@ -17,13 +20,25 @@ const layersSlice = createSlice({
         toggleGeozones: (state) => {
             state.showGeozones = !state.showGeozones;
         },
+        toggleUnits: (state) => {
+            state.showUnits = !state.showUnits;
+        },
+        toggleRent: (state) => {
+            state.showRent = !state.showRent;
+        },
+        toggleProperty: (state) => {  // переключати власність
+            state.showProperty = !state.showProperty;
+        },
     },
 });
 
-export const { toggleFields, toggleCadastre, toggleGeozones } = layersSlice.actions;
+export const { toggleFields, toggleCadastre, toggleGeozones, toggleUnits, toggleRent, toggleProperty } = layersSlice.actions;
 
 export const selectShowFields = (state) => state.layers.showFields;
 export const selectShowCadastre = (state) => state.layers.showCadastre;
 export const selectShowGeozones = (state) => state.layers.showGeozones;
+export const selectShowUnits = (state) => state.layers.showUnits;
+export const selectShowRent = (state) => state.layers.showRent;
+export const selectShowProperty = (state) => state.layers.showProperty;
 
 export default layersSlice.reducer;

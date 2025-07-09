@@ -53,6 +53,24 @@ const apiRoutes = {
     addVariety: `${API_BASE_URL}/varieties`,
     updateVariety: (id) => `${API_BASE_URL}/varieties/${id}`,
     deleteVariety: (id) => `${API_BASE_URL}/varieties/${id}`,
+
+    // Господарські ділянки
+    getUnits: `${API_BASE_URL}/units`,
+    addUnit: `${API_BASE_URL}/units`,
+    updateUnit: (id) => `${API_BASE_URL}/units/${id}`,
+    deleteUnit: (id) => `${API_BASE_URL}/units/${id}`,
+
+    // Орендовані ділянки
+    getRents: `${API_BASE_URL}/rent`,
+    addRent: `${API_BASE_URL}/rent`,
+    updateRent: (id) => `${API_BASE_URL}/rent/${id}`,
+    deleteRent: (id) => `${API_BASE_URL}/rent/${id}`,
+
+    // Власність (property)
+    getProperties: `${API_BASE_URL}/property`,
+    addProperty: `${API_BASE_URL}/property`,
+    updateProperty: (id) => `${API_BASE_URL}/property/${id}`,
+    deleteProperty: (id) => `${API_BASE_URL}/property/${id}`,
 };
 
 export default apiRoutes;

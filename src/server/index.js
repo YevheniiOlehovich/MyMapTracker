@@ -13,6 +13,9 @@ import geoDataRoutes from './routes/geoDataRoutes.js';
 import operationRoutes from './routes/operation.js'; // Додано маршрут для технологічних операцій
 import cropsRoutes from './routes/crop.js'; // Додано маршрут для культур
 import varietyRoutes from './routes/variety.js'
+import unitsRoutes from './routes/units.js'; // Додано маршрут для господарських ділянок
+import rentRoutes from './routes/rent.js'; // Додано маршрут для орендованих ділянок
+import propertyRoutes from './routes/property.js'; // Додано маршрут для ділянок у власності
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import authRoutes from './routes/auth.js';
@@ -46,6 +49,10 @@ app.use('/auth', authRoutes); // Додано маршрут для автент
 app.use('/operations', operationRoutes); // Додано маршрут для технологічних операцій
 app.use('/crops', cropsRoutes); // Додано маршрут для культур
 app.use('/varieties', varietyRoutes); // Додано маршрут для сортів
+app.use('/units', unitsRoutes); // Додано маршрут для господарських ділянок
+app.use('/rent', rentRoutes); // Додано маршрут для орендованих ділянок
+app.use('/property', propertyRoutes); // Додано маршрут для ділянок у власності
+
 // Головний маршрут
 app.get('/', (req, res) => {
     res.send('Сервер працює!');

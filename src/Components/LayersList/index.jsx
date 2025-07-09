@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import Styles from './styles';
 import arrowPic from '../../assets/ico/arrow.svg';
 import { setMapType } from '../../store/mapSlice'; // Імпорт дії для зміни типу карти
-import { toggleFields, toggleCadastre, toggleGeozones, selectShowFields, selectShowCadastre, selectShowGeozones } from '../../store/layersList'; // Імпорт дій і селекторів для керування шарами
+import { toggleFields, toggleCadastre, toggleGeozones, toggleUnits, toggleRent, toggleProperty, selectShowFields, selectShowCadastre, selectShowGeozones, selectShowUnits, selectShowRent, selectShowProperty } from '../../store/layersList'; // Імпорт дій і селекторів для керування шарами
 import FieldsLit from '../FieldsLit';
 import TriangleIco from '../../assets/ico/triangle.png';
 import DatePickerComponent from '../DatePicker';
@@ -17,8 +17,10 @@ const LayersList = () => {
     const showFields = useSelector(selectShowFields);
     const showCadastre = useSelector(selectShowCadastre);
     const showGeozones = useSelector(selectShowGeozones);
+    const showUnits = useSelector(selectShowUnits); // Отримання стану видимості юнітів
+    const showRent = useSelector(selectShowRent); // Отримання стану видимості оренди
+    const showProperty = useSelector(selectShowProperty); // Отримання стану видимості власності
     
-
     const toggleListHandler = () => {
         setIsVisible(!isVisible);
     };
@@ -37,6 +39,18 @@ const LayersList = () => {
 
     const handleToggleGeozones = () => {
         dispatch(toggleGeozones());
+    };
+
+    const handleToggleUnits = () => {
+        dispatch(toggleUnits()); 
+    };   
+
+    const handleToggleRent = () => {
+        dispatch(toggleRent());
+    };
+
+    const handleToggleProperty = () => {
+        dispatch(toggleProperty());     
     };
 
     const toggleMapListVisibility = () => {
@@ -103,7 +117,7 @@ const LayersList = () => {
                             checked={mapType === 'google_terrain'}
                             onChange={handleMapTypeChange}
                         />
-                        Google Hybrid
+                        Google Terrain
                     </Styles.label>
 
                     <Styles.label>
@@ -176,6 +190,33 @@ const LayersList = () => {
                             onChange={handleToggleGeozones}
                         />
                         Геозони
+                    </Styles.label>
+
+                    <Styles.label>
+                        <input
+                            type="checkbox"
+                            checked={showUnits}
+                            onChange={handleToggleUnits}
+                        />
+                        Господарчі ділянки
+                    </Styles.label>
+
+                    <Styles.label>
+                        <input
+                            type="checkbox"
+                            checked={showRent}
+                            onChange={handleToggleRent}
+                        />
+                        Орендоані ділянки
+                    </Styles.label>
+
+                    <Styles.label>
+                        <input
+                            type="checkbox"
+                            checked={showProperty}
+                            onChange={handleToggleProperty}
+                        />
+                        Ділянки у власності
                     </Styles.label>
                 </Styles.maplist>
             )}
