@@ -16,7 +16,7 @@ export const useRentsData = () => {
     return useQuery({
         queryKey: ['rents'],
         queryFn: fetchRents,
-        enabled: showRent,
+        // enabled: showRent,
         select: (rents) =>
             Array.isArray(rents)
                 ? rents.map(r => ({ ...r, visible: true }))

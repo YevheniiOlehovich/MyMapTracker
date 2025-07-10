@@ -10,6 +10,8 @@ import FieldsTab from "../FieldsTab";
 import OperationsTab from "../OperationsTab";
 import CropsTab from "../CropsTab";
 import VarietiesTab from "../VarietiesTab";
+import RentTab from "../RentTab";
+import PropertiesTab from "../PropertiesTab";
 import Modals from "../Modals";
 
 const tabs = [
@@ -18,6 +20,8 @@ const tabs = [
   { key: "vehicles", label: "Транспорт", component: <VehicleTab /> },
   { key: "trailers", label: "Причепи", component: <TechniqeTab /> },
   { key: "fields", label: "Поля", component: <FieldsTab /> },
+  { key: "rent", label: "Оренда", component: <RentTab /> },
+  { key: "properties", label: "Власність", component: <PropertiesTab /> },
   { key: "operations", label: "Операції", component: <OperationsTab />},
   { key: "crops", label: "Культури", component: <CropsTab /> },
   { key: "sorts", label: "Сорти", component: <VarietiesTab /> },

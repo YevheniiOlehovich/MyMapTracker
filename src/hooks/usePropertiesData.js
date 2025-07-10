@@ -15,7 +15,7 @@ export const usePropertiesData = () => {
     return useQuery({
         queryKey: ['properties'],
         queryFn: fetchProperties,
-        enabled: showProperty,
+        // enabled: showProperty,
         select: (properties) =>
             Array.isArray(properties)
                 ? properties.map(p => ({ ...p, visible: true }))
