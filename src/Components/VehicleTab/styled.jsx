@@ -59,7 +59,7 @@ const Styles = {
     tableContainer: styled.div`
         flex-grow: 1;
         overflow-y: auto;
-        max-height: 400px; /* або інша висота, яка тобі підходить */
+        /* max-height: 400px;  */
         border: 1px solid #ccc;
     `,
 

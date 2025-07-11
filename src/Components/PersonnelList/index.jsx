@@ -58,7 +58,7 @@ export default function PersonnelList() {
                 <Styles.list>
                     {Object.entries(groupedByGroup).map(([groupId, people]) => (
                         <div key={groupId}>
-                            <Styles.subtitle>{getGroupName(groupId)}</Styles.subtitle>
+                            <Styles.groupTitle>{getGroupName(groupId)}</Styles.groupTitle>
 
                             {personalFunctions.map((func) => {
                                 const filtered = people.filter(p => p.function === func._id);
@@ -66,7 +66,7 @@ export default function PersonnelList() {
 
                                 return (
                                     <div key={func._id}>
-                                        <Styles.subtitle>{func.name}</Styles.subtitle>
+                                        <Styles.functionTitle>{func.name}</Styles.functionTitle>
                                         {filtered.map((person) => (
                                             <Styles.listItem key={person._id} $hasBorder>
                                                 <Styles.block>
@@ -77,7 +77,7 @@ export default function PersonnelList() {
                                                                 : QuestionIco
                                                         }
                                                     />
-                                                    <Styles.subtitle>{person.lastName} {person.firstName}</Styles.subtitle>
+                                                    <Styles.personName>{person.lastName} {person.firstName}</Styles.personName>
                                                     <Styles.buttonBlock>
                                                         <Styles.button onClick={() => handleEdit(person._id)}>
                                                             <Styles.ico $pic={EditIco} />
