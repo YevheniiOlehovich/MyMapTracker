@@ -10,7 +10,9 @@ import QuestionIco from '../../assets/ico/10965421.webp';
 import { useGroupsData } from '../../hooks/useGroupsData';
 import { useSaveTechnique, useDeleteTechnique, useTechniquesData, useUpdateTechnique } from '../../hooks/useTechniquesData';
 
+
 export default function AddTechniqueModal({ onClose }) {
+
     const { editGroupId, editTechniqueId } = useSelector((state) => state.modals);
 
     const handleWrapperClick = closeModal(onClose);
@@ -135,7 +137,7 @@ export default function AddTechniqueModal({ onClose }) {
                 </Styles.StyledLabel>
 
                 <Styles.StyledLabel>
-                    <Styles.StyledSubtitle>Операція з полями</Styles.StyledSubtitle>
+                    <Styles.StyledSubtitle>Тип обладнання</Styles.StyledSubtitle>
                     <SelectComponent
                         options={fieldOperations}
                         value={fieldOperation ? { value: fieldOperation, label: fieldOperation } : null}

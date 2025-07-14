@@ -92,55 +92,55 @@ const Styles = {
         }
 
         th:nth-child(2), td:nth-child(2) { /* Група */
-            width: 14%;
-            min-width: 120px;
-            max-width: 180px;
+            /* width: 14%; */
+            min-width: 80px;
+            max-width: 120px;
             overflow: hidden;
             text-overflow: ellipsis;
         }
 
         th:nth-child(3), td:nth-child(3) { /* Назва */
-            width: 12%;
+            /* width: 12%; */
             min-width: 100px;
-            max-width: 140px;
+            max-width: 250px;
             overflow: hidden;
             text-overflow: ellipsis;
         }
 
         th:nth-child(4), td:nth-child(4) { /* RFID */
-            width: 12%;
-            min-width: 100px;
-            max-width: 140px;
+            /* width: 12%; */
+            min-width: 60px;
+            max-width: 100px;
             overflow: hidden;
             text-overflow: ellipsis;
         }
 
         th:nth-child(5), td:nth-child(5) { /* Унікальний № */
-            width: 8%;
-            min-width: 80px;
-            max-width: 100px;
+            /* width: 8%; */
+            min-width: 40px;
+            max-width: 80px;
             overflow: hidden;
             text-overflow: ellipsis;
         }
 
         th:nth-child(6), td:nth-child(6) { /* Ширина */
-            width: 8%;
-            min-width: 80px;
-            max-width: 100px;
+            /* width: 8%; */
+            min-width: 40px;
+            max-width: 80px;
             overflow: hidden;
             text-overflow: ellipsis;
         }
 
         th:nth-child(7), td:nth-child(7) { /* Швидкість */
-            width: 7%;
-            min-width: 60px;
-            max-width: 90px;
+            /* width: 7%; */
+            min-width: 40px;
+            max-width: 80px;
             overflow: hidden;
             text-overflow: ellipsis;
         }
 
         th:nth-child(8), td:nth-child(8) { /* Тип операції */
-            width: 14%;
+            /* width: 14%; */
             min-width: 120px;
             max-width: 180px;
             overflow: hidden;
@@ -148,9 +148,9 @@ const Styles = {
         }
 
         th:nth-child(9), td:nth-child(9) { /* Примітка */
-            width: 15%;
-            min-width: 140px;
-            max-width: 200px;
+            /* width: 15%; */
+            min-width: 40px;
+            max-width: 100px;
             overflow: hidden;
             text-overflow: ellipsis;
         }

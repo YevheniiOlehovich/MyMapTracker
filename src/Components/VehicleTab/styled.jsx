@@ -58,7 +58,7 @@ const Styles = {
 
     tableContainer: styled.div`
         flex-grow: 1;
-        overflow-y: auto;
+        /* overflow-y: auto; */
         /* max-height: 400px;  */
         border: 1px solid #ccc;
     `,
@@ -88,18 +88,19 @@ const Styles = {
         /* Номер - фіксована ширина */
         th:nth-child(1),
         td:nth-child(1) {
-        width: 40px;
+        /* width: 40px; */
         min-width: 40px;
         max-width: 40px;
         text-align: center;
+        
         }
 
         /* Група */
         th:nth-child(2),
         td:nth-child(2) {
-        width: 15%;
+        /* width: 15%; */
         min-width: 120px;
-        max-width: 180px;
+        max-width: 140px;
         overflow: hidden;
         text-overflow: ellipsis;
         }
@@ -107,9 +108,9 @@ const Styles = {
         /* Марка */
         th:nth-child(3),
         td:nth-child(3) {
-        width: 12%;
+        /* width: 12%; */
         min-width: 100px;
-        max-width: 140px;
+        max-width: 240px;
         overflow: hidden;
         text-overflow: ellipsis;
         }
@@ -117,9 +118,9 @@ const Styles = {
         /* Реєстраційний номер */
         th:nth-child(4),
         td:nth-child(4) {
-        width: 12%;
-        min-width: 100px;
-        max-width: 140px;
+        /* width: 12%; */
+        min-width: 80px;
+        max-width: 120px;
         overflow: hidden;
         text-overflow: ellipsis;
         }
@@ -127,7 +128,7 @@ const Styles = {
         /* Тип транспорту */
         th:nth-child(5),
         td:nth-child(5) {
-        width: 15%;
+        /* width: 15%; */
         min-width: 130px;
         max-width: 180px;
         overflow: hidden;
@@ -137,9 +138,9 @@ const Styles = {
         /* IMEI */
         th:nth-child(6),
         td:nth-child(6) {
-        width: 20%;
-        min-width: 160px;
-        max-width: 220px;
+        /* width: 20%; */
+        min-width: 120px;
+        max-width: 180px;
         overflow: hidden;
         text-overflow: ellipsis;
         }

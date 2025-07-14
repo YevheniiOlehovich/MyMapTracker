@@ -32,6 +32,7 @@ export default function AddVehicleModal({ onClose }) {
     const [mark, setMark] = useState(editVehicle?.mark || '');
     const [note, setNote] = useState(editVehicle?.note || '');
     const [vehicleType, setVehicleType] = useState(editVehicle?.vehicleType || '');
+    const [fuelCapacity, setFuelCapacity] = useState(editVehicle?.fuelCapacity || '');
 
     const [employeePhoto, setEmployeePhoto] = useState(
         editVehicle?.photoPath
@@ -66,6 +67,7 @@ export default function AddVehicleModal({ onClose }) {
             formData.append('note', note);
             formData.append('imei', imei);
             formData.append('sim', sim);
+            formData.append('fuelCapacity', fuelCapacity);
 
             if (employeePhoto instanceof Blob) {
                 formData.append('photo', employeePhoto, 'vehicle.webp');
@@ -150,6 +152,16 @@ export default function AddVehicleModal({ onClose }) {
                 <Styles.lable>
                     <Styles.subtitle>Номер Sim-карти</Styles.subtitle>
                     <Styles.input value={sim} onChange={(e) => setSim(e.target.value)} />
+                </Styles.lable>
+
+                <Styles.lable>
+                    <Styles.subtitle>Обʼєм паливного баку (л)</Styles.subtitle>
+                    <Styles.input
+                        type="number"
+                        min="0"
+                        value={fuelCapacity}
+                        onChange={(e) => setFuelCapacity(e.target.value)}
+                    />
                 </Styles.lable>
 
                 <Styles.lable>

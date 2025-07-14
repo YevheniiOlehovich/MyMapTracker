@@ -17,18 +17,37 @@ const Styles = {
         padding: 12px 0;
         cursor: pointer;
         border-bottom: 1px solid #ccc;
+        height: 50px;
     `,
     title: styled.h3`
         font-family: Arial, Helvetica, sans-serif;
         font-weight: 700;
-        font-size: 16px;
+        font-size: 18px;
         margin: 0;
+        color: #222;
     `,
     list: styled.ul`
         list-style: none;
         padding: 0;
         margin: 8px 0 0 0;
         width: 100%;
+        max-height: calc(100vh - 70px);
+        overflow-y: auto;
+        scrollbar-width: thin;
+        scrollbar-color: #999 #f0f0f0;
+
+        &::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        &::-webkit-scrollbar-thumb {
+            background-color: #999;
+            border-radius: 3px;
+        }
+
+        &::-webkit-scrollbar-track {
+            background: #f0f0f0;
+        }
     `,
     listItem: styled.li`
         margin-bottom: 4px;
@@ -40,6 +59,10 @@ const Styles = {
         align-items: center;
         justify-content: space-between;
         background: #f9f9f9;
+        transition: background-color 0.2s ease;
+        &:hover {
+            background-color: #f0f0f0;
+        }
     `,
     block: styled.div`
         width: 100%;

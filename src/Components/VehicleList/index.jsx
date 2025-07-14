@@ -35,11 +35,11 @@ export default function VehicleList() {
     const handleEdit = (id) => dispatch(openAddVehicleModal({ vehicleId: id }));
     const handleDelete = (id) => {
         deleteVehicle.mutate(id, {
-        onError: (err) => console.error('Помилка при видаленні техніки:', err),
+            onError: (err) => console.error('Помилка при видаленні техніки:', err),
         });
     };
 
-    // --- НОВИЙ ФУНКЦІОНАЛ: фільтрація GPS даних по даті і пошук останньої валідної точки ---
+    // --- Фільтрація GPS даних по даті і пошук останньої валідної точки ---
     const filteredGpsData = useMemo(() => {
         if (!gpsData || !selectedDate) return [];
         const selectedDateFormatted = selectedDate.split('T')[0];
@@ -48,23 +48,22 @@ export default function VehicleList() {
 
     const lastGpsPoints = useMemo(() => {
         return filteredGpsData
-        .map(item => {
-            const validPoints = item.data.filter(p => p.latitude !== 0 && p.longitude !== 0);
-            return validPoints.length > 0
-            ? { ...validPoints[validPoints.length - 1], imei: item.imei }
-            : null;
-        })
-        .filter(point => point !== null);
+            .map(item => {
+                const validPoints = item.data.filter(p => p.latitude !== 0 && p.longitude !== 0);
+                return validPoints.length > 0
+                    ? { ...validPoints[validPoints.length - 1], imei: item.imei }
+                    : null;
+            })
+            .filter(point => point !== null);
     }, [filteredGpsData]);
 
     // Показати останню локацію техніки на мапі по останній валідній точці
     const showVehicleLocation = (vehicle) => {
         const selectedVehicle = lastGpsPoints.find(point => point.imei === vehicle.imei);
         if (selectedVehicle) {
-        dispatch(setMapCenter({ lat: selectedVehicle.latitude, lng: selectedVehicle.longitude }));
+            dispatch(setMapCenter({ lat: selectedVehicle.latitude, lng: selectedVehicle.longitude }));
         }
     };
-    // ---
 
     if (isLoading) return <p>Завантаження техніки...</p>;
     if (isError) return <p>Помилка завантаження: {error?.message}</p>;
@@ -85,64 +84,63 @@ export default function VehicleList() {
 
     return (
         <Styles.mainList>
-        <Styles.header onClick={toggleExpanded}>
-            <Styles.title>Транспорт</Styles.title>
-            <Styles.button
-                onClick={e => {
-                    e.stopPropagation();
-                    handleAdd();
-                }}
-            >
-                <Styles.ico $pic={AddIco} />
-            </Styles.button>
-            <Styles.ico $pic={TriangleIco} $rotation={isExpanded ? 180 : 0} />
-        </Styles.header>
+            <Styles.header onClick={toggleExpanded}>
+                <Styles.title>Транспорт</Styles.title>
+                <Styles.button
+                    onClick={e => {
+                        e.stopPropagation();
+                        handleAdd();
+                    }}
+                >
+                    <Styles.ico $pic={AddIco} />
+                </Styles.button>
+                <Styles.ico $pic={TriangleIco} $rotation={isExpanded ? 180 : 0} />
+            </Styles.header>
 
-        {isExpanded && (
-            <Styles.list>
-            {Object.entries(groupedByGroup).map(([groupId, vehiclesInGroup]) => (
-                <div key={groupId}>
-                <Styles.subtitle>{getGroupName(groupId)}</Styles.subtitle>
+            {isExpanded && (
+                <Styles.list>
+                    {Object.entries(groupedByGroup).map(([groupId, vehiclesInGroup]) => (
+                        <Styles.groupTitle key={groupId}>
+                            {getGroupName(groupId)}
+                            {vehicleTypes.map(({ _id: typeId, name: typeName }) => {
+                                const vehiclesOfType = vehiclesInGroup.filter(v => v.vehicleType === typeId);
+                                if (vehiclesOfType.length === 0) return null;
 
-                {vehicleTypes.map(({ _id: typeId, name: typeName }) => {
-                    const vehiclesOfType = vehiclesInGroup.filter(v => v.vehicleType === typeId);
-                    if (vehiclesOfType.length === 0) return null;
-
-                    return (
-                    <div key={typeId}>
-                        <Styles.subtitle>{typeName}</Styles.subtitle>
-                        {vehiclesOfType.map(vehicle => (
-                        <Styles.listItem key={vehicle._id} $hasBorder>
-                            <Styles.block>
-                            <Styles.imgBlock
-                                $imageUrl={
-                                    vehicle.photoPath
-                                        ? '/src/' + vehicle.photoPath.substring(3).replace(/\\/g, '/')
-                                        : QuestionIco
-                                }
-                            />
-                            <Styles.subtitle>{vehicle.mark}</Styles.subtitle>
-                            <Styles.buttonBlock>
-                                <Styles.button onClick={() => showVehicleLocation(vehicle)}>
-                                <Styles.ico $pic={LocationIco} />
-                                </Styles.button>
-                                <Styles.button onClick={() => handleEdit(vehicle._id)}>
-                                <Styles.ico $pic={EditIco} />
-                                </Styles.button>
-                                <Styles.button onClick={() => handleDelete(vehicle._id)}>
-                                <Styles.ico $pic={DelIco} />
-                                </Styles.button>
-                            </Styles.buttonBlock>
-                            </Styles.block>
-                        </Styles.listItem>
-                        ))}
-                    </div>
-                    );
-                })}
-                </div>
-            ))}
-            </Styles.list>
-        )}
+                                return (
+                                    <Styles.functionTitle key={typeId}>
+                                        {typeName}
+                                        {vehiclesOfType.map(vehicle => (
+                                            <Styles.listItem key={vehicle._id} $hasBorder>
+                                                <Styles.block>
+                                                    <Styles.imgBlock
+                                                        $imageUrl={
+                                                            vehicle.photoPath
+                                                                ? '/src/' + vehicle.photoPath.substring(3).replace(/\\/g, '/')
+                                                                : QuestionIco
+                                                        }
+                                                    />
+                                                    <Styles.vehicleName>{vehicle.mark}</Styles.vehicleName>
+                                                    <Styles.buttonBlock>
+                                                        <Styles.button onClick={() => showVehicleLocation(vehicle)}>
+                                                            <Styles.ico $pic={LocationIco} />
+                                                        </Styles.button>
+                                                        <Styles.button onClick={() => handleEdit(vehicle._id)}>
+                                                            <Styles.ico $pic={EditIco} />
+                                                        </Styles.button>
+                                                        <Styles.button onClick={() => handleDelete(vehicle._id)}>
+                                                            <Styles.ico $pic={DelIco} />
+                                                        </Styles.button>
+                                                    </Styles.buttonBlock>
+                                                </Styles.block>
+                                            </Styles.listItem>
+                                        ))}
+                                    </Styles.functionTitle>
+                                );
+                            })}
+                        </Styles.groupTitle>
+                    ))}
+                </Styles.list>
+            )}
         </Styles.mainList>
     );
 }

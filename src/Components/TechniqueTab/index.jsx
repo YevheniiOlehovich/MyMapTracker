@@ -148,8 +148,8 @@ export default function TechniqeTab() {
                     placeholder="Пошук по групі, RFID, назві..."
                     value={globalFilter}
                     onChange={e => setGlobalFilter(e.target.value)}
-                    />
-                    
+                />
+                <Button text="Додати" onClick={handleAdd} />
             </Styles.header>
 
             <Styles.tableContainer>

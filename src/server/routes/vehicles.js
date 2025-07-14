@@ -16,6 +16,7 @@ const VehiclesSchema = new mongoose.Schema({
     imei: { type: String },
     sim: { type: String },
     groupId: { type: mongoose.Schema.Types.ObjectId, ref: 'Group' },
+    fuelCapacity: { type: Number },
 }, { timestamps: true });
 
 const Vehicle = mongoose.model('Vehicle', VehiclesSchema);
@@ -71,7 +72,7 @@ router.post('/', upload.single('photo'), async (req, res) => {
     console.log('[DEBUG] req.file:', req.file);
 
     try {
-        const { vehicleType, regNumber, mark, note, imei, sim, groupId } = req.body;
+        const { vehicleType, regNumber, mark, note, imei, sim, groupId, fuelCapacity  } = req.body;
         if (!vehicleType || !regNumber) {
             console.warn('[WARN] Missing vehicleType or regNumber');
             return res.status(400).json({ message: 'vehicleType and regNumber are required' });
@@ -91,6 +92,7 @@ router.post('/', upload.single('photo'), async (req, res) => {
             imei,
             sim,
             groupId,
+            fuelCapacity: fuelCapacity ? Number(fuelCapacity) : undefined,
         });
 
         await newVehicle.save();
@@ -109,7 +111,7 @@ router.put('/:id', upload.single('photo'), async (req, res) => {
     console.log('[DEBUG] req.file:', req.file);
 
     try {
-        const { vehicleType, regNumber, mark, note, imei, sim, groupId } = req.body;
+        const { vehicleType, regNumber, mark, note, imei, sim, groupId, fuelCapacity  } = req.body;
 
         const vehicle = await Vehicle.findById(req.params.id);
         if (!vehicle) {
@@ -134,6 +136,7 @@ router.put('/:id', upload.single('photo'), async (req, res) => {
             imei,
             sim,
             groupId,
+            fuelCapacity: fuelCapacity ? Number(fuelCapacity) : undefined,
         };
 
         if (req.file) {
