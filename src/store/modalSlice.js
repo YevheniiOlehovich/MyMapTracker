@@ -14,6 +14,7 @@ const modalSlice = createSlice({
         isAddOperationModalVisible: false,
         isAddCropModalVisible: false,
         isAddVarietyModalVisible: false,
+        isAddTaskModalVisible: false,
 
         editTechniqueId: null,
         editGroupId: null,
@@ -25,6 +26,7 @@ const modalSlice = createSlice({
         editOperationId: null,
         editCropId: null,
         editVarietyId: null,
+        editTaskId: null,
     },
     reducers: {
         openAddGroupModal: (state, action) => {
@@ -119,6 +121,14 @@ const modalSlice = createSlice({
             state.isAddVarietyModalVisible = false;
             state.editVarietyId = null;
         },
+        openAddTaskModal: (state, action) => {
+            state.isAddTaskModalVisible = true;
+            state.editTaskId = action.payload || null;
+        },
+        closeAddTaskModal: (state) => {
+            state.isAddTaskModalVisible = false;
+            state.editTaskId = null;
+        },
     },
 });
 
@@ -146,6 +156,8 @@ export const {
     closeAddCropModal,
     openAddVarietyModal,
     closeAddVarietyModal,
+    openAddTaskModal,
+    closeAddTaskModal,
 
 } = modalSlice.actions;
 
