@@ -79,9 +79,13 @@ const Styles = {
         display: flex;
         flex-direction: column;
         width: 100%;
-        height: 700px; 
+        /* height: 700px;  */
+        height: 100%;
+        max-height: 450px;
         overflow-y: auto; 
         white-space: nowrap;  
+        margin-bottom: 20px;
+        padding: 0 8px;
     `,
     searchInput: styled.input`
         width: 100%;

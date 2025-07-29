@@ -10,7 +10,7 @@ import { useFieldsData, useToggleFieldVisibility } from '../../hooks/useFieldsDa
 import { setMapCenter } from '../../store/mapCenterSlice';
 import { openAddFieldsModal, setSelectedField } from '../../store/modalSlice';
 
-export default function FieldsLit() {
+export default function FieldsList() {
     const dispatch = useDispatch();
     const [isFieldsListVisible, setIsFieldsListVisible] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');

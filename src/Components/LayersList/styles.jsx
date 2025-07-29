@@ -11,7 +11,7 @@ const Styles = {
         background-color: rgba(0, 0, 0, 0.7);
         z-index: 5;
         transition: right 0.3s ease-in-out;
-        padding: 10px 10px 10px 30px;
+        padding: 20px 10px 20px 10px;
     `,
     showBtn: styled.div`
         position: absolute;

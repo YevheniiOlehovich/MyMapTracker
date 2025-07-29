@@ -4,7 +4,7 @@ import Styles from './styles';
 import arrowPic from '../../assets/ico/arrow.svg';
 import { setMapType } from '../../store/mapSlice'; // Імпорт дії для зміни типу карти
 import { toggleFields, toggleCadastre, toggleGeozones, toggleUnits, toggleRent, toggleProperty, selectShowFields, selectShowCadastre, selectShowGeozones, selectShowUnits, selectShowRent, selectShowProperty } from '../../store/layersList'; // Імпорт дій і селекторів для керування шарами
-import FieldsLit from '../FieldsLit';
+import FieldsList from '../FieldsList';
 import TriangleIco from '../../assets/ico/triangle.png';
 import DatePickerComponent from '../DatePicker';
 
@@ -220,8 +220,8 @@ const LayersList = () => {
                     </Styles.label>
                 </Styles.maplist>
             )}
-            <FieldsLit />
-            {/* <DatePickerComponent /> */}
+            <FieldsList />
+            <DatePickerComponent />
         </Styles.wrapper>
     );
 };

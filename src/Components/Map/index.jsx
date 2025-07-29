@@ -18,6 +18,7 @@ import { useUnitsData } from '../../hooks/useUnitsData';
 import { useRentsData } from '../../hooks/useRentData';
 import { usePropertiesData } from '../../hooks/usePropertiesData'; 
 
+
 import {
     selectShowFields,
     selectShowCadastre,
@@ -38,6 +39,12 @@ import FieldLabel from '../FieldLabel';
 import { openAddFieldsModal, setSelectedField } from '../../store/modalSlice';
 import L from 'leaflet';
 import RedMarker from '../../assets/ico/redmarker.png';
+
+import 'leaflet/dist/leaflet.css';
+import '@geoman-io/leaflet-geoman-free/dist/leaflet-geoman.css';
+import '@geoman-io/leaflet-geoman-free';
+import MeasureLayer from '../MeasureLayer'; // Імпортуємо компонент GeomanControl
+
 
 function ZoomTracker({ setZoomLevel }) {
     useMapEvents({
@@ -290,6 +297,7 @@ export default function Map() {
 
                 <ZoomTracker setZoomLevel={(zoom) => dispatch(setZoomLevel(zoom))} />
                 <MapCenterUpdater />
+                <MeasureLayer />
             </MapContainer>
         </Styles.wrapper>
     );

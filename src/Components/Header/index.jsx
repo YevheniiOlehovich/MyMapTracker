@@ -8,16 +8,30 @@ import {
 import { setMapCenter } from '../../store/mapCenterSlice'; // Для центру карти
 import { setCurrentLocation, setLocationError } from '../../store/currentLocationSlice'; // Для маркера поточного місцезнаходження
 import { useDispatch } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation  } from 'react-router-dom';
 
 export default function Header() {
     const dispatch = useDispatch();
     const navigate = useNavigate();
+    const location = useLocation();
 
     // Функція для виходу з аккаунта
+    // const handleLogout = () => {
+    //     sessionStorage.removeItem('token'); // Видаляємо токен із sessionStorage
+    //     window.location.reload(); // Перезавантажуємо сторінку, щоб повернутися на сторінку авторизації
+    // };
+
     const handleLogout = () => {
-        sessionStorage.removeItem('token'); // Видаляємо токен із sessionStorage
-        window.location.reload(); // Перезавантажуємо сторінку, щоб повернутися на сторінку авторизації
+        if (location.pathname !== '/') {
+            navigate('/');
+            setTimeout(() => {
+                sessionStorage.removeItem('token');
+                window.location.reload();
+            }, 100); // Даємо час навігації
+        } else {
+            sessionStorage.removeItem('token');
+            window.location.reload();
+        }
     };
 
     // Функція для визначення поточного місцезнаходження
