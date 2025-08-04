@@ -54,22 +54,21 @@ const Styles = {
         margin-bottom: 20px;
     `,
 
-    // StyledLabel: styled.label`
-    //     width: 100%;
-    //     display: flex;
-    //     justify-content: space-between;
-    //     align-items: center;
-    //     margin-bottom: 20px;
-    // `,
+    StyledLabel: styled.label`
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin: 0 0 20px 0`,
 
-    // StyledSubtitle: styled.h5`
-    //     font-family: Arial, sans-serif;
-    //     font-weight: 500;
-    //     font-size: 14px;
-    //     color: black;
-    //     margin: 0;
-    //     display: block;
-    // `,
+    StyledSubtitle: styled.h5`
+        font-family: Arial, sans-serif;
+        font-weight: 500;
+        font-size: 14px;
+        color: black;
+        margin: 0;
+        display: block;
+    `,
 
     // StyledInput: styled.input`
     //     width: 200px;

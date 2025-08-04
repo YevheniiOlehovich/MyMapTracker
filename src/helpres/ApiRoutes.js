@@ -71,6 +71,13 @@ const apiRoutes = {
     addProperty: `${API_BASE_URL}/property`,
     updateProperty: (id) => `${API_BASE_URL}/property/${id}`,
     deleteProperty: (id) => `${API_BASE_URL}/property/${id}`,
+
+    // === Таски ===
+    getTasks: `${API_BASE_URL}/tasks`,
+    getTaskById: (id) => `${API_BASE_URL}/tasks/${id}`,
+    addTask: `${API_BASE_URL}/tasks`,
+    updateTask: (id) => `${API_BASE_URL}/tasks/${id}`,
+    deleteTask: (id) => `${API_BASE_URL}/tasks/${id}`,
 };
 
 export default apiRoutes;

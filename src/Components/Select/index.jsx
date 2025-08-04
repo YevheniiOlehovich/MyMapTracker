@@ -9,7 +9,7 @@ export default function SelectComponent({ options, value, onChange, placeholder 
     }));
     
     return (
-        <div style={{ width: '300px', margin: '0 auto' }}>
+        <div style={{ width: '300px', margin: '0' }}>
             <Select 
                 value={value} // Передача обраного значення
                 onChange={onChange} // Обробка зміни

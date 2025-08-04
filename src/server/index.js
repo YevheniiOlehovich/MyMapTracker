@@ -16,6 +16,7 @@ import varietyRoutes from './routes/variety.js'
 import unitsRoutes from './routes/units.js'; // Додано маршрут для господарських ділянок
 import rentRoutes from './routes/rent.js'; // Додано маршрут для орендованих ділянок
 import propertyRoutes from './routes/property.js'; // Додано маршрут для ділянок у власності
+import taskRoutes from './routes/taskRoutes.js'; // Додано маршрут для тасків
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import authRoutes from './routes/auth.js';
@@ -52,7 +53,7 @@ app.use('/varieties', varietyRoutes); // Додано маршрут для со
 app.use('/units', unitsRoutes); // Додано маршрут для господарських ділянок
 app.use('/rent', rentRoutes); // Додано маршрут для орендованих ділянок
 app.use('/property', propertyRoutes); // Додано маршрут для ділянок у власності
-
+app.use('/tasks', taskRoutes); // Додано маршрут для тасків
 // Головний маршрут
 app.get('/', (req, res) => {
     res.send('Сервер працює!');
