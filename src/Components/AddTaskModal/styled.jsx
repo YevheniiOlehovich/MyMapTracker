@@ -18,9 +18,9 @@ const Styles = {
     `,
 
     StyledModal: styled.div`
-        width: 400px;
+        width: 820px;
         background: white;
-        padding: 10px;
+        padding: 40px 10px 10px 10px;
         display: flex;
         flex-direction: column;
         position: relative;
@@ -45,6 +45,12 @@ const Styles = {
         }
     `,
 
+    StyledColumn: styled.div`
+        display: flex;
+        flex-direction: column;
+        width: 400px;
+    `,
+
     StyledTitle: styled.h4`
         font-family: Arial, sans-serif;
         font-weight: 700;
@@ -52,13 +58,18 @@ const Styles = {
         color: black;
         margin: 0;
         margin-bottom: 20px;
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        z-index: 1; 
     `,
 
     StyledLabel: styled.label`
         width: 100%;
         display: flex;
+        flex-direction: column;
         justify-content: space-between;
-        align-items: center;
+        align-items: flex-start;
         margin: 0 0 20px 0`,
 
     StyledSubtitle: styled.h5`
@@ -67,7 +78,24 @@ const Styles = {
         font-size: 14px;
         color: black;
         margin: 0;
+        margin-bottom: 10px;
         display: block;
+    `,
+
+    StyledBlock : styled.div`
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        
+    `,
+
+    StyledMapBlock: styled.div`
+        width: 400px;
+        height: 400px;
+        border: 1px solid grey;
+        box-sizing: border-box;
+        margin-bottom: 20px;
+        position: relative;
     `,
 
     // StyledInput: styled.input`
@@ -82,14 +110,14 @@ const Styles = {
     //     }
     // `,
 
-    // StyledTextArea: styled.textarea`
-    //     width: 100%;
-    //     height: 100px;
-    //     border: 1px solid grey;
-    //     resize: none; 
-    //     word-wrap: break-word; 
-    //     overflow: auto; 
-    // `,
+    StyledTextArea: styled.textarea`
+        width: 100%;
+        height: 100px;
+        border: 1px solid grey;
+        resize: none; 
+        word-wrap: break-word; 
+        overflow: auto; 
+    `,
 
     // StyledPhotoBlock: styled.div`
     //     position: relative;
