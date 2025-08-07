@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Styles from './styled';
 import closeModal from '../../helpres/closeModal';
 import SelectComponent from '../Select';
@@ -10,6 +10,7 @@ import { useOperationsData } from '../../hooks/useOperationsData';
 import { useCropsData } from '../../hooks/useCropsData';
 import { useVarietiesData } from '../../hooks/useVarietiesData';
 import { useVehiclesData } from '../../hooks/useVehiclesData';
+import { useSaveTask, useTasksData } from '../../hooks/useTasksData';
 import Button from '../Button';
 import apiRoutes from '../../helpres/ApiRoutes';
 import MapBlock from '../MapBlock';
@@ -36,7 +37,10 @@ export default function AddTaskModal({ onClose }) {
     const [selectedVariety, setSelectedVariety] = useState(null);
     const [selectedCrop, setSelectedCrop] = useState(null);
 
-    console.log(selectedField, 'selectedField');
+    const [width, setWidth] = useState('');
+    const [note, setNote] = useState('');
+
+    const [isWidthEditable, setIsWidthEditable] = useState(false);
 
     // Обробники зміни
     const handleGroupChange = (opt) => setSelectedGroup(opt);
@@ -49,7 +53,22 @@ export default function AddTaskModal({ onClose }) {
     const handleVarietyChange = (opt) => setSelectedVariety(opt);
     const handleCropChange = (opt) => setSelectedCrop(opt);
 
-    const handleSave = async () => {
+    const saveTaskMutation = useSaveTask();
+
+    useEffect(() => {
+    if (selectedTechnique?.value) {
+        const fullTechnique = techniques.find(t => t._id === selectedTechnique.value);
+        if (fullTechnique?.width !== undefined) {
+        setWidth(fullTechnique.width);
+        } else {
+        setWidth('');
+        }
+    } else {
+        setWidth('');
+    }
+    }, [selectedTechnique, techniques]);
+
+    const handleSave = () => {
         const formData = {
             group: selectedGroup,
             personnel: selectedPersonnel,
@@ -59,33 +78,17 @@ export default function AddTaskModal({ onClose }) {
             operation: selectedOperation,
             variety: selectedVariety,
             crop: selectedCrop,
-            // статус не передаємо — на бекенді буде 'new' за замовчуванням
+            width: Number(width) || null,
+            note,
         };
 
-        try {
-            console.log("Відправляю таску:", formData);
-            const resp = await fetch(apiRoutes.addTask, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(formData),
-            });
-
-            if (!resp.ok) {
-            const errBody = await resp.json();
-            console.error('Помилка створення таски:', errBody);
-            // можеш показати користувачу повідомлення
-            return;
+        saveTaskMutation.mutate(formData, {
+            onSuccess: () => onClose?.(),
+            onError: (error) => {
+            console.error('Помилка створення таски:', error);
+            alert('Сталася помилка при створенні таски');
             }
-
-            const created = await resp.json();
-            console.log('Таска створена:', created);
-            // тут можеш закрити модалку або оновити список
-            onClose?.();
-        } catch (e) {
-            console.error('Network error створення таски:', e);
-        }
+        });
     };
 
     return (
@@ -218,11 +221,30 @@ export default function AddTaskModal({ onClose }) {
                             <Styles.StyledSubtitle>Додаткова інформація</Styles.StyledSubtitle>
                             <Styles.StyledTextArea
                                 maxLength={250}
-                                // value={note} 
-                                // onChange={(e) => setNote(e.target.value)}
+                                value={note}
+                                onChange={(e) => setNote(e.target.value)}
                             />
                         </Styles.StyledLabel>
-                    </Styles.StyledColumn>
+
+                        <Styles.StyledLabel>
+                            <Styles.StyledSubtitle>
+                                Ширина техніки (м)
+                                <Styles.StyledEditToggle onClick={() => setIsWidthEditable(prev => !prev)}>
+                                {isWidthEditable ? '🔒 Заблокувати' : '✏️ Редагувати'}
+                                </Styles.StyledEditToggle>
+                            </Styles.StyledSubtitle>
+                            <Styles.StyledInput
+                                type="number"
+                                min="0"
+                                step="0.1"
+                                value={width}
+                                disabled={!isWidthEditable}
+                                onChange={(e) => setWidth(Number(e.target.value))}
+                                placeholder="Ширина"
+                            />
+                            </Styles.StyledLabel>
+
+                        </Styles.StyledColumn>
                     </Styles.StyledBlock>
                     
                     <div style={{ display: 'flex', justifyContent: 'flex-end'}}>

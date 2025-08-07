@@ -98,17 +98,17 @@ const Styles = {
         position: relative;
     `,
 
-    // StyledInput: styled.input`
-    //     width: 200px;
-    //     border: 1px solid grey;
-    //     height: 20px;
-    //     padding: 4px;
+    StyledInput: styled.input`
+        width: 100%;
+        border: 1px solid grey;
+        height: 40px;
+        padding: 10px;
 
-    //     &:focus {
-    //         border: 1px solid black;
-    //         border-radius: 0;
-    //     }
-    // `,
+        &:focus {
+            border: 1px solid black;
+            border-radius: 0;
+        }
+    `,
 
     StyledTextArea: styled.textarea`
         width: 100%;
@@ -117,6 +117,17 @@ const Styles = {
         resize: none; 
         word-wrap: break-word; 
         overflow: auto; 
+    `,
+
+    StyledEditToggle: styled.span`
+        margin-left: 10px;
+        cursor: pointer;
+        font-size: 0.9em;
+        color: #007bff;
+        text-decoration: underline;
+        &:hover {
+            opacity: 0.8;
+        }
     `,
 
     // StyledPhotoBlock: styled.div`
