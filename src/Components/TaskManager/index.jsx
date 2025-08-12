@@ -11,6 +11,7 @@ import {
 } from '@tanstack/react-table';
 
 import { useTasksData, useDeleteTask } from '../../hooks/useTasksData';
+import { useFieldsData } from '../../hooks/useFieldsData';
 import { openAddTaskModal } from '../../store/modalSlice';
 
 import Header from '../Header';
@@ -24,6 +25,8 @@ import dayjs from 'dayjs';
 export default function TasksTab() {
     const dispatch = useDispatch();
     const { data: tasks = [], isLoading, isError, error } = useTasksData();
+    const { data: fieldsData = [] } = useFieldsData();
+    
     const deleteTask = useDeleteTask();
 
     const [globalFilter, setGlobalFilter] = useState('');
@@ -48,19 +51,43 @@ export default function TasksTab() {
     };
 
     const columns = useMemo(() => [
-        // {
-        //     id: 'rowNumber',
-        //     header: '#',
-        //     cell: info => info.row.index + 1 + info.table.getState().pagination.pageIndex * 20,
-        // },
         columnHelper.accessor(row => row.order ?? 0, {
             id: 'order',
-            header: 'Порядок',
+            header: '#',
             enableGlobalFilter: false,
+        }),
+        columnHelper.accessor(row => row.groupId?.name || '—', {
+            id: 'group',
+            header: 'Група',
+            enableGlobalFilter: true,
+        }),
+        columnHelper.accessor(row => row.fieldId?.properties?.name || '—', {
+            id: 'field',
+            header: 'Поле',
+            enableGlobalFilter: true,
         }),
         columnHelper.accessor(row => row.operationId?.name || '—', {
             id: 'operation',
             header: 'Операція',
+            enableGlobalFilter: true,
+        }),
+        columnHelper.accessor('status', {
+            header: 'Статус',
+            enableGlobalFilter: true,
+        }),
+        columnHelper.accessor(row => row.vehicleId ? `${row.vehicleId.mark} (${row.vehicleId.regNumber})` : '—', {
+            id: 'vehicle',
+            header: 'Транспорт',
+            enableGlobalFilter: true,
+        }),
+        columnHelper.accessor(row => row.techniqueId?.name || '—', {
+            id: 'technique',
+            header: 'Техніка',
+            enableGlobalFilter: true,
+        }),
+        columnHelper.accessor(row => row.personnelId ? `${row.personnelId.lastName} ${row.personnelId.firstName}` : '—', {
+            id: 'executor',
+            header: 'Виконавець',
             enableGlobalFilter: true,
         }),
         columnHelper.accessor(row => row.cropId?.name || '—', {
@@ -73,35 +100,6 @@ export default function TasksTab() {
             header: 'Сорт',
             enableGlobalFilter: true,
         }),
-        columnHelper.accessor(row => row.groupId?.name || '—', {
-            id: 'group',
-            header: 'Група',
-            enableGlobalFilter: true,
-        }),
-        columnHelper.accessor(row => row.fieldId?.properties?.name || '—', {
-            id: 'field',
-            header: 'Поле',
-            enableGlobalFilter: true,
-        }),
-        columnHelper.accessor(row => row.techniqueId?.name || '—', {
-            id: 'technique',
-            header: 'Техніка',
-            enableGlobalFilter: true,
-        }),
-        columnHelper.accessor(row => row.vehicleId ? `${row.vehicleId.mark} (${row.vehicleId.regNumber})` : '—', {
-            id: 'vehicle',
-            header: 'Транспорт',
-            enableGlobalFilter: true,
-        }),
-        columnHelper.accessor(row => row.personnelId ? `${row.personnelId.lastName} ${row.personnelId.firstName}` : '—', {
-            id: 'executor',
-            header: 'Виконавець',
-            enableGlobalFilter: true,
-        }),
-        columnHelper.accessor('status', {
-            header: 'Статус',
-            enableGlobalFilter: true,
-        }),
         columnHelper.accessor('note', {
             header: 'Примітка',
             enableGlobalFilter: true,
@@ -111,6 +109,15 @@ export default function TasksTab() {
             id: 'createdAt',
             header: 'Дата створення',
             enableGlobalFilter: false,
+        }),
+        columnHelper.accessor(row => row.fieldId?.properties?.calculated_area ?? '—', {
+            id: 'area',
+            header: 'Площа (га)',
+            enableGlobalFilter: false,
+            cell: info => {
+                const value = info.getValue();
+                return typeof value === 'number' ? value.toFixed(2) : value;
+            }
         }),
         {
             id: 'actions',

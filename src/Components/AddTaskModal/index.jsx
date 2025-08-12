@@ -10,13 +10,17 @@ import { useOperationsData } from '../../hooks/useOperationsData';
 import { useCropsData } from '../../hooks/useCropsData';
 import { useVarietiesData } from '../../hooks/useVarietiesData';
 import { useVehiclesData } from '../../hooks/useVehiclesData';
-import { useSaveTask, useTasksData } from '../../hooks/useTasksData';
+import { useSaveTask, useTasksData, useUpdateTask } from '../../hooks/useTasksData';
 import Button from '../Button';
 import apiRoutes from '../../helpres/ApiRoutes';
 import MapBlock from '../MapBlock';
+import { useSelector } from 'react-redux';
 
 export default function AddTaskModal({ onClose }) {
     const handleWrapperClick = closeModal(onClose);
+    const { editTaskId } = useSelector((state) => state.modals);
+    
+    
 
     const { data: groups = [] } = useGroupsData();
     const { data: personnel = [] } = usePersonnelData();
@@ -26,6 +30,11 @@ export default function AddTaskModal({ onClose }) {
     const { data: crops = [] } = useCropsData();
     const { data: varieties = [] } = useVarietiesData();
     const { data: vehicles = [] } = useVehiclesData();
+    const { data: tasks = [] } = useTasksData();
+
+    const editTask = tasks.find(task => task._id === editTaskId);
+    // console.log(editTask)
+    
 
     // Стейти для вибору
     const [selectedGroup, setSelectedGroup] = useState(null);
@@ -39,6 +48,69 @@ export default function AddTaskModal({ onClose }) {
 
     const [width, setWidth] = useState('');
     const [note, setNote] = useState('');
+    const [deadline, setDeadline] = useState(null);
+
+    useEffect(() => {
+        if (editTask) {
+            setSelectedGroup(
+            editTask.groupId
+                ? { value: editTask.groupId._id, label: editTask.groupId.name || '' }
+                : null
+            );
+            setSelectedPersonnel(
+            editTask.personnelId
+                ? { value: editTask.personnelId._id, label: `${editTask.personnelId.firstName} ${editTask.personnelId.lastName}`.trim() || '' }
+                : null
+            );
+            setSelectedTechnique(
+            editTask.techniqueId
+                ? { value: editTask.techniqueId._id, label: editTask.techniqueId.name || '' }
+                : null
+            );
+            setSelectedVehicle(
+            editTask.vehicleId
+                ? { value: editTask.vehicleId._id, label: editTask.vehicleId.mark || editTask.vehicleId.regNumber || editTask.vehicleId.vehicleType || '' }
+                : null
+            );
+            setSelectedField(
+            editTask.fieldId
+                ? { value: editTask.fieldId._id, label: editTask.fieldId.properties?.name || '' }
+                : null
+            );
+            setSelectedOperation(
+            editTask.operationId
+                ? { value: editTask.operationId._id, label: editTask.operationId.name || '' }
+                : null
+            );
+            setSelectedVariety(
+            editTask.varietyId
+                ? { value: editTask.varietyId._id, label: editTask.varietyId.name || '' }
+                : null
+            );
+            setSelectedCrop(
+            editTask.cropId
+                ? { value: editTask.cropId._id, label: editTask.cropId.name || '' }
+                : null
+            );
+
+            setWidth(editTask.width || '');
+            setNote(editTask.note || '');
+            setDeadline(editTask.daysToComplete || null);
+        } else {
+            setSelectedGroup(null);
+            setSelectedPersonnel(null);
+            setSelectedTechnique(null);
+            setSelectedVehicle(null);
+            setSelectedField(null);
+            setSelectedOperation(null);
+            setSelectedVariety(null);
+            setSelectedCrop(null);
+            setWidth('');
+            setNote('');
+            setDeadline(null);
+        }
+    }, [editTask]);
+
 
     const [isWidthEditable, setIsWidthEditable] = useState(false);
 
@@ -53,7 +125,8 @@ export default function AddTaskModal({ onClose }) {
     const handleVarietyChange = (opt) => setSelectedVariety(opt);
     const handleCropChange = (opt) => setSelectedCrop(opt);
 
-    const saveTaskMutation = useSaveTask();
+    const saveTask = useSaveTask();
+    const updateTask = useUpdateTask();
 
     useEffect(() => {
     if (selectedTechnique?.value) {
@@ -68,34 +141,42 @@ export default function AddTaskModal({ onClose }) {
     }
     }, [selectedTechnique, techniques]);
 
-    const handleSave = () => {
-        const formData = {
-            group: selectedGroup,
-            personnel: selectedPersonnel,
-            technique: selectedTechnique,
-            vehicle: selectedVehicle,
-            field: selectedField,
-            operation: selectedOperation,
-            variety: selectedVariety,
-            crop: selectedCrop,
-            width: Number(width) || null,
-            note,
-        };
+    const handleSave = async () => {
+        try {
+            const formData = new FormData();
 
-        saveTaskMutation.mutate(formData, {
-            onSuccess: () => onClose?.(),
-            onError: (error) => {
-            console.error('Помилка створення таски:', error);
-            alert('Сталася помилка при створенні таски');
+            formData.append('group', selectedGroup?.value || '');
+            formData.append('personnel', selectedPersonnel?.value || '');
+            formData.append('technique', selectedTechnique?.value || '');
+            formData.append('vehicle', selectedVehicle?.value || '');
+            formData.append('field', selectedField?.value || '');
+            formData.append('operation', selectedOperation?.value || '');
+            formData.append('variety', selectedVariety?.value || '');
+            formData.append('crop', selectedCrop?.value || '');
+            formData.append('width', width ? String(width) : '');
+            formData.append('note', note || '');
+            formData.append('daysToComplete', deadline ? String(deadline) : '');
+
+            if (editTaskId) {
+                // Оновлення існуючої таски
+                await updateTask.mutateAsync({ taskId: editTaskId, taskData: formData });
+            } else {
+                // Створення нової таски
+                await saveTask.mutateAsync(formData);
             }
-        });
+
+            onClose();
+        } catch (error) {
+            console.error('Помилка при збереженні таски:', error);
+            alert('Сталася помилка при збереженні таски');
+        }
     };
 
     return (
         <Styles.StyledWrapper onClick={handleWrapperClick}>
             <Styles.StyledModal onClick={e => e.stopPropagation()}>
                 <Styles.StyledCloseButton onClick={handleWrapperClick} />
-                    <Styles.StyledTitle>Додавання нового завдання</Styles.StyledTitle>
+                    <Styles.StyledTitle>{editTaskId ? `Редагування завдання ${editTask.order}` : 'Додавання нового завдання'}</Styles.StyledTitle>
                     <Styles.StyledBlock>
                         <Styles.StyledColumn>
 
@@ -242,6 +323,18 @@ export default function AddTaskModal({ onClose }) {
                                 onChange={(e) => setWidth(Number(e.target.value))}
                                 placeholder="Ширина"
                             />
+                            </Styles.StyledLabel>
+
+                            <Styles.StyledLabel>
+                                <Styles.StyledSubtitle>Термін виконання (днів)</Styles.StyledSubtitle>
+                                <Styles.StyledInput
+                                    type="number"
+                                    min="1"
+                                    step="1"
+                                    value={deadline ?? ''}
+                                    onChange={(e) => setDeadline(e.target.value ? Number(e.target.value) : '')}
+                                    placeholder="Введіть кількість днів"
+                                />
                             </Styles.StyledLabel>
 
                         </Styles.StyledColumn>

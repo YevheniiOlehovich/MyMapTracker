@@ -1,147 +1,3 @@
-// import { styled } from 'styled-components';
-
-// const Styles = {
-//     wrapper: styled.div`
-//         position: relative;
-//         left: 50%;
-//         transform: translateX(-50%);
-//         max-width: 1200px;
-//         width: 100%;
-//         height: 100vh;
-//         padding: 120px 20px 20px 20px;
-//         display: flex;
-//         flex-direction: column;
-//         justify-content: space-between;
-//     `,
-
-//     header: styled.div`
-//         display: flex;
-//         justify-content: space-between;
-//         align-items: center;
-//         margin-bottom: 10px;
-//     `,
-
-//     searchInput: styled.input`
-//         padding: 5px 10px;
-//         width: 250px;
-//         font-size: 14px;
-//         border: 1px solid #ccc;
-//         border-radius: 4px;
-
-//         &::placeholder {
-//             color: #aaa;
-//         }
-//     `,
-
-//     button: styled.button`
-//         width: 20px;
-//         height: 20px;
-//         border: none;
-//         display: flex;
-//         justify-content: center;
-//         align-items: center;
-//         background-color: white;
-//         padding: 0;
-//         cursor: pointer;
-//         transition: border 0.2s ease;
-
-//         &:hover {
-//             border: 2px solid black;
-//         }
-//     `,
-
-//     ico: styled.div`
-//         width: 12px;
-//         height: 12px;
-//         background-image: url(${(props) => props.$pic});
-//         background-size: cover;
-//         background-position: center;
-//         transition: transform 0.2s ease;
-//         transform: rotate(${(props) => props.$rotation || 0}deg);
-//     `,
-
-//     tableContainer: styled.div`
-//         flex-grow: 1;
-//         overflow-y: auto;
-//         border: 1px solid #ccc;
-//     `,
-
-//     table: styled.table`
-//         border-collapse: collapse;
-//         width: 100%;
-//         min-width: 800px;
-
-//         thead th {
-//             position: sticky;
-//             top: 0;
-//             background-color: white;
-//             z-index: 1;
-//             border-bottom: 2px solid #ddd;
-//             cursor: pointer;
-//             user-select: none;
-
-//             &:hover {
-//                 background-color: #f2f2f2;
-//             }
-//         }
-
-//         th, td {
-//             padding: 6px 8px;
-//             border: 1px solid #ddd;
-//             text-align: left;
-//         }
-
-//         /* 1: № */
-//         th:nth-child(1), td:nth-child(1) {
-//             width: 40px;
-//             max-width: 40px;
-//             text-align: center;
-//             white-space: nowrap;
-//         }
-
-//         /* 2: Назва задачі */
-//         th:nth-child(2), td:nth-child(2) {
-//             width: 250px;
-//             max-width: 250px;
-//             white-space: nowrap;
-//             overflow: hidden;
-//             text-overflow: ellipsis;
-//         }
-
-//         /* 3: Статус */
-//         th:nth-child(3), td:nth-child(3) {
-//             width: 120px;
-//             max-width: 120px;
-//             white-space: nowrap;
-//             overflow: hidden;
-//             text-overflow: ellipsis;
-//         }
-
-//         /* 4: Виконавець */
-//         th:nth-child(4), td:nth-child(4) {
-//             width: 180px;
-//             max-width: 180px;
-//             white-space: nowrap;
-//             overflow: hidden;
-//             text-overflow: ellipsis;
-//         }
-
-//         /* 5: Дії */
-//         th:nth-child(5), td:nth-child(5) {
-//             width: 80px;
-//             max-width: 80px;
-//             text-align: center;
-//             white-space: nowrap;
-//         }
-
-//         tbody tr:hover {
-//             background-color: #f9f9f9;
-//         }
-//     `,
-// };
-
-// export default Styles;
-
 import { styled } from 'styled-components';
 
 const Styles = {
@@ -156,8 +12,8 @@ const Styles = {
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
-    /* background-color: #fefefe; */
-    background-color: rgba(0, 0, 0, 0.2);
+    /* background-color: rgba(0, 0, 0, 0.2); */
+    background-color: transparent;
   `,
 
   header: styled.div`
@@ -221,7 +77,7 @@ const Styles = {
     overflow-y: auto;
     border: 1px solid #ccc;
     border-radius: 6px;
-    background-color: white;
+    background-color: transparent;
   `,
 
   table: styled.table`
@@ -233,13 +89,14 @@ const Styles = {
     thead th {
       position: sticky;
       top: 0;
-      background-color: #fafafa;
+      background-color: transparent;
       z-index: 2;
       border-bottom: 2px solid #ddd;
       cursor: pointer;
       user-select: none;
-      padding: 10px;
+      padding: 4px 8px;
       font-weight: 600;
+      font-size: 12px;
       transition: background 0.2s ease;
 
       &:hover {
@@ -256,10 +113,11 @@ const Styles = {
     }
 
     th, td {
-      padding: 8px 12px;
+      padding: 4px 8px;
       border: 1px solid #ddd;
       text-align: left;
       vertical-align: middle;
+      font-size: 12px;
     }
 
     /* 1: № */
@@ -269,39 +127,104 @@ const Styles = {
       text-align: center;
     }
 
-    /* 2: Назва задачі */
+    /* 2: Група */
     th:nth-child(2), td:nth-child(2) {
-      width: 250px;
-      max-width: 250px;
+      /* width: 100%; */
+      max-width: 150px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
 
-    /* 3: Статус */
+    /* 3: Поле */
     th:nth-child(3), td:nth-child(3) {
-      width: 140px;
-      max-width: 140px;
+      /* width: 140px; */
+      max-width: 100px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
 
-    /* 4: Виконавець */
+    /* 4: Операція */
     th:nth-child(4), td:nth-child(4) {
-      width: 200px;
-      max-width: 200px;
-      white-space: nowrap;
+      /* width: 200px; */
+      max-width: 120px;
+      white-space: wrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      text-align: left;
     }
 
-    /* 5: Дії */
+    /* 5: Статус */
     th:nth-child(5), td:nth-child(5) {
-      width: 80px;
-      max-width: 80px;
+      /* width: 80px; */
+      max-width: 100px;
       text-align: center;
       white-space: nowrap;
+    }
+
+    /* 6: Транспорт */
+    th:nth-child(6), td:nth-child(6) {
+      /* width: 80px; */
+      max-width: 140px;
+      white-space: wrap;
+      text-align: left;
+    }
+
+    /* 7: Техніка */
+    th:nth-child(7), td:nth-child(7) {
+      /* width: 80px; */
+      max-width: 160px;
+      white-space: wrap;
+      text-align: left;
+    }
+
+    /* 8: Виконавець */
+    th:nth-child(8), td:nth-child(8) {
+      /* width: 80px; */
+      max-width: 100px;
+      white-space: wrap;
+      text-align: left;
+    }
+
+    /* 9: Культура */
+    th:nth-child(9), td:nth-child(9) {
+      /* width: 80px; */
+      max-width: 80px;
+      white-space: wrap;
+      text-align: left;
+    }
+
+    /* 10: Сорт */
+    th:nth-child(10), td:nth-child(10) {
+      /* width: 80px; */
+      max-width: 60px;
+      white-space: wrap;
+      text-align: left;
+    }
+
+    /* 11: Примітка */
+    th:nth-child(11), td:nth-child(11) {
+      /* width: 80px; */
+      max-width: 100px;
+      white-space: wrap;
+      text-align: left;
+    }
+
+    /* 12: Дата створення */
+    th:nth-child(12), td:nth-child(12) {
+      /* width: 80px; */
+      max-width: 95px;
+      white-space: wrap;
+      text-align: left;
+    }
+
+    /* 13: Дата створення */
+    th:nth-child(13), td:nth-child(13) {
+      /* width: 80px; */
+      max-width: 70px;
+      white-space: wrap;
+      text-align: left;
     }
   `,
 

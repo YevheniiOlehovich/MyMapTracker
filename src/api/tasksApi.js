@@ -9,10 +9,10 @@ export const fetchTasksApi = async () => {
 
 // Створити нову таску
 export const saveTaskApi = async (taskData) => {
+  console.log(taskData);
   const response = await fetch(apiRoutes.addTask, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(taskData),
+    body: taskData,  // taskData - це FormData
   });
   if (!response.ok) throw new Error('Не вдалося створити таску');
   return await response.json();
@@ -20,10 +20,11 @@ export const saveTaskApi = async (taskData) => {
 
 // Оновити таску
 export const updateTaskApi = async ({ taskId, taskData }) => {
+  console.log(taskId);
+  console.log(taskData);
   const response = await fetch(apiRoutes.updateTask(taskId), {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(taskData),
+    body: taskData,  // FormData
   });
   if (!response.ok) throw new Error('Не вдалося оновити таску');
   return await response.json();
