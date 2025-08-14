@@ -22,6 +22,8 @@ import DelIco from '../../assets/ico/del-icon-black.png';
 import Modals from '../Modals';
 import dayjs from 'dayjs';
 
+import { openTaskReportModal } from '../../store/modalSlice';
+
 export default function TasksTab() {
     const dispatch = useDispatch();
     const { data: tasks = [], isLoading, isError, error } = useTasksData();
@@ -129,6 +131,12 @@ export default function TasksTab() {
                     </Styles.button>
                     <Styles.button onClick={() => handleDelete(info.row.original._id)} title="Видалити">
                         <Styles.ico $pic={DelIco} />
+                    </Styles.button>
+                    <Styles.button
+                        onClick={() => dispatch(openTaskReportModal(info.row.original))}
+                        title="Відкрити нову модалку"
+                    >
+                        📄
                     </Styles.button>
                 </div>
             ),

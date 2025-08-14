@@ -172,6 +172,9 @@ export default function AddTaskModal({ onClose }) {
         }
     };
 
+    console.log('Selected Field:', selectedField);
+    console.log('Fields Data:', fieldsData);
+
     return (
         <Styles.StyledWrapper onClick={handleWrapperClick}>
             <Styles.StyledModal onClick={e => e.stopPropagation()}>
@@ -295,7 +298,7 @@ export default function AddTaskModal({ onClose }) {
                     
                     <Styles.StyledColumn>
                         <Styles.StyledMapBlock>
-                            <MapBlock field={selectedField} fieldsList={fieldsData} height="400px" />
+                            <MapBlock field={selectedField} fieldsList={fieldsData} height="100%" />
                         </Styles.StyledMapBlock>
                         {/* Тут можна додати інші поля, якщо потрібно */}
                         <Styles.StyledLabel>

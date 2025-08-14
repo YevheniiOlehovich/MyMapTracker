@@ -15,6 +15,7 @@ const modalSlice = createSlice({
         isAddCropModalVisible: false,
         isAddVarietyModalVisible: false,
         isAddTaskModalVisible: false,
+        isAddTaskReportModalVisible: false,
 
         editTechniqueId: null,
         editGroupId: null,
@@ -27,6 +28,9 @@ const modalSlice = createSlice({
         editCropId: null,
         editVarietyId: null,
         editTaskId: null,
+        // editTaskReportId: null,
+        editTaskReportData: null,
+
     },
     reducers: {
         openAddGroupModal: (state, action) => {
@@ -129,6 +133,22 @@ const modalSlice = createSlice({
             state.isAddTaskModalVisible = false;
             state.editTaskId = null;
         },
+        // openTaskReportModal: (state, action) => {
+        //     state.isAddTaskReportModalVisible = true;
+        //     state.editTaskReportData = action.payload; // зберігаємо весь об'єкт таски
+        // },
+        // closeTaskReportModal: (state) => {
+        //     state.isAddTaskReportModalVisible = false;
+        //     state.editTaskReportData = null;
+        // },
+        openTaskReportModal: (state, action) => {
+            state.isAddTaskReportModalVisible = true;
+            state.editTaskReportData = action.payload; // зберігаємо всю таску
+        },
+        closeTaskReportModal: (state) => {
+            state.isAddTaskReportModalVisible = false;
+            state.editTaskReportData = null;
+        },
     },
 });
 
@@ -158,6 +178,8 @@ export const {
     closeAddVarietyModal,
     openAddTaskModal,
     closeAddTaskModal,
+    openTaskReportModal,
+    closeTaskReportModal,
 
 } = modalSlice.actions;
 

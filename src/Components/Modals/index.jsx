@@ -12,6 +12,7 @@ import AddOperaionModal from '../AddOperationModal';
 import AddCropsModal from '../AddCropsModal'; // Імпорт модалки для додавання культур
 import AddVarietiesModal from '../AddVarietiesModal';
 import AddTaskModal from '../AddTaskModal'; // Імпорт модалки для додавання завдань
+import AddTaskReportModal from '../AddTaskReportModal'; // Імпорт модалки для звіту по завданням
 import { 
     closeAddRatesModal, 
     closeAddMileagle, 
@@ -23,7 +24,8 @@ import {
     closeAddOperationModal,
     closeAddCropModal,
     closeAddVarietyModal,
-    closeAddTaskModal
+    closeAddTaskModal,
+    closeTaskReportModal
 } from '../../store/modalSlice'; // Actions для закриття модалок
 
 const Modals = () => {
@@ -41,6 +43,7 @@ const Modals = () => {
     const isAddCropModalVisible = useSelector((state) => state.modals.isAddCropModalVisible); // Видимість модалки для додавання культур
     const isAddVarietyModalVisible = useSelector((state) => state.modals.isAddVarietyModalVisible); // Видимість модалки для додавання сортів
     const isAddTaskModalVisible = useSelector((state) => state.modals.isAddTaskModalVisible); // Видимість модалки для додавання завдань
+    const isAddTaskReportModalVisible = useSelector((state) => state.modals.isAddTaskReportModalVisible); // Видимість модалки для звіту по завданням
     return (
         <>
             {isAddFieldsModalVisible && selectedField && (
@@ -78,6 +81,9 @@ const Modals = () => {
             )}
             {isAddTaskModalVisible && (
                 <AddTaskModal onClose={() => dispatch(closeAddTaskModal())} /> // Відображення модалки для додавання завдань
+            )}
+            {isAddTaskReportModalVisible && (
+                <AddTaskReportModal onClose={() => dispatch(closeTaskReportModal())} /> // Відображення модалки для звіту по завданням
             )}
         </>
     );

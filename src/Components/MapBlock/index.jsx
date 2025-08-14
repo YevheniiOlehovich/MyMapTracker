@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { MapContainer, TileLayer, Polygon, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Polygon, useMap, Tooltip } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { center as defaultCenter } from '../../helpres';
 import L from 'leaflet';
@@ -20,7 +20,7 @@ const CenterMap = ({ coordinates }) => {
 const MapBlock = ({
     field,
     fieldsList = [],
-    height = '400px',
+    height = '399px',
     zoom = 15,
     tileUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
     attribution = '&copy; OpenStreetMap contributors',
@@ -66,7 +66,13 @@ const MapBlock = ({
             <TileLayer url={tileUrl} attribution={attribution} />
             {coordinates && (
             <>
-                <Polygon positions={coordinates} color="blue" />
+                <Polygon positions={coordinates} color="blue"> 
+                    {resolvedField?.properties?.name && (
+                        <Tooltip permanent direction="top">
+                            {resolvedField.properties.name}
+                        </Tooltip>
+                    )}
+                </Polygon>
                 <CenterMap coordinates={coordinates} />
             </>
             )}
