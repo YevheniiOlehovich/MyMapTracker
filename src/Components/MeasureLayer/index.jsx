@@ -1,17 +1,17 @@
-import { useMap } from 'react-leaflet';
-import { useEffect, useState } from 'react';
-import L from 'leaflet';
-import '@geoman-io/leaflet-geoman-free';
-import * as turf from '@turf/turf';
+import { useMap } from "react-leaflet";
+import { useEffect, useState } from "react";
+import L from "leaflet";
+import "@geoman-io/leaflet-geoman-free";
+import * as turf from "@turf/turf";
+import { Paper, Typography } from "@mui/material";
 
 export default function MeasureLayer() {
   const map = useMap();
   const [measurement, setMeasurement] = useState(null);
 
-  // Вивід measurement у консоль щоразу, коли він змінюється
   useEffect(() => {
     if (measurement) {
-      console.log('Поточне вимірювання:', measurement);
+      console.log("Поточне вимірювання:", measurement);
     }
   }, [measurement]);
 
@@ -19,7 +19,7 @@ export default function MeasureLayer() {
     if (!map) return;
 
     map.pm.addControls({
-      position: 'bottomleft',
+      position: "bottomright",
       drawPolygon: true,
       drawPolyline: true,
       editMode: true,
@@ -31,7 +31,6 @@ export default function MeasureLayer() {
       if (layer instanceof L.Polygon) {
         let latlngs = layer.getLatLngs()[0].map(({ lat, lng }) => [lng, lat]);
 
-        // Перевірка, чи полігон замкнутий — якщо ні, додаємо першу точку в кінець
         const first = latlngs[0];
         const last = latlngs[latlngs.length - 1];
         if (first[0] !== last[0] || first[1] !== last[1]) {
@@ -52,31 +51,36 @@ export default function MeasureLayer() {
       }
     }
 
-    map.on('pm:create', e => updateMeasurement(e.layer));
-    map.on('pm:edit', e => {
-      e.layers.eachLayer(layer => updateMeasurement(layer));
+    map.on("pm:create", (e) => updateMeasurement(e.layer));
+    map.on("pm:edit", (e) => {
+      e.layers.eachLayer((layer) => updateMeasurement(layer));
     });
 
     return () => {
       map.pm.removeControls();
-      map.off('pm:create');
-      map.off('pm:edit');
+      map.off("pm:create");
+      map.off("pm:edit");
     };
   }, [map]);
 
   return (
-    <div style={{
-      position: 'absolute',
-      bottom: 20,
-      left: 20,
-      background: 'white',
-      padding: '10px 15px',
-      borderRadius: 6,
-      boxShadow: '0 0 8px rgba(0,0,0,0.2)',
-      zIndex: 1000,
-      userSelect: 'none',
-    }}>
-      {measurement ?? 'Намалюйте лінію або полігон'}
-    </div>
+    <Paper
+      elevation={3}
+      sx={{
+        position: "absolute",
+        bottom: 20,
+        right: 60,
+        p: 1.5,
+        borderRadius: 2,
+        zIndex: 1000,
+        userSelect: "none",
+        minWidth: 160,
+        textAlign: "center",
+      }}
+    >
+      <Typography variant="body2" color="text.primary">
+        {measurement ?? "Намалюйте лінію або полігон"}
+      </Typography>
+    </Paper>
   );
 }

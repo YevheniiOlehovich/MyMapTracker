@@ -1,24 +1,16 @@
-import Styles from './styled';
-import Button from '../Button';
-import closeModal from "../../helpres/closeModal";
-import { months, vehicleTypes } from '../../helpres';
+import { useState, useEffect } from 'react';
+import { Dialog, DialogTitle, DialogContent, DialogActions, Button, IconButton, Typography } from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
 import Select from 'react-select';
-import { useEffect, useState } from 'react';
+import { months, vehicleTypes } from '../../helpres';
 import { haversineDistance } from '../../helpres/distance';
-import { useGpsData } from '../../hooks/useGpsData'; // Хук для GPS-даних
-import { useRatesData } from '../../hooks/useRatesData'; // Хук для тарифів
+import { useGpsData } from '../../hooks/useGpsData';
+import { useRatesData } from '../../hooks/useRatesData';
 import { useVehiclesData } from '../../hooks/useVehiclesData';
 
 export default function AddMileagleModal({ onClose }) {
-    const handleWrapperClick = closeModal(onClose);
-
     const { data: vehiclesData = [], isLoading: isVehiclesLoading, isError: isVehiclesError, error: vehiclesError } = useVehiclesData();
-
-
-    // Використовуємо React Query для отримання GPS-даних
     const { data: gpsData = [], isLoading: isGpsLoading, isError: isGpsError, error: gpsError } = useGpsData();
-
-    // Використовуємо React Query для отримання тарифів
     const { data: rates = {}, isLoading: isRatesLoading, isError: isRatesError, error: ratesError } = useRatesData();
 
     const [selectedMonth, setSelectedMonth] = useState(null);
@@ -41,36 +33,24 @@ export default function AddMileagleModal({ onClose }) {
     }, [vehiclesData]);
 
     const filterGpsData = (month, vehicle) => {
-        const selectedMonthValue = month.value;
-
         const filteredData = gpsData.filter(data => {
             const gpsDate = new Date(data.date);
-            return (
-                data.imei === vehicle.imei &&
-                gpsDate.getMonth() + 1 === selectedMonthValue
-            );
+            return data.imei === vehicle.imei && gpsDate.getMonth() + 1 === month.value;
         }).map(data => ({
             ...data,
-            data: data.data.filter(coord => coord.latitude !== 0 && coord.longitude !== 0) // Фільтруємо координати
+            data: data.data.filter(coord => coord.latitude !== 0 && coord.longitude !== 0)
         }));
-
         setSelectedGpsData(filteredData);
     };
 
     const handleMonthChange = (selectedOption) => {
         setSelectedMonth(selectedOption);
-
-        if (selectedVehicle) {
-            filterGpsData(selectedOption, selectedVehicle);
-        }
+        if (selectedVehicle) filterGpsData(selectedOption, selectedVehicle);
     };
 
     const handleVehicleChange = (selectedOption) => {
         setSelectedVehicle(selectedOption);
-
-        if (selectedMonth) {
-            filterGpsData(selectedMonth, selectedOption);
-        }
+        if (selectedMonth) filterGpsData(selectedMonth, selectedOption);
     };
 
     const handleCalculate = () => {
@@ -79,17 +59,14 @@ export default function AddMileagleModal({ onClose }) {
             return;
         }
 
-        let totalDistance = 0;
+        let distanceSum = 0;
 
         selectedGpsData.forEach((data) => {
             const coordinates = data.data.map(coord => [coord.latitude, coord.longitude]);
-
             for (let i = 1; i < coordinates.length; i++) {
                 const [lat1, lon1] = coordinates[i - 1];
                 const [lat2, lon2] = coordinates[i];
-
-                const distance = haversineDistance(lat1, lon1, lat2, lon2);
-                totalDistance += distance;
+                distanceSum += haversineDistance(lat1, lon1, lat2, lon2);
             }
         });
 
@@ -101,53 +78,45 @@ export default function AddMileagleModal({ onClose }) {
 
         let rate = 0;
         switch (vehicleType._id) {
-            case 'car':
-                rate = rates.carRate;
-                break;
-            case 'vintage_car':
-                rate = rates.vintageCarRate;
-                break;
-            case 'tractor':
-                rate = rates.tractorRate;
-                break;
-            case 'combine':
-                rate = rates.combineRate;
-                break;
-            case 'truck':
-                rate = rates.truckRate;
-                break;
-            default:
-                alert("Невідомий тип транспортного засобу!");
-                return;
+            case 'car': rate = rates.carRate; break;
+            case 'vintage_car': rate = rates.vintageCarRate; break;
+            case 'tractor': rate = rates.tractorRate; break;
+            case 'combine': rate = rates.combineRate; break;
+            case 'truck': rate = rates.truckRate; break;
+            default: alert("Невідомий тип транспортного засобу!"); return;
         }
 
-        const totalCost = (totalDistance * rate).toFixed(2);
-
-        setTotalDistance(totalDistance);
-        setTotalCost(totalCost);
+        setTotalDistance(distanceSum);
+        setTotalCost((distanceSum * rate).toFixed(2));
     };
 
-    if (isVehiclesLoading || isGpsLoading || isRatesLoading) return <p>Завантаження даних...</p>;
-    if (isVehiclesError || isGpsError || isRatesError) return <p>Помилка завантаження даних: {vehiclesError?.message || gpsError?.message || ratesError?.message}</p>;
+    if (isVehiclesLoading || isGpsLoading || isRatesLoading)
+        return <Typography sx={{ p: 2 }}>Завантаження даних...</Typography>;
+    if (isVehiclesError || isGpsError || isRatesError)
+        return <Typography sx={{ p: 2 }}>Помилка завантаження даних: {vehiclesError?.message || gpsError?.message || ratesError?.message}</Typography>;
 
     return (
-        <Styles.Wrapper onClick={handleWrapperClick}>
-            <Styles.Modal>
-                <Styles.CloseButton onClick={onClose} />
+        <Dialog open onClose={onClose} maxWidth="sm" fullWidth>
+            <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 16 }}>
+                Розрахунок пробігу
+                <IconButton onClick={onClose} size="small">
+                    <CloseIcon fontSize="small" />
+                </IconButton>
+            </DialogTitle>
 
-                <div style={{ width: '300px', margin: '0 auto' }}>
+            <DialogContent 
+                dividers 
+                sx={{ display: 'flex', flexDirection: 'column', gap: 2, height: '30vh', overflowY: 'auto' }}
+            >
+                <div>
                     <Select
                         value={selectedMonth}
                         onChange={handleMonthChange}
-                        options={months.map((month) => ({
-                            value: parseInt(month._id, 10),
-                            label: month.name_ua,
-                        }))}
+                        options={months.map(month => ({ value: parseInt(month._id, 10), label: month.name_ua }))}
                         placeholder="Оберіть місяць"
                     />
                 </div>
-
-                <div style={{ width: '300px', margin: '10px auto' }}>
+                <div>
                     <Select
                         value={selectedVehicle}
                         onChange={handleVehicleChange}
@@ -157,22 +126,18 @@ export default function AddMileagleModal({ onClose }) {
                     />
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
-                    <Button text="Розрахувати" onClick={handleCalculate} />
-                </div>
-
                 {totalDistance > 0 && (
-                    <Styles.Text>
-                        Пробіг: {totalDistance.toFixed(2)} км
-                    </Styles.Text>
+                    <Typography>Пробіг: {totalDistance.toFixed(2)} км</Typography>
                 )}
-
                 {totalCost > 0 && (
-                    <Styles.Text>
-                        Вартість пробігу: {totalCost} грн
-                    </Styles.Text>
+                    <Typography>Вартість пробігу: {totalCost} грн</Typography>
                 )}
-            </Styles.Modal>
-        </Styles.Wrapper>
+            </DialogContent>
+
+            <DialogActions>
+                <Button variant="contained" size="small" onClick={handleCalculate}>Розрахувати</Button>
+            </DialogActions>
+        </Dialog>
+
     );
 }

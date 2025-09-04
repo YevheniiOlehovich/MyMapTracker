@@ -1,229 +1,146 @@
-import React, { useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import Styles from './styles';
-import arrowPic from '../../assets/ico/arrow.svg';
-import { setMapType } from '../../store/mapSlice'; // Імпорт дії для зміни типу карти
-import { toggleFields, toggleCadastre, toggleGeozones, toggleUnits, toggleRent, toggleProperty, selectShowFields, selectShowCadastre, selectShowGeozones, selectShowUnits, selectShowRent, selectShowProperty } from '../../store/layersList'; // Імпорт дій і селекторів для керування шарами
-import FieldsList from '../FieldsList';
-import TriangleIco from '../../assets/ico/triangle.png';
-import DatePickerComponent from '../DatePicker';
+import { useDispatch, useSelector } from "react-redux";
+import {
+  Box,
+  Paper,
+  Typography,
+  Tooltip,
+  Slide,
+  IconButton,
+  Switch,
+  Radio,
+  RadioGroup,
+  FormControlLabel,
+} from "@mui/material";
+import LayersIcon from "@mui/icons-material/Layers";
+import { setMapType } from "../../store/mapSlice";
+import {
+  toggleFields,
+  toggleCadastre,
+  toggleGeozones,
+  toggleUnits,
+  toggleRent,
+  toggleProperty,
+  selectShowFields,
+  selectShowCadastre,
+  selectShowGeozones,
+  selectShowUnits,
+  selectShowRent,
+  selectShowProperty,
+} from "../../store/layersList";
 
-const LayersList = () => {
-    const [isVisible, setIsVisible] = useState(false);
-    const [isMapListVisible, setIsMapListVisible] = useState(false); // Додаємо стан для видимості першого списку шарів мапи
-    const [isGeoDataListVisible, setIsGeoDataListVisible] = useState(false); // Додаємо стан для видимості другого списку шарів геоданих
-    const dispatch = useDispatch();
-    const mapType = useSelector((state) => state.map.type); // Отримання поточного типу карти з Redux
-    const showFields = useSelector(selectShowFields);
-    const showCadastre = useSelector(selectShowCadastre);
-    const showGeozones = useSelector(selectShowGeozones);
-    const showUnits = useSelector(selectShowUnits); // Отримання стану видимості юнітів
-    const showRent = useSelector(selectShowRent); // Отримання стану видимості оренди
-    const showProperty = useSelector(selectShowProperty); // Отримання стану видимості власності
-    
-    const toggleListHandler = () => {
-        setIsVisible(!isVisible);
-    };
+export default function LayersList({ open = true }) {
+  const dispatch = useDispatch();
 
-    const handleMapTypeChange = (event) => {
-        dispatch(setMapType(event.target.value));
-    };
+  const mapType = useSelector((state) => state.map.type);
+  const showFields = useSelector(selectShowFields);
+  const showCadastre = useSelector(selectShowCadastre);
+  const showGeozones = useSelector(selectShowGeozones);
+  const showUnits = useSelector(selectShowUnits);
+  const showRent = useSelector(selectShowRent);
+  const showProperty = useSelector(selectShowProperty);
 
-    const handleToggleFields = () => {
-        dispatch(toggleFields());
-    };
+  const mapOptions = [
+    { value: "google_roadmap", label: "Google Maps" },
+    { value: "google_satellite", label: "Google Satellite" },
+    { value: "google_hybrid", label: "Google Hybrid" },
+    { value: "google_terrain", label: "Google Terrain" },
+    { value: "osm", label: "OpenStreetMap" },
+    { value: "osm_hot", label: "OpenStreetMap HOT" },
+    { value: "osm_topo", label: "OpenStreetMap TOPO" },
+  ];
 
-    const handleToggleCadastre = () => {
-        dispatch(toggleCadastre());
-    };
+  const geoOptions = [
+    { value: "fields", checked: showFields, handler: () => dispatch(toggleFields()), label: "Поля" },
+    { value: "cadastre", checked: showCadastre, handler: () => dispatch(toggleCadastre()), label: "Кадастр" },
+    { value: "geozones", checked: showGeozones, handler: () => dispatch(toggleGeozones()), label: "Геозони" },
+    { value: "units", checked: showUnits, handler: () => dispatch(toggleUnits()), label: "Господарчі ділянки" },
+    { value: "rent", checked: showRent, handler: () => dispatch(toggleRent()), label: "Орендовані ділянки" },
+    { value: "property", checked: showProperty, handler: () => dispatch(toggleProperty()), label: "Ділянки у власності" },
+  ];
 
-    const handleToggleGeozones = () => {
-        dispatch(toggleGeozones());
-    };
+  return (
+    <Slide direction="right" in={open} mountOnEnter unmountOnExit>
+      <Paper
+        elevation={3}
+        sx={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          height: "100vh",
+          width: 350,
+          bgcolor: "rgba(33,33,33,0.85)",
+          color: "white",
+          borderRadius: "0 8px 8px 0",
+          overflow: "hidden",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        {/* Заголовок */}
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            px: 1,
+            py: 0.5,
+            borderBottom: "1px solid rgba(255,255,255,0.2)",
+            height: 56,
+          }}
+        >
+          <Typography variant="subtitle1" fontWeight="bold">Шари карти</Typography>
+          <Tooltip title="Шари">
+            <IconButton size="small">
+              <LayersIcon fontSize="small" sx={{ color: "white" }} />
+            </IconButton>
+          </Tooltip>
+        </Box>
 
-    const handleToggleUnits = () => {
-        dispatch(toggleUnits()); 
-    };   
+        {/* Контейнер зі скролом */}
+        <Box sx={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: 2, p: 1 }}>
+          {/* Тип карти */}
+          <Box>
+            <Typography sx={{ fontWeight: "bold", mb: 1 }}>Тип карти</Typography>
+            <Paper sx={{ p: 1, bgcolor: "rgba(255,255,255,0.05)", borderRadius: 1 }}>
+              <RadioGroup value={mapType} onChange={(e) => dispatch(setMapType(e.target.value))}>
+                {mapOptions.map((option) => (
+                  <FormControlLabel
+                    key={option.value}
+                    value={option.value}
+                    control={<Radio size="small" sx={{ color: "white" }} />}
+                    label={<Typography sx={{ color: "white" }}>{option.label}</Typography>}
+                  />
+                ))}
+              </RadioGroup>
+            </Paper>
+          </Box>
 
-    const handleToggleRent = () => {
-        dispatch(toggleRent());
-    };
-
-    const handleToggleProperty = () => {
-        dispatch(toggleProperty());     
-    };
-
-    const toggleMapListVisibility = () => {
-        setIsMapListVisible(!isMapListVisible);
-    };
-
-    const toggleGeoDataListVisibility = () => {
-        setIsGeoDataListVisible(!isGeoDataListVisible);
-    };
-
-    return (
-        <Styles.wrapper $isVisible={isVisible}>
-            <Styles.showBtn onClick={toggleListHandler} $isVisible={isVisible}>
-                <Styles.showBtnImg src={arrowPic} alt="Show Layers" />
-            </Styles.showBtn>
-
-            <Styles.Block>
-                <Styles.Title>Шари мапи</Styles.Title>
-
-                <Styles.btn onClick={toggleMapListVisibility}>
-                    <Styles.btnIco
-                        $pic={TriangleIco}
-                        $rotation={isMapListVisible ? 180 : 0} // Перевертаємо трикутник
-                    />
-                </Styles.btn>
-            </Styles.Block>
-            
-            {isMapListVisible && (
-                <Styles.maplist>
-                    <Styles.label>
-                        <input
-                            type="radio"
-                            value="google_roadmap"
-                            checked={mapType === 'google_roadmap'}
-                            onChange={handleMapTypeChange}
-                        />
-                        Google Maps
-                    </Styles.label>
-
-                    <Styles.label>
-                        <input
-                            type="radio"
-                            value="google_satellite"
-                            checked={mapType === 'google_satellite'}
-                            onChange={handleMapTypeChange}
-                        />
-                        Google Satelite
-                    </Styles.label>
-
-                    <Styles.label>
-                        <input
-                            type="radio"
-                            value="google_hybrid"
-                            checked={mapType === 'google_hybrid'}
-                            onChange={handleMapTypeChange}
-                        />
-                        Google Hybrid
-                    </Styles.label>
-
-                    <Styles.label>
-                        <input
-                            type="radio"
-                            value="google_terrain"
-                            checked={mapType === 'google_terrain'}
-                            onChange={handleMapTypeChange}
-                        />
-                        Google Terrain
-                    </Styles.label>
-
-                    <Styles.label>
-                        <input
-                            type="radio"
-                            value="osm"
-                            checked={mapType === 'osm'}
-                            onChange={handleMapTypeChange}
-                        />
-                        OpenStreetMap
-                    </Styles.label>
-
-                    <Styles.label>
-                        <input
-                            type="radio"
-                            value="osm_hot"
-                            checked={mapType === 'osm_hot'}
-                            onChange={handleMapTypeChange}
-                        />
-                        OpenStreetMap HOT
-                    </Styles.label>
-
-                    <Styles.label>
-                        <input
-                            type="radio"
-                            value="osm_topo"
-                            checked={mapType === 'osm_topo'}
-                            onChange={handleMapTypeChange}
-                        />
-                        OpenStreetMap TOPO
-                    </Styles.label>
-                </Styles.maplist>
-            )}
-            
-            <Styles.Block>
-                <Styles.Title>Шари геоданих</Styles.Title>
-
-                <Styles.btn onClick={toggleGeoDataListVisibility}>
-                    <Styles.btnIco
-                        $pic={TriangleIco}
-                        $rotation={isGeoDataListVisible ? 180 : 0} // Перевертаємо трикутник
-                    />
-                </Styles.btn>
-            </Styles.Block>
-
-            {isGeoDataListVisible && (
-                <Styles.maplist>
-                    <Styles.label>
-                        <input
-                            type="checkbox"
-                            checked={showFields}
-                            onChange={handleToggleFields}
-                        />
-                        Поля
-                    </Styles.label>
-
-                    <Styles.label>
-                        <input
-                            type="checkbox"
-                            checked={showCadastre}
-                            onChange={handleToggleCadastre}
-                        />
-                        Кадастр
-                    </Styles.label>
-
-                    <Styles.label>
-                        <input
-                            type="checkbox"
-                            checked={showGeozones}
-                            onChange={handleToggleGeozones}
-                        />
-                        Геозони
-                    </Styles.label>
-
-                    <Styles.label>
-                        <input
-                            type="checkbox"
-                            checked={showUnits}
-                            onChange={handleToggleUnits}
-                        />
-                        Господарчі ділянки
-                    </Styles.label>
-
-                    <Styles.label>
-                        <input
-                            type="checkbox"
-                            checked={showRent}
-                            onChange={handleToggleRent}
-                        />
-                        Орендоані ділянки
-                    </Styles.label>
-
-                    <Styles.label>
-                        <input
-                            type="checkbox"
-                            checked={showProperty}
-                            onChange={handleToggleProperty}
-                        />
-                        Ділянки у власності
-                    </Styles.label>
-                </Styles.maplist>
-            )}
-            <FieldsList />
-            <DatePickerComponent />
-        </Styles.wrapper>
-    );
-};
-
-export default LayersList;
+          {/* Геошари */}
+          <Box>
+            <Typography sx={{ fontWeight: "bold", mb: 1 }}>Шари геоданих</Typography>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+              {geoOptions.map((option) => (
+                <Paper
+                  key={option.value}
+                  sx={{
+                    p: 1,
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    bgcolor: "rgba(255,255,255,0.05)",
+                    borderRadius: 1,
+                    transition: "background 0.2s",
+                    "&:hover": { bgcolor: "rgba(25,118,210,0.2)" },
+                  }}
+                >
+                  <Typography sx={{ color: "white" }}>{option.label}</Typography>
+                  <Switch size="small" checked={option.checked} onChange={option.handler} />
+                </Paper>
+              ))}
+            </Box>
+          </Box>
+        </Box>
+      </Paper>
+    </Slide>
+  );
+}

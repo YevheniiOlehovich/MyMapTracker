@@ -1,84 +1,128 @@
-import { useState } from 'react';
-import { useDispatch } from 'react-redux';
-import { useTechniquesData, useDeleteTechnique } from '../../hooks/useTechniquesData';
-import { openAddTechniqueModal } from '../../store/modalSlice';
-import EditIco from '../../assets/ico/edit-icon-black.png';
-import DelIco from '../../assets/ico/del-icon-black.png';
-import TriangleIco from '../../assets/ico/triangle.png';
-import AddIco from '../../assets/ico/add-icon-black.png';
-import Styles from './styled';
-import QuestionIco from '../../assets/ico/10965421.webp';
+import { useDispatch } from "react-redux";
+import { useTechniquesData, useDeleteTechnique } from "../../hooks/useTechniquesData";
+import { openAddTechniqueModal } from "../../store/modalSlice";
+import {
+  Box,
+  Paper,
+  Typography,
+  IconButton,
+  Tooltip,
+  Slide
+} from "@mui/material";
+import AddIcon from "@mui/icons-material/Add";
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
+import QuestionIco from "../../assets/ico/10965421.webp";
 
-export default function TechniqueList() {
-    const dispatch = useDispatch();
-    const { data: techniques = [], isLoading, isError, error } = useTechniquesData();
-    const deleteTechnique = useDeleteTechnique();
-    const [isExpanded, setIsExpanded] = useState(true);
+export default function TechniqueList({ open = true }) {
+  const dispatch = useDispatch();
+  const { data: techniques = [], isLoading, isError, error } = useTechniquesData();
+  const deleteTechnique = useDeleteTechnique();
 
-    const toggleExpanded = () => {
-        setIsExpanded(prev => !prev);
-    };
+  const handleAdd = () => dispatch(openAddTechniqueModal());
+  const handleEdit = (id) => dispatch(openAddTechniqueModal({ techniqueId: id }));
+  const handleDelete = (id) => deleteTechnique.mutate(id);
 
-    const handleEdit = (techniqueId) => {
-        dispatch(openAddTechniqueModal({ techniqueId }));
-    };
+  if (isLoading) return <Typography sx={{ p: 2 }}>Завантаження техніки...</Typography>;
+  if (isError) return <Typography sx={{ p: 2 }}>Помилка: {error?.message}</Typography>;
+  if (techniques.length === 0) return <Typography sx={{ p: 2 }}>Техніка не знайдена.</Typography>;
 
-    const handleAdd = () => dispatch(openAddTechniqueModal());
+  return (
+    <Slide direction="right" in={open} mountOnEnter unmountOnExit>
+      <Paper
+        elevation={3}
+        sx={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: 350,
+          height: "100vh",
+          bgcolor: "rgba(33,33,33,0.85)",
+          color: "white",
+          borderRadius: "0 8px 8px 0",
+          overflow: "hidden",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        {/* Заголовок */}
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            px: 1,
+            py: 0.5,
+            borderBottom: "1px solid rgba(255,255,255,0.2)",
+            height: 56,
+          }}
+        >
+          <Typography variant="subtitle1" fontWeight="bold">Техніка</Typography>
+          <Tooltip title="Додати техніку">
+            <IconButton size="small" onClick={handleAdd}>
+              <AddIcon fontSize="small" sx={{ color: "white" }} />
+            </IconButton>
+          </Tooltip>
+        </Box>
 
-    const handleDelete = (techniqueId) => {
-        deleteTechnique.mutate(techniqueId, {
-            onError: (err) => console.error('Помилка при видаленні техніки:', err),
-        });
-    };
+        {/* Список техніки */}
+        <Box
+          sx={{
+            flex: 1,
+            overflowY: "auto",
+            display: "flex",
+            flexDirection: "column",
+            gap: 1,
+            p: 1,
+          }}
+        >
+          {techniques.map((tech) => {
+            const imgSrc = tech.photoPath
+              ? '/src/' + tech.photoPath.substring(3).replace(/\\/g, '/')
+              : QuestionIco;
 
-    if (isLoading) return <p>Завантаження техніки...</p>;
-    if (isError) return <p>Помилка завантаження техніки: {error?.message}</p>;
-
-    return (
-        <Styles.mainList>
-            <Styles.header onClick={toggleExpanded}>
-                <Styles.title>Техніка</Styles.title>
-                <Styles.button
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        handleAdd();
-                    }}
-                >
-                    <Styles.ico $pic={AddIco} />
-                </Styles.button>
-                <Styles.ico $pic={TriangleIco} $rotation={isExpanded ? 180 : 0} />
-            </Styles.header>
-
-            {isExpanded && (
-                <Styles.list>
-                    {techniques.map((tech) => (
-                        <Styles.listItem key={tech._id} $hasBorder>
-                            <Styles.block>
-                                <Styles.imgBlock
-                                    $imageUrl={
-                                        tech.photoPath
-                                            ? '/src/' + tech.photoPath.substring(3).replace(/\\/g, '/')
-                                            : QuestionIco
-                                    }
-                                />
-                                <Styles.subtitle>{tech.name}</Styles.subtitle>
-                                <Styles.buttonBlock>
-                                    <Styles.button onClick={() => handleEdit(tech._id)}>
-                                        <Styles.ico $pic={EditIco} />
-                                    </Styles.button>
-                                    <Styles.button onClick={() => handleDelete(tech._id)}>
-                                        <Styles.ico $pic={DelIco} />
-                                    </Styles.button>
-                                </Styles.buttonBlock>
-                            </Styles.block>
-                        </Styles.listItem>
-                    ))}
-                </Styles.list>
-            )}
-        </Styles.mainList>
-    );
+            return (
+              <Paper
+                key={tech._id}
+                sx={{
+                  p: 1,
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  bgcolor: "rgba(255,255,255,0.05)",
+                  borderRadius: 1,
+                  transition: "background 0.2s",
+                  "&:hover": {
+                    bgcolor: "rgba(25,118,210,0.2)",
+                  },
+                }}
+              >
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <Box
+                    component="img"
+                    src={imgSrc}
+                    alt={tech.name}
+                    sx={{ width: 32, height: 32, borderRadius: "20%", objectFit: "cover" }}
+                  />
+                  <Typography sx={{ color: "white" }}>{tech.name}</Typography>
+                </Box>
+                <Box sx={{ display: "flex", gap: 0.5 }}>
+                  <Tooltip title="Редагувати">
+                    <IconButton size="small" onClick={() => handleEdit(tech._id)}>
+                      <EditIcon fontSize="small" sx={{ color: "white" }} />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="Видалити">
+                    <IconButton size="small" onClick={() => handleDelete(tech._id)}>
+                      <DeleteIcon fontSize="small" sx={{ color: "white" }} />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
+              </Paper>
+            );
+          })}
+        </Box>
+      </Paper>
+    </Slide>
+  );
 }
-
-
-
-

@@ -3,7 +3,7 @@ import Login from '../Login';
 import Map from '../Map';
 import Header from '../Header';
 import Aside from '../Aside';
-import LayersList from '../LayersList';
+// import LayersList from '../LayersList';
 import Modals from '../Modals';
 
 export default function Main() {
@@ -30,7 +30,7 @@ export default function Main() {
             <Header />
             <Aside />
             <Map />
-            <LayersList />
+            {/* <LayersList /> */}
             <Modals />
         </>
     );

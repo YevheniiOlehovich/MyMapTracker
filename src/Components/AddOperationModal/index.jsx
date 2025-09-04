@@ -1,95 +1,130 @@
-import Styles from './styled'
+import React, { useState, useEffect } from "react";
+import { useSelector } from "react-redux";
+import { Box, Typography, TextField, IconButton, Button as MuiButton } from "@mui/material";
+import CloseIcon from "@mui/icons-material/Close";
+
+import { useOperationsData, useUpdateOperation, useSaveOperation } from "../../hooks/useOperationsData";
 import closeModal from "../../helpres/closeModal";
-import Button from '../Button';
-import { useState, useEffect } from 'react';
-import { useOperationsData, useUpdateOperation, useSaveOperation } from '../../hooks/useOperationsData';
-import { useSelector } from 'react-redux';
 
 export default function AddOperationModal({ onClose }) {
-    const handleWrapperClick = closeModal(onClose);
+  const handleWrapperClick = closeModal(onClose);
 
-    // Отримуємо дані операцій через React Query
-    const { data: operations = [] } = useOperationsData();
+  const { data: operations = [] } = useOperationsData();
+  const updateOperation = useUpdateOperation();
+  const saveOperation = useSaveOperation();
 
-    // Хуки для оновлення та додавання операції
-    const updateOperation = useUpdateOperation();
-    const saveOperation = useSaveOperation();
+  const editOperationId = useSelector(state => state.modals.editOperationId);
+  const editOperation = operations.find(op => op._id === editOperationId);
 
-    // Отримуємо ID операції для редагування з Redux
-    const editOperationId = useSelector(state => state.modals.editOperationId);
-    const editOperation = operations.find(op => op._id === editOperationId);
+  const [operationName, setOperationName] = useState(editOperation ? editOperation.name : "");
+  const [operationDescription, setOperationDescription] = useState(editOperation ? editOperation.description : "");
 
-    const [operationName, setOperationName] = useState(editOperation ? editOperation.name : '');
-    const [operationDescription, setOperationDescription] = useState(editOperation ? editOperation.description : '');
+  useEffect(() => {
+    if (editOperation) {
+      setOperationName(editOperation.name);
+      setOperationDescription(editOperation.description);
+    }
+  }, [editOperation]);
 
-    useEffect(() => {
-        if (editOperation) {
-            setOperationName(editOperation.name);
-            setOperationDescription(editOperation.description);
+  const handleSave = () => {
+    const operationData = { name: operationName, description: operationDescription };
+
+    if (editOperationId) {
+      updateOperation.mutate(
+        { operationId: editOperationId, operationData },
+        {
+          onSuccess: () => onClose(),
+          onError: (error) => console.error("Помилка при оновленні операції:", error.message),
         }
-    }, [editOperation]);
+      );
+    } else {
+      saveOperation.mutate(operationData, {
+        onSuccess: () => onClose(),
+        onError: (error) => console.error("Помилка при створенні операції:", error.message),
+      });
+    }
+  };
 
-    const handleSave = () => {
-        const operationData = {
-            name: operationName,
-            description: operationDescription,
-        };
+  return (
+    <Box
+      onClick={handleWrapperClick}
+      sx={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        width: "100vw",
+        height: "100vh",
+        bgcolor: "rgba(0,0,0,0.7)",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        zIndex: 10,
+      }}
+    >
+      <Box
+        onClick={(e) => e.stopPropagation()}
+        sx={{
+          width: 400,
+          minHeight: 350,
+          bgcolor: "background.paper",
+          p: 3,
+          display: "flex",
+          flexDirection: "column",
+          position: "relative",
+          borderRadius: 2,
+        }}
+      >
+        <IconButton
+          onClick={onClose}
+          sx={{
+            position: "absolute",
+            top: 10,
+            right: 10,
+            width: 30,
+            height: 30,
+            border: "1px solid black",
+            transition: "0.4s",
+            "&:hover": { transform: "rotate(180deg)" },
+          }}
+        >
+          <CloseIcon fontSize="small" />
+        </IconButton>
 
-        if (editOperationId) {
-            // Оновлення операції через React Query
-            updateOperation.mutate(
-                { operationId: editOperationId, operationData },
-                {
-                    onSuccess: () => {
-                        console.log(`Operation with ID ${editOperationId} updated successfully.`);
-                        onClose();
-                    },
-                    onError: (error) => {
-                        console.error('Помилка при оновленні операції:', error.message);
-                    },
-                }
-            );
-        } else {
-            // Створення нової операції через React Query
-            saveOperation.mutate(operationData, {
-                onSuccess: () => {
-                    console.log('Нова операція успішно створена.');
-                    onClose();
-                },
-                onError: (error) => {
-                    console.error('Помилка при створенні операції:', error.message);
-                },
-            });
-        }
-    };
+        <Typography variant="h6" sx={{ mb: 3, fontWeight: 700 }}>
+          {editOperationId ? "Редагування операції" : "Створення нової операції"}
+        </Typography>
 
-    return (
-        <Styles.Wrapper onClick={handleWrapperClick}>
-            <Styles.Modal>
-                <Styles.CloseButton onClick={onClose} />
-                <Styles.Title>{editOperationId ? 'Редагування операції' : 'Створення нової операції'}</Styles.Title>
-                
-                <Styles.Label>
-                    <Styles.Subtitle>Назва операції</Styles.Subtitle>
-                    <Styles.Input
-                        value={operationName}
-                        onChange={(e) => setOperationName(e.target.value)}
-                    />
-                </Styles.Label>
-                
-                <Styles.Label>
-                    <Styles.Subtitle>Опис операції</Styles.Subtitle>
-                    <Styles.TextArea
-                        maxLength={250}
-                        value={operationDescription}
-                        onChange={(e) => setOperationDescription(e.target.value)}
-                    />
-                </Styles.Label>
-                
-                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
-                    <Button text={'Зберегти'} onClick={handleSave} />
-                </div>
-            </Styles.Modal>
-        </Styles.Wrapper>
-    );
+        <Box sx={{ mb: 2, display: "flex", flexDirection: "column", gap: 1 }}>
+          <Typography variant="subtitle2">Назва операції</Typography>
+          <TextField
+            value={operationName}
+            onChange={(e) => setOperationName(e.target.value)}
+            size="small"
+            variant="outlined"
+            fullWidth
+          />
+        </Box>
+
+        <Box sx={{ mb: 2, display: "flex", flexDirection: "column", gap: 1 }}>
+          <Typography variant="subtitle2">Опис операції</Typography>
+          <TextField
+            value={operationDescription}
+            onChange={(e) => setOperationDescription(e.target.value)}
+            size="small"
+            variant="outlined"
+            multiline
+            rows={4}
+            inputProps={{ maxLength: 250 }}
+            fullWidth
+          />
+        </Box>
+
+        <Box sx={{ display: "flex", justifyContent: "flex-end", mt: "auto" }}>
+          <MuiButton variant="contained" onClick={handleSave}>
+            Зберегти
+          </MuiButton>
+        </Box>
+      </Box>
+    </Box>
+  );
 }

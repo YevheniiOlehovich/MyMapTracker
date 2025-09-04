@@ -1,352 +1,340 @@
-import { useState, useEffect } from 'react';
-import Styles from './styled';
-import closeModal from '../../helpres/closeModal';
-import SelectComponent from '../Select';
-import { useGroupsData } from '../../hooks/useGroupsData';
-import { usePersonnelData } from '../../hooks/usePersonnelData';
-import { useTechniquesData } from '../../hooks/useTechniquesData';
-import { useFieldsData } from '../../hooks/useFieldsData';
-import { useOperationsData } from '../../hooks/useOperationsData';
-import { useCropsData } from '../../hooks/useCropsData';
-import { useVarietiesData } from '../../hooks/useVarietiesData';
-import { useVehiclesData } from '../../hooks/useVehiclesData';
-import { useSaveTask, useTasksData, useUpdateTask } from '../../hooks/useTasksData';
-import Button from '../Button';
-import apiRoutes from '../../helpres/ApiRoutes';
-import MapBlock from '../MapBlock';
-import { useSelector } from 'react-redux';
+import { useState, useEffect } from "react";
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Button,
+  Grid,
+  IconButton,
+  Typography,
+  Box,
+} from "@mui/material";
+import CloseIcon from "@mui/icons-material/Close";
+import { Autocomplete } from "@mui/material";
 
-export default function AddTaskModal({ onClose }) {
-    const handleWrapperClick = closeModal(onClose);
-    const { editTaskId } = useSelector((state) => state.modals);
-    
-    
+import MapBlock from "../MapBlock";
+import { useSelector, useDispatch } from "react-redux";
+import { closeAddTaskModal } from "../../store/modalSlice";
 
-    const { data: groups = [] } = useGroupsData();
-    const { data: personnel = [] } = usePersonnelData();
-    const { data: techniques = [] } = useTechniquesData();
-    const { data: fieldsData = [] } = useFieldsData();
-    const { data: operations = [] } = useOperationsData();
-    const { data: crops = [] } = useCropsData();
-    const { data: varieties = [] } = useVarietiesData();
-    const { data: vehicles = [] } = useVehiclesData();
-    const { data: tasks = [] } = useTasksData();
+import { useGroupsData } from "../../hooks/useGroupsData";
+import { usePersonnelData } from "../../hooks/usePersonnelData";
+import { useTechniquesData } from "../../hooks/useTechniquesData";
+import { useFieldsData } from "../../hooks/useFieldsData";
+import { useOperationsData } from "../../hooks/useOperationsData";
+import { useCropsData } from "../../hooks/useCropsData";
+import { useVarietiesData } from "../../hooks/useVarietiesData";
+import { useVehiclesData } from "../../hooks/useVehiclesData";
+import { useSaveTask, useTasksData, useUpdateTask } from "../../hooks/useTasksData";
 
-    const editTask = tasks.find(task => task._id === editTaskId);
-    // console.log(editTask)
-    
+export default function AddTaskModal() {
+  const dispatch = useDispatch();
+  // ВАЖЛИВО: беремо правильні ключі зі слайса
+  const { isAddTaskModalVisible, editTaskId } = useSelector((state) => state.modals);
 
-    // Стейти для вибору
-    const [selectedGroup, setSelectedGroup] = useState(null);
-    const [selectedPersonnel, setSelectedPersonnel] = useState(null);
-    const [selectedTechnique, setSelectedTechnique] = useState(null);
-    const [selectedVehicle, setSelectedVehicle] = useState(null);
-    const [selectedField, setSelectedField] = useState(null);
-    const [selectedOperation, setSelectedOperation] = useState(null);
-    const [selectedVariety, setSelectedVariety] = useState(null);
-    const [selectedCrop, setSelectedCrop] = useState(null);
+  const { data: groups = [] } = useGroupsData();
+  const { data: personnel = [] } = usePersonnelData();
+  const { data: techniques = [] } = useTechniquesData();
+  const { data: fieldsData = [] } = useFieldsData();
+  const { data: operations = [] } = useOperationsData();
+  const { data: crops = [] } = useCropsData();
+  const { data: varieties = [] } = useVarietiesData();
+  const { data: vehicles = [] } = useVehiclesData();
+  const { data: tasks = [] } = useTasksData();
 
-    const [width, setWidth] = useState('');
-    const [note, setNote] = useState('');
-    const [deadline, setDeadline] = useState(null);
+  const editTask = tasks.find((t) => t._id === editTaskId);
 
-    useEffect(() => {
-        if (editTask) {
-            setSelectedGroup(
-            editTask.groupId
-                ? { value: editTask.groupId._id, label: editTask.groupId.name || '' }
-                : null
-            );
-            setSelectedPersonnel(
-            editTask.personnelId
-                ? { value: editTask.personnelId._id, label: `${editTask.personnelId.firstName} ${editTask.personnelId.lastName}`.trim() || '' }
-                : null
-            );
-            setSelectedTechnique(
-            editTask.techniqueId
-                ? { value: editTask.techniqueId._id, label: editTask.techniqueId.name || '' }
-                : null
-            );
-            setSelectedVehicle(
-            editTask.vehicleId
-                ? { value: editTask.vehicleId._id, label: editTask.vehicleId.mark || editTask.vehicleId.regNumber || editTask.vehicleId.vehicleType || '' }
-                : null
-            );
-            setSelectedField(
-            editTask.fieldId
-                ? { value: editTask.fieldId._id, label: editTask.fieldId.properties?.name || '' }
-                : null
-            );
-            setSelectedOperation(
-            editTask.operationId
-                ? { value: editTask.operationId._id, label: editTask.operationId.name || '' }
-                : null
-            );
-            setSelectedVariety(
-            editTask.varietyId
-                ? { value: editTask.varietyId._id, label: editTask.varietyId.name || '' }
-                : null
-            );
-            setSelectedCrop(
-            editTask.cropId
-                ? { value: editTask.cropId._id, label: editTask.cropId.name || '' }
-                : null
-            );
+  // state
+  const [selectedGroup, setSelectedGroup] = useState(null);
+  const [selectedPersonnel, setSelectedPersonnel] = useState(null);
+  const [selectedTechnique, setSelectedTechnique] = useState(null);
+  const [selectedVehicle, setSelectedVehicle] = useState(null);
+  const [selectedField, setSelectedField] = useState(null);
+  const [selectedOperation, setSelectedOperation] = useState(null);
+  const [selectedVariety, setSelectedVariety] = useState(null);
+  const [selectedCrop, setSelectedCrop] = useState(null);
 
-            setWidth(editTask.width || '');
-            setNote(editTask.note || '');
-            setDeadline(editTask.daysToComplete || null);
-        } else {
-            setSelectedGroup(null);
-            setSelectedPersonnel(null);
-            setSelectedTechnique(null);
-            setSelectedVehicle(null);
-            setSelectedField(null);
-            setSelectedOperation(null);
-            setSelectedVariety(null);
-            setSelectedCrop(null);
-            setWidth('');
-            setNote('');
-            setDeadline(null);
-        }
-    }, [editTask]);
+  const [width, setWidth] = useState("");
+  const [note, setNote] = useState("");
+  const [deadline, setDeadline] = useState("");
+  const [isWidthEditable, setIsWidthEditable] = useState(false);
 
+  const saveTask = useSaveTask();
+  const updateTask = useUpdateTask();
 
-    const [isWidthEditable, setIsWidthEditable] = useState(false);
-
-    // Обробники зміни
-    const handleGroupChange = (opt) => setSelectedGroup(opt);
-    const handlePersonnelChange = (opt) => setSelectedPersonnel(opt);
-    const handleTechniqueChange = (opt) => setSelectedTechnique(opt);
-    const handleVehicleChange = (opt) => setSelectedVehicle(opt);
-    const handleFieldChange = (opt) => setSelectedField(opt);
-    
-    const handleOperationChange = (opt) => setSelectedOperation(opt);
-    const handleVarietyChange = (opt) => setSelectedVariety(opt);
-    const handleCropChange = (opt) => setSelectedCrop(opt);
-
-    const saveTask = useSaveTask();
-    const updateTask = useUpdateTask();
-
-    useEffect(() => {
-    if (selectedTechnique?.value) {
-        const fullTechnique = techniques.find(t => t._id === selectedTechnique.value);
-        if (fullTechnique?.width !== undefined) {
-        setWidth(fullTechnique.width);
-        } else {
-        setWidth('');
-        }
-    } else {
-        setWidth('');
-    }
-    }, [selectedTechnique, techniques]);
-
-    const handleSave = async () => {
-        try {
-            const formData = new FormData();
-
-            formData.append('group', selectedGroup?.value || '');
-            formData.append('personnel', selectedPersonnel?.value || '');
-            formData.append('technique', selectedTechnique?.value || '');
-            formData.append('vehicle', selectedVehicle?.value || '');
-            formData.append('field', selectedField?.value || '');
-            formData.append('operation', selectedOperation?.value || '');
-            formData.append('variety', selectedVariety?.value || '');
-            formData.append('crop', selectedCrop?.value || '');
-            formData.append('width', width ? String(width) : '');
-            formData.append('note', note || '');
-            formData.append('daysToComplete', deadline ? String(deadline) : '');
-
-            if (editTaskId) {
-                // Оновлення існуючої таски
-                await updateTask.mutateAsync({ taskId: editTaskId, taskData: formData });
-            } else {
-                // Створення нової таски
-                await saveTask.mutateAsync(formData);
+  // preload task data
+  useEffect(() => {
+    if (editTask) {
+      setSelectedGroup(
+        editTask.groupId ? { label: editTask.groupId.name || "Без назви", value: editTask.groupId._id } : null
+      );
+      setSelectedPersonnel(
+        editTask.personnelId
+          ? {
+              label: `${editTask.personnelId.firstName || ""} ${editTask.personnelId.lastName || ""}`.trim(),
+              value: editTask.personnelId._id,
             }
+          : null
+      );
+      setSelectedTechnique(
+        editTask.techniqueId ? { label: editTask.techniqueId.name || "Без назви", value: editTask.techniqueId._id } : null
+      );
+      setSelectedVehicle(
+        editTask.vehicleId
+          ? {
+              label:
+                editTask.vehicleId.mark
+                  ? `${editTask.vehicleId.mark}${editTask.vehicleId.regNumber ? ` (${editTask.vehicleId.regNumber})` : ""}`
+                  : editTask.vehicleId.regNumber || editTask.vehicleId.vehicleType || "Транспорт",
+              value: editTask.vehicleId._id,
+            }
+          : null
+      );
+      setSelectedField(
+        editTask.fieldId
+          ? { label: editTask.fieldId.properties?.name || "Без назви", value: editTask.fieldId._id }
+          : null
+      );
+      setSelectedOperation(
+        editTask.operationId ? { label: editTask.operationId.name || "Без назви", value: editTask.operationId._id } : null
+      );
+      setSelectedVariety(
+        editTask.varietyId ? { label: editTask.varietyId.name || "Без назви", value: editTask.varietyId._id } : null
+      );
+      setSelectedCrop(editTask.cropId ? { label: editTask.cropId.name || "Без назви", value: editTask.cropId._id } : null);
 
-            onClose();
-        } catch (error) {
-            console.error('Помилка при збереженні таски:', error);
-            alert('Сталася помилка при збереженні таски');
-        }
-    };
+      setWidth(editTask.width ?? "");
+      setNote(editTask.note ?? "");
+      setDeadline(editTask.daysToComplete ?? "");
+    } else {
+      setSelectedGroup(null);
+      setSelectedPersonnel(null);
+      setSelectedTechnique(null);
+      setSelectedVehicle(null);
+      setSelectedField(null);
+      setSelectedOperation(null);
+      setSelectedVariety(null);
+      setSelectedCrop(null);
+      setWidth("");
+      setNote("");
+      setDeadline("");
+    }
+  }, [editTask]);
 
-    console.log('Selected Field:', selectedField);
-    console.log('Fields Data:', fieldsData);
+  // auto set width when technique changes (як було раніше)
+  useEffect(() => {
+    if (selectedTechnique?.value) {
+      const full = techniques.find((t) => t._id === selectedTechnique.value);
+      setWidth(full?.width ?? "");
+    } else if (!isWidthEditable) {
+      setWidth("");
+    }
+  }, [selectedTechnique, techniques, isWidthEditable]);
+
+  const handleSave = async () => {
+    try {
+      const formData = new FormData();
+      formData.append("group", selectedGroup?.value || "");
+      formData.append("personnel", selectedPersonnel?.value || "");
+      formData.append("technique", selectedTechnique?.value || "");
+      formData.append("vehicle", selectedVehicle?.value || "");
+      formData.append("field", selectedField?.value || "");
+      formData.append("operation", selectedOperation?.value || "");
+      formData.append("variety", selectedVariety?.value || "");
+      formData.append("crop", selectedCrop?.value || "");
+      formData.append("width", width ? String(width) : "");
+      formData.append("note", note || "");
+      formData.append("daysToComplete", deadline ? String(deadline) : "");
+
+      if (editTaskId) {
+        await updateTask.mutateAsync({ taskId: editTaskId, taskData: formData });
+      } else {
+        await saveTask.mutateAsync(formData);
+      }
+      dispatch(closeAddTaskModal());
+    } catch (err) {
+      console.error("Помилка при збереженні:", err);
+      alert("Не вдалося зберегти завдання");
+    }
+  };
+
+  // Хелпер для Autocomplete, щоб не ламався value
+  const isOptionEqualToValue = (opt, val) => opt?.value === val?.value;
 
     return (
-        <Styles.StyledWrapper onClick={handleWrapperClick}>
-            <Styles.StyledModal onClick={e => e.stopPropagation()}>
-                <Styles.StyledCloseButton onClick={handleWrapperClick} />
-                    <Styles.StyledTitle>{editTaskId ? `Редагування завдання ${editTask.order}` : 'Додавання нового завдання'}</Styles.StyledTitle>
-                    <Styles.StyledBlock>
-                        <Styles.StyledColumn>
+        <Dialog
+            open={isAddTaskModalVisible}
+            onClose={() => dispatch(closeAddTaskModal())}
+            maxWidth="lg"
+            fullWidth
+        >
+            <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <Typography variant="h6">
+                {editTaskId ? `Редагування завдання ${editTask?.order ?? ""}` : "Додавання нового завдання"}
+            </Typography>
+            <IconButton onClick={() => dispatch(closeAddTaskModal())}>
+                <CloseIcon />
+            </IconButton>
+            </DialogTitle>
 
-                        {/* Група */}
-                        <Styles.StyledLabel>
-                            <Styles.StyledSubtitle>Група</Styles.StyledSubtitle>
-                            <SelectComponent
-                                options={groups}
-                                value={selectedGroup}
-                                onChange={handleGroupChange}
-                                placeholder="Оберіть групу"
-                            />
-                        </Styles.StyledLabel>
+            <DialogContent dividers>
 
-                        {/* Поле */}
-                        <Styles.StyledLabel>
-                            <Styles.StyledSubtitle>Поле</Styles.StyledSubtitle>
-                            <SelectComponent
-                                options={fieldsData.map(f => ({
-                                    _id: f._id,
-                                    name: f.properties?.name || 'Без назви',
-                                    original: f,
-                                }))}
-                                value={selectedField}
-                                onChange={handleFieldChange}
-                                placeholder="Оберіть поле"
-                            />
-                        </Styles.StyledLabel>
+            <Box
+                sx={{
+                    display: "flex",
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    height: "100%",
+                    gap: 2, // відстань між лівим і правим блоком
+                }}
+                >
+                {/* Ліва колонка */}
+                <Box
+                    sx={{
+                    flex: "0 0 50%", // 50% ширини
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 2,
+                    height: "100%",
+                    border: "1px solid #ddd",
+                    borderRadius: 1,
+                    p: 2,
+                    }}
+                >
+                    <Autocomplete
+                    options={groups.map((g) => ({ label: g.name || "Без назви", value: g._id }))}
+                    value={selectedGroup}
+                    onChange={(_, v) => setSelectedGroup(v)}
+                    isOptionEqualToValue={isOptionEqualToValue}
+                    renderInput={(params) => <TextField {...params} label="Група" size="small" fullWidth />}
+                    />
 
-                        {/* Транспорт */}
-                        <Styles.StyledLabel>
-                            <Styles.StyledSubtitle>Транспортний засіб</Styles.StyledSubtitle>
-                            <SelectComponent
-                                options={vehicles.map(v => ({
-                                    _id: v._id,
-                                    name: v.mark
-                                    ? `${v.mark}${v.regNumber ? ` (${v.regNumber})` : ''}`
-                                    : v.regNumber || v.vehicleType || 'Транспорт',
-                                }))}
-                                value={selectedVehicle}
-                                onChange={handleVehicleChange}
-                                placeholder="Оберіть транспорт"
-                            />
-                        </Styles.StyledLabel>
+                    <Autocomplete
+                    options={fieldsData.map((f) => ({ label: f.properties?.name || "Без назви", value: f._id }))}
+                    value={selectedField}
+                    onChange={(_, v) => setSelectedField(v)}
+                    isOptionEqualToValue={isOptionEqualToValue}
+                    renderInput={(params) => <TextField {...params} label="Поле" size="small" fullWidth />}
+                    />
 
-                        {/* Техніка */}
-                        <Styles.StyledLabel>
-                            <Styles.StyledSubtitle>Технічний засіб</Styles.StyledSubtitle>
-                            <SelectComponent
-                                options={techniques.map(t => ({
-                                    _id: t._id,
-                                    name: t.name,
-                                }))}
-                                value={selectedTechnique}
-                                onChange={handleTechniqueChange}
-                                placeholder="Оберіть техніку"
-                            />
-                        </Styles.StyledLabel>
+                    <Autocomplete
+                    options={vehicles.map((v) => ({
+                        label: v.mark
+                        ? `${v.mark}${v.regNumber ? ` (${v.regNumber})` : ""}`
+                        : v.regNumber || v.vehicleType || "Транспорт",
+                        value: v._id,
+                    }))}
+                    value={selectedVehicle}
+                    onChange={(_, v) => setSelectedVehicle(v)}
+                    isOptionEqualToValue={isOptionEqualToValue}
+                    renderInput={(params) => <TextField {...params} label="Транспортний засіб" size="small" fullWidth />}
+                    />
 
-                        {/* Виконавець */}
-                        <Styles.StyledLabel>
-                            <Styles.StyledSubtitle>Виконавець</Styles.StyledSubtitle>
-                            <SelectComponent
-                                options={personnel.map(p => ({
-                                    _id: p._id,
-                                    name: `${p.firstName} ${p.lastName}`.trim(),
-                                }))}
-                                value={selectedPersonnel}
-                                onChange={handlePersonnelChange}
-                                placeholder="Оберіть працівника"
-                            />
-                        </Styles.StyledLabel>
+                    <Autocomplete
+                    options={techniques.map((t) => ({ label: t.name || "Без назви", value: t._id }))}
+                    value={selectedTechnique}
+                    onChange={(_, v) => setSelectedTechnique(v)}
+                    isOptionEqualToValue={isOptionEqualToValue}
+                    renderInput={(params) => <TextField {...params} label="Технічний засіб" size="small" fullWidth />}
+                    />
 
-                        {/* Операція */}
-                        <Styles.StyledLabel>
-                            <Styles.StyledSubtitle>Технологічна операція</Styles.StyledSubtitle>
-                            <SelectComponent
-                                options={operations.map(op => ({
-                                    _id: op._id,
-                                    name: op.name || 'Без назви',
-                                }))}
-                                value={selectedOperation}
-                                onChange={handleOperationChange}
-                                placeholder="Оберіть операцію"
-                            />
-                        </Styles.StyledLabel>
+                    <Autocomplete
+                    options={personnel.map((p) => ({
+                        label: `${p.firstName || ""} ${p.lastName || ""}`.trim() || "Без імені",
+                        value: p._id,
+                    }))}
+                    value={selectedPersonnel}
+                    onChange={(_, v) => setSelectedPersonnel(v)}
+                    isOptionEqualToValue={isOptionEqualToValue}
+                    renderInput={(params) => <TextField {...params} label="Виконавець" size="small" fullWidth />}
+                    />
 
-                        {/* Культура */}
-                        <Styles.StyledLabel>
-                            <Styles.StyledSubtitle>Культура</Styles.StyledSubtitle>
-                            <SelectComponent
-                                options={crops.map(c => ({
-                                    _id: c._id,
-                                    name: c.name || 'Без назви',
-                                }))}
-                                value={selectedCrop}
-                                onChange={handleCropChange}
-                                placeholder="Оберіть культуру"
-                            />
-                        </Styles.StyledLabel>
+                    <Autocomplete
+                    options={operations.map((op) => ({ label: op.name || "Без назви", value: op._id }))}
+                    value={selectedOperation}
+                    onChange={(_, v) => setSelectedOperation(v)}
+                    isOptionEqualToValue={isOptionEqualToValue}
+                    renderInput={(params) => <TextField {...params} label="Технологічна операція" size="small" fullWidth />}
+                    />
 
-                        {/* Сорт */}
-                        <Styles.StyledLabel>
-                            <Styles.StyledSubtitle>Сорт</Styles.StyledSubtitle>
-                            <SelectComponent
-                                options={varieties.map(v => ({
-                                    _id: v._id,
-                                    name: v.name || 'Без назви',
-                                }))}
-                                value={selectedVariety}
-                                onChange={handleVarietyChange}
-                                placeholder="Оберіть сорт"
-                            />
-                        </Styles.StyledLabel>
-                    </Styles.StyledColumn>
-                    
-                    <Styles.StyledColumn>
-                        <Styles.StyledMapBlock>
-                            <MapBlock field={selectedField} fieldsList={fieldsData} height="100%" />
-                        </Styles.StyledMapBlock>
-                        {/* Тут можна додати інші поля, якщо потрібно */}
-                        <Styles.StyledLabel>
-                            <Styles.StyledSubtitle>Додаткова інформація</Styles.StyledSubtitle>
-                            <Styles.StyledTextArea
-                                maxLength={250}
-                                value={note}
-                                onChange={(e) => setNote(e.target.value)}
-                            />
-                        </Styles.StyledLabel>
+                    <Autocomplete
+                    options={crops.map((c) => ({ label: c.name || "Без назви", value: c._id }))}
+                    value={selectedCrop}
+                    onChange={(_, v) => setSelectedCrop(v)}
+                    isOptionEqualToValue={isOptionEqualToValue}
+                    renderInput={(params) => <TextField {...params} label="Культура" size="small" fullWidth />}
+                    />
 
-                        <Styles.StyledLabel>
-                            <Styles.StyledSubtitle>
-                                Ширина техніки (м)
-                                <Styles.StyledEditToggle onClick={() => setIsWidthEditable(prev => !prev)}>
-                                {isWidthEditable ? '🔒 Заблокувати' : '✏️ Редагувати'}
-                                </Styles.StyledEditToggle>
-                            </Styles.StyledSubtitle>
-                            <Styles.StyledInput
-                                type="number"
-                                min="0"
-                                step="0.1"
-                                value={width}
-                                disabled={!isWidthEditable}
-                                onChange={(e) => setWidth(Number(e.target.value))}
-                                placeholder="Ширина"
-                            />
-                            </Styles.StyledLabel>
+                    <Autocomplete
+                    options={varieties.map((v) => ({ label: v.name || "Без назви", value: v._id }))}
+                    value={selectedVariety}
+                    onChange={(_, v) => setSelectedVariety(v)}
+                    isOptionEqualToValue={isOptionEqualToValue}
+                    renderInput={(params) => <TextField {...params} label="Сорт" size="small" fullWidth />}
+                    />
+                </Box>
 
-                            <Styles.StyledLabel>
-                                <Styles.StyledSubtitle>Термін виконання (днів)</Styles.StyledSubtitle>
-                                <Styles.StyledInput
-                                    type="number"
-                                    min="1"
-                                    step="1"
-                                    value={deadline ?? ''}
-                                    onChange={(e) => setDeadline(e.target.value ? Number(e.target.value) : '')}
-                                    placeholder="Введіть кількість днів"
-                                />
-                            </Styles.StyledLabel>
+                {/* Права колонка */}
+                <Box
+                    sx={{
+                    flex: "0 0 50%", // 50% ширини
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 2,
+                    height: "100%",
+                    border: "1px solid #ddd",
+                    borderRadius: 1,
+                    p: 2,
+                    }}
+                >
+                    <Box sx={{ border: "1px solid #ccc", borderRadius: 1, flex: 1, overflow: "hidden" }}>
+                    <MapBlock field={selectedField} fieldsList={fieldsData} height="200px" />
+                    </Box>
 
-                        </Styles.StyledColumn>
-                    </Styles.StyledBlock>
-                    
-                    <div style={{ display: 'flex', justifyContent: 'flex-end'}}>
-                        <Button text={'Зберегти'} onClick={handleSave}/>
-                    </div>
-            </Styles.StyledModal>
-        </Styles.StyledWrapper>
-    );
+                    <TextField
+                    label="Додаткова інформація"
+                    multiline
+                    rows={3}
+                    fullWidth
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                    />
+
+                    <Box sx={{ display: "flex", gap: 2 }}>
+                    <TextField
+                        label="Ширина техніки (м)"
+                        type="number"
+                        fullWidth
+                        size="small"
+                        disabled={!isWidthEditable}
+                        value={width}
+                        onChange={(e) => setWidth(e.target.value)}
+                    />
+                    <Button onClick={() => setIsWidthEditable((p) => !p)} size="small">
+                        {isWidthEditable ? "🔒 Заблокувати" : "✏️ Редагувати"}
+                    </Button>
+                    </Box>
+
+                    <TextField
+                    label="Термін виконання (днів)"
+                    type="number"
+                    fullWidth
+                    size="small"
+                    value={deadline}
+                    onChange={(e) => setDeadline(e.target.value)}
+                    />
+                </Box>
+                </Box>
+
+            </DialogContent>
+
+            <DialogActions>
+            <Button variant="contained" onClick={handleSave}>
+                Зберегти
+            </Button>
+            </DialogActions>
+        </Dialog>
+        );
+    
 }

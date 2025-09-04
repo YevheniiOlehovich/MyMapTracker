@@ -1,146 +1,195 @@
-import { useState, useMemo } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { openAddVehicleModal } from '../../store/modalSlice';
-import { useVehiclesData, useDeleteVehicle } from '../../hooks/useVehiclesData';
-import { useGpsData } from '../../hooks/useGpsData';
-import { useGroupsData } from '../../hooks/useGroupsData';
-import { setMapCenter } from '../../store/mapCenterSlice';
+import { useState, useMemo } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { openAddVehicleModal } from "../../store/modalSlice";
+import { useVehiclesData, useDeleteVehicle } from "../../hooks/useVehiclesData";
+import { useGpsData } from "../../hooks/useGpsData";
+import { useGroupsData } from "../../hooks/useGroupsData";
+import { setMapCenter } from "../../store/mapCenterSlice";
+import {
+  Box,
+  Paper,
+  Typography,
+  IconButton,
+  Tooltip,
+  Slide
+} from "@mui/material";
+import AddIcon from "@mui/icons-material/Add";
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
+import LocationOnIcon from "@mui/icons-material/LocationOn";
 
-import EditIco from '../../assets/ico/edit-icon-black.png';
-import DelIco from '../../assets/ico/del-icon-black.png';
-import TriangleIco from '../../assets/ico/triangle.png';
-import QuestionIco from '../../assets/ico/10965421.webp';
-import LocationIco from '../../assets/ico/location.png';
-import AddIco from '../../assets/ico/add-icon-black.png';
-import Styles from './styled';
+import QuestionIco from "../../assets/ico/10965421.webp";
+import { vehicleTypes } from "../../helpres";
 
-import { vehicleTypes } from '../../helpres';
+export default function VehicleList({ open = true }) {
+  const dispatch = useDispatch();
+  const { data: vehicles = [], isLoading, isError, error } = useVehiclesData();
+  const { data: gpsData = [] } = useGpsData();
+  const { data: groups = [] } = useGroupsData();
+  const deleteVehicle = useDeleteVehicle();
+  const selectedDate = useSelector(state => state.calendar.selectedDate);
 
-export default function VehicleList() {
-    const dispatch = useDispatch();
+  const handleAdd = () => dispatch(openAddVehicleModal());
+  const handleEdit = (id) => dispatch(openAddVehicleModal({ vehicleId: id }));
+  const handleDelete = (id) => deleteVehicle.mutate(id);
 
-    // Дані з API
-    const { data: vehicles = [], isLoading, isError, error } = useVehiclesData();
-    const { data: gpsData = [] } = useGpsData();
-    const { data: groups = [] } = useGroupsData();
-    const deleteVehicle = useDeleteVehicle();
+  // Фільтрація GPS даних по даті
+  const filteredGpsData = useMemo(() => {
+    if (!gpsData || !selectedDate) return [];
+    const selectedDateFormatted = selectedDate.split("T")[0];
+    return gpsData.filter(item => item.date === selectedDateFormatted);
+  }, [gpsData, selectedDate]);
 
-    // Вибрана дата календаря (для локації)
-    const selectedDate = useSelector(state => state.calendar.selectedDate);
+  const lastGpsPoints = useMemo(() => {
+    return filteredGpsData
+      .map(item => {
+        const validPoints = item.data.filter(p => p.latitude !== 0 && p.longitude !== 0);
+        return validPoints.length > 0 ? { ...validPoints[validPoints.length - 1], imei: item.imei } : null;
+      })
+      .filter(point => point !== null);
+  }, [filteredGpsData]);
 
-    const [isExpanded, setIsExpanded] = useState(true);
+  const showVehicleLocation = (vehicle) => {
+    const selectedVehicle = lastGpsPoints.find(p => p.imei === vehicle.imei);
+    if (selectedVehicle) {
+      dispatch(setMapCenter({ lat: selectedVehicle.latitude, lng: selectedVehicle.longitude }));
+    }
+  };
 
-    const toggleExpanded = () => setIsExpanded(prev => !prev);
-    const handleAdd = () => dispatch(openAddVehicleModal());
-    const handleEdit = (id) => dispatch(openAddVehicleModal({ vehicleId: id }));
-    const handleDelete = (id) => {
-        deleteVehicle.mutate(id, {
-            onError: (err) => console.error('Помилка при видаленні техніки:', err),
-        });
-    };
+  if (isLoading) return <Typography sx={{ p: 2 }}>Завантаження техніки...</Typography>;
+  if (isError) return <Typography sx={{ p: 2 }}>Помилка: {error?.message}</Typography>;
+  if (vehicles.length === 0) return <Typography sx={{ p: 2 }}>Техніка не знайдена.</Typography>;
 
-    // --- Фільтрація GPS даних по даті і пошук останньої валідної точки ---
-    const filteredGpsData = useMemo(() => {
-        if (!gpsData || !selectedDate) return [];
-        const selectedDateFormatted = selectedDate.split('T')[0];
-        return gpsData.filter(item => item.date === selectedDateFormatted);
-    }, [gpsData, selectedDate]);
+  const getGroupName = (groupId) => {
+    const group = groups.find(g => g._id === groupId);
+    return group ? group.name : "Без групи";
+  };
 
-    const lastGpsPoints = useMemo(() => {
-        return filteredGpsData
-            .map(item => {
-                const validPoints = item.data.filter(p => p.latitude !== 0 && p.longitude !== 0);
-                return validPoints.length > 0
-                    ? { ...validPoints[validPoints.length - 1], imei: item.imei }
-                    : null;
-            })
-            .filter(point => point !== null);
-    }, [filteredGpsData]);
+  const groupedByGroup = vehicles.reduce((acc, vehicle) => {
+    const groupId = vehicle.groupId || "noGroup";
+    if (!acc[groupId]) acc[groupId] = [];
+    acc[groupId].push(vehicle);
+    return acc;
+  }, {});
 
-    // Показати останню локацію техніки на мапі по останній валідній точці
-    const showVehicleLocation = (vehicle) => {
-        const selectedVehicle = lastGpsPoints.find(point => point.imei === vehicle.imei);
-        if (selectedVehicle) {
-            dispatch(setMapCenter({ lat: selectedVehicle.latitude, lng: selectedVehicle.longitude }));
-        }
-    };
+  return (
+    <Slide direction="right" in={open} mountOnEnter unmountOnExit>
+      <Paper
+        elevation={3}
+        sx={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: 350,
+          height: "100vh",
+          bgcolor: "rgba(33,33,33,0.85)",
+          color: "white",
+          borderRadius: "0 8px 8px 0",
+          overflow: "hidden",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        {/* Заголовок */}
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            px: 1,
+            py: 0.5,
+            borderBottom: "1px solid rgba(255,255,255,0.2)",
+            height: 56,
+          }}
+        >
+          <Typography variant="subtitle1" fontWeight="bold">Транспорт</Typography>
+          <Tooltip title="Додати техніку">
+            <IconButton size="small" onClick={handleAdd}>
+              <AddIcon fontSize="small" sx={{ color: "white" }} />
+            </IconButton>
+          </Tooltip>
+        </Box>
 
-    if (isLoading) return <p>Завантаження техніки...</p>;
-    if (isError) return <p>Помилка завантаження: {error?.message}</p>;
-    if (vehicles.length === 0) return <Styles.span>Техніка не знайдена.</Styles.span>;
+        {/* Список груп і транспортних засобів */}
+        <Box
+          sx={{
+            flex: 1,
+            overflowY: "auto",
+            display: "flex",
+            flexDirection: "column",
+            gap: 1,
+            p: 1,
+          }}
+        >
+          {Object.entries(groupedByGroup).map(([groupId, vehiclesInGroup]) => (
+            <Box key={groupId}>
+              <Typography sx={{ fontWeight: "bold", mt: 1, mb: 0.5 }}>
+                {getGroupName(groupId)}
+              </Typography>
+              {vehicleTypes.map(({ _id: typeId, name: typeName }) => {
+                const vehiclesOfType = vehiclesInGroup.filter(v => v.vehicleType === typeId);
+                if (vehiclesOfType.length === 0) return null;
 
-    const getGroupName = (groupId) => {
-        const group = groups.find(g => g._id === groupId);
-        return group ? group.name : 'Без групи';
-    };
+                return (
+                  <Box key={typeId} sx={{ mb: 1 }}>
+                    <Typography sx={{ fontStyle: "italic", mb: 0.5 }}>{typeName}</Typography>
+                    {vehiclesOfType.map(vehicle => {
+                      const imgSrc = vehicle.photoPath
+                        ? '/src/' + vehicle.photoPath.substring(3).replace(/\\/g, '/')
+                        : QuestionIco;
 
-    // Групування техніки по групах
-    const groupedByGroup = vehicles.reduce((acc, vehicle) => {
-        const groupId = vehicle.groupId || 'noGroup';
-        if (!acc[groupId]) acc[groupId] = [];
-        acc[groupId].push(vehicle);
-        return acc;
-    }, {});
-
-    return (
-        <Styles.mainList>
-            <Styles.header onClick={toggleExpanded}>
-                <Styles.title>Транспорт</Styles.title>
-                <Styles.button
-                    onClick={e => {
-                        e.stopPropagation();
-                        handleAdd();
-                    }}
-                >
-                    <Styles.ico $pic={AddIco} />
-                </Styles.button>
-                <Styles.ico $pic={TriangleIco} $rotation={isExpanded ? 180 : 0} />
-            </Styles.header>
-
-            {isExpanded && (
-                <Styles.list>
-                    {Object.entries(groupedByGroup).map(([groupId, vehiclesInGroup]) => (
-                        <Styles.groupTitle key={groupId}>
-                            {getGroupName(groupId)}
-                            {vehicleTypes.map(({ _id: typeId, name: typeName }) => {
-                                const vehiclesOfType = vehiclesInGroup.filter(v => v.vehicleType === typeId);
-                                if (vehiclesOfType.length === 0) return null;
-
-                                return (
-                                    <Styles.functionTitle key={typeId}>
-                                        {typeName}
-                                        {vehiclesOfType.map(vehicle => (
-                                            <Styles.listItem key={vehicle._id} $hasBorder>
-                                                <Styles.block>
-                                                    <Styles.imgBlock
-                                                        $imageUrl={
-                                                            vehicle.photoPath
-                                                                ? '/src/' + vehicle.photoPath.substring(3).replace(/\\/g, '/')
-                                                                : QuestionIco
-                                                        }
-                                                    />
-                                                    <Styles.vehicleName>{vehicle.mark}</Styles.vehicleName>
-                                                    <Styles.buttonBlock>
-                                                        <Styles.button onClick={() => showVehicleLocation(vehicle)}>
-                                                            <Styles.ico $pic={LocationIco} />
-                                                        </Styles.button>
-                                                        <Styles.button onClick={() => handleEdit(vehicle._id)}>
-                                                            <Styles.ico $pic={EditIco} />
-                                                        </Styles.button>
-                                                        <Styles.button onClick={() => handleDelete(vehicle._id)}>
-                                                            <Styles.ico $pic={DelIco} />
-                                                        </Styles.button>
-                                                    </Styles.buttonBlock>
-                                                </Styles.block>
-                                            </Styles.listItem>
-                                        ))}
-                                    </Styles.functionTitle>
-                                );
-                            })}
-                        </Styles.groupTitle>
-                    ))}
-                </Styles.list>
-            )}
-        </Styles.mainList>
-    );
+                      return (
+                        <Paper
+                          key={vehicle._id}
+                          sx={{
+                            p: 1,
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            bgcolor: "rgba(255,255,255,0.05)",
+                            borderRadius: 1,
+                            transition: "background 0.2s",
+                            "&:hover": {
+                              bgcolor: "rgba(25,118,210,0.2)",
+                            },
+                          }}
+                        >
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                            <Box
+                              component="img"
+                              src={imgSrc}
+                              alt={vehicle.mark}
+                              sx={{ width: 32, height: 32, borderRadius: "20%", objectFit: "cover" }}
+                            />
+                            <Typography sx={{ color: "white" }}>{vehicle.mark}</Typography>
+                          </Box>
+                          <Box sx={{ display: "flex", gap: 0.5 }}>
+                            <Tooltip title="Показати локацію">
+                              <IconButton size="small" onClick={() => showVehicleLocation(vehicle)}>
+                                <LocationOnIcon fontSize="small" sx={{ color: "white" }} />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Редагувати">
+                              <IconButton size="small" onClick={() => handleEdit(vehicle._id)}>
+                                <EditIcon fontSize="small" sx={{ color: "white" }} />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Видалити">
+                              <IconButton size="small" onClick={() => handleDelete(vehicle._id)}>
+                                <DeleteIcon fontSize="small" sx={{ color: "white" }} />
+                              </IconButton>
+                            </Tooltip>
+                          </Box>
+                        </Paper>
+                      );
+                    })}
+                  </Box>
+                );
+              })}
+            </Box>
+          ))}
+        </Box>
+      </Paper>
+    </Slide>
+  );
 }

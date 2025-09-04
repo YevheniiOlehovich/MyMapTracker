@@ -1,12 +1,9 @@
-import Styles from './styled';
 import { useState, useEffect } from 'react';
-import Button from '../Button';
-import closeModal from '../../helpres/closeModal';
+import { Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button, IconButton, Typography } from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
 import { useRatesData, useAddRates } from '../../hooks/useRatesData';
 
 export default function AddRatesModal({ onClose }) {
-    const handleWrapperClick = closeModal(onClose);
-
     const { data: rates, isLoading, isError } = useRatesData();
     const addRatesMutation = useAddRates();
 
@@ -15,7 +12,6 @@ export default function AddRatesModal({ onClose }) {
     const [tracktorRate, setTracktorRate] = useState('');
     const [combineRate, setCombineRate] = useState('');
 
-    // Заповнюємо стейт після завантаження тарифів
     useEffect(() => {
         if (rates) {
             setCarRate(rates.carRate ?? '');
@@ -34,63 +30,72 @@ export default function AddRatesModal({ onClose }) {
         };
 
         addRatesMutation.mutate(ratesData, {
-            onSuccess: () => {
-                onClose();
-            },
-            onError: (error) => {
-                console.error('Помилка при збереженні тарифів:', error);
-            },
+            onSuccess: () => onClose(),
+            onError: (error) => console.error('Помилка при збереженні тарифів:', error),
         });
     };
 
-    if (isLoading) return <p>Завантаження тарифів...</p>;
-    if (isError) return <p>Помилка при завантаженні тарифів</p>;
+    if (isLoading) return <Typography sx={{ p: 2 }}>Завантаження тарифів...</Typography>;
+    if (isError) return <Typography sx={{ p: 2 }}>Помилка при завантаженні тарифів</Typography>;
 
     return (
-        <Styles.Wrapper onClick={handleWrapperClick}>
-            <Styles.Modal>
-                <Styles.CloseButton onClick={onClose} />
-                <Styles.Title>Поточна тарифна сітка</Styles.Title>
-                <Styles.Label>
-                    <Styles.Subtitle>Тариф для легкового автомобілю, грн/км</Styles.Subtitle>
-                    <Styles.Input
-                        type="number"
-                        value={carRate}
-                        onChange={(e) => setCarRate(e.target.value)}
-                    />
-                </Styles.Label>
-                <Styles.Label>
-                    <Styles.Subtitle>Тариф для вантажівки, грн/км</Styles.Subtitle>
-                    <Styles.Input
-                        type="number"
-                        value={truckRate}
-                        onChange={(e) => setTruckRate(e.target.value)}
-                    />
-                </Styles.Label>
-                <Styles.Label>
-                    <Styles.Subtitle>Тариф для трактора, грн/км</Styles.Subtitle>
-                    <Styles.Input
-                        type="number"
-                        value={tracktorRate}
-                        onChange={(e) => setTracktorRate(e.target.value)}
-                    />
-                </Styles.Label>
-                <Styles.Label>
-                    <Styles.Subtitle>Тариф для комбайна, грн/км</Styles.Subtitle>
-                    <Styles.Input
-                        type="number"
-                        value={combineRate}
-                        onChange={(e) => setCombineRate(e.target.value)}
-                    />
-                </Styles.Label>
-                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 10 }}>
-                    <Button
-                        text="Зберегти"
-                        onClick={handleSave}
-                        disabled={addRatesMutation.isLoading}
-                    />
-                </div>
-            </Styles.Modal>
-        </Styles.Wrapper>
+        <Dialog open onClose={onClose} maxWidth="xs" fullWidth>
+            <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 16 }}>
+                Поточна тарифна сітка
+                <IconButton onClick={onClose} size="small">
+                    <CloseIcon fontSize="small" />
+                </IconButton>
+            </DialogTitle>
+
+            <DialogContent dividers>
+                <TextField
+                    label="Тариф для легкового автомобілю, грн/км"
+                    fullWidth
+                    margin="dense"
+                    size="small"
+                    type="number"
+                    value={carRate}
+                    onChange={(e) => setCarRate(e.target.value)}
+                />
+                <TextField
+                    label="Тариф для вантажівки, грн/км"
+                    fullWidth
+                    margin="dense"
+                    size="small"
+                    type="number"
+                    value={truckRate}
+                    onChange={(e) => setTruckRate(e.target.value)}
+                />
+                <TextField
+                    label="Тариф для трактора, грн/км"
+                    fullWidth
+                    margin="dense"
+                    size="small"
+                    type="number"
+                    value={tracktorRate}
+                    onChange={(e) => setTracktorRate(e.target.value)}
+                />
+                <TextField
+                    label="Тариф для комбайна, грн/км"
+                    fullWidth
+                    margin="dense"
+                    size="small"
+                    type="number"
+                    value={combineRate}
+                    onChange={(e) => setCombineRate(e.target.value)}
+                />
+            </DialogContent>
+
+            <DialogActions>
+                <Button
+                    variant="contained"
+                    size="small"
+                    onClick={handleSave}
+                    disabled={addRatesMutation.isLoading}
+                >
+                    Зберегти
+                </Button>
+            </DialogActions>
+        </Dialog>
     );
 }

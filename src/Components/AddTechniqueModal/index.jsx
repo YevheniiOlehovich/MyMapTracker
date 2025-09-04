@@ -1,39 +1,45 @@
 import { useState } from 'react';
-import Styles from './styles';
-import closeModal from "../../helpres/closeModal";
-import Button from '../Button';
-import SelectComponent from '../Select';
 import { useSelector } from 'react-redux';
-import { createBlobFromImagePath, convertImageToWebP } from '../../helpres/imageUtils';
-import { fieldOperations } from '../../helpres';
+import {
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions,
+    TextField,
+    Button,
+    Select,
+    MenuItem,
+    InputLabel,
+    FormControl,
+    IconButton,
+    Avatar,
+    Typography
+} from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
 import QuestionIco from '../../assets/ico/10965421.webp';
+import { fieldOperations } from '../../helpres';
 import { useGroupsData } from '../../hooks/useGroupsData';
-import { useSaveTechnique, useDeleteTechnique, useTechniquesData, useUpdateTechnique } from '../../hooks/useTechniquesData';
-
+import { useTechniquesData, useSaveTechnique, useUpdateTechnique } from '../../hooks/useTechniquesData';
+import { createBlobFromImagePath, convertImageToWebP } from '../../helpres/imageUtils';
 
 export default function AddTechniqueModal({ onClose }) {
-
     const { editGroupId, editTechniqueId } = useSelector((state) => state.modals);
 
-    const handleWrapperClick = closeModal(onClose);
-
     const saveTechnique = useSaveTechnique();
-    const deleteTechnique = useDeleteTechnique();
     const updateTechnique = useUpdateTechnique();
 
     const { data: groups = [] } = useGroupsData();
     const { data: techniques = [] } = useTechniquesData();
 
-    const editTechnique = techniques.find(technique => technique._id === editTechniqueId);
+    const editTechnique = techniques.find(t => t._id === editTechniqueId);
 
-    const [selectedGroup, setSelectedGroup] = useState(
-        editTechnique?.groupId || editGroupId || null
-    );
+    const [selectedGroup, setSelectedGroup] = useState(editTechnique?.groupId || editGroupId || null);
     const [selectedGroupName, setSelectedGroupName] = useState(
         editTechnique
-            ? groups.find(group => group._id === editTechnique.groupId)?.name || ''
-            : groups.find(group => group._id === editGroupId)?.name || ''
+            ? groups.find(g => g._id === editTechnique.groupId)?.name || ''
+            : groups.find(g => g._id === editGroupId)?.name || ''
     );
+
     const [name, setName] = useState(editTechnique?.name || '');
     const [rfid, setRfid] = useState(editTechnique?.rfid || '');
     const [uniqNum, setUniqNum] = useState(editTechnique?.uniqNum || '');
@@ -47,14 +53,8 @@ export default function AddTechniqueModal({ onClose }) {
             : QuestionIco
     );
 
-    const handleGroupChange = (option) => {
-        setSelectedGroup(option.value);
-        setSelectedGroupName(option.label);
-    };
-
-    const handleFieldOperationChange = (option) => {
-        setFieldOperation(option?.value || '');
-    };
+    const handleGroupChange = (event) => setSelectedGroup(event.target.value);
+    const handleFieldOperationChange = (event) => setFieldOperation(event.target.value);
 
     const handlePhotoChange = async (e) => {
         const file = e.target.files[0];
@@ -84,10 +84,7 @@ export default function AddTechniqueModal({ onClose }) {
             }
 
             if (editTechniqueId) {
-                await updateTechnique.mutateAsync({
-                    id: editTechniqueId,
-                    techniqueData: formData,
-                });
+                await updateTechnique.mutateAsync({ id: editTechniqueId, techniqueData: formData });
             } else {
                 await saveTechnique.mutateAsync(formData);
             }
@@ -99,86 +96,70 @@ export default function AddTechniqueModal({ onClose }) {
     };
 
     return (
-        <Styles.StyledWrapper onClick={handleWrapperClick}>
-            <Styles.StyledModal>
-                <Styles.StyledCloseButton onClick={onClose} />
-                <Styles.StyledTitle>{editTechniqueId ? 'Редагування техніки' : 'Додавання нової техніки'}</Styles.StyledTitle>
+        <Dialog open onClose={onClose} maxWidth="xs" fullWidth>
+            <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 16 }}>
+                {editTechniqueId ? 'Редагування техніки' : 'Додавання нової техніки'}
+                <IconButton onClick={onClose} size="small">
+                    <CloseIcon fontSize="small" />
+                </IconButton>
+            </DialogTitle>
 
-                <Styles.StyledPhotoBlock>
-                    <Styles.BlockColumn>
-                        <Styles.StyledSubtitle>Фото техніки</Styles.StyledSubtitle>
-                        <Styles.StyledButtonLabel>
-                            <Styles.StyledText>{techniquePhoto ? 'Змінити фото' : 'Додати фото'}</Styles.StyledText>
-                            <Styles.StyledInputFile
-                                type="file"
-                                accept="image/*"
-                                onChange={handlePhotoChange}
-                            />
-                        </Styles.StyledButtonLabel>
-                    </Styles.BlockColumn>
-
-                    <Styles.PhotoBlock>
-                        {techniquePhoto && (
-                            <Styles.PhotoPic
-                                src={techniquePhoto instanceof Blob ? URL.createObjectURL(techniquePhoto) : techniquePhoto}
-                            />
-                        )}
-                    </Styles.PhotoBlock>
-                </Styles.StyledPhotoBlock>
-
-                <Styles.StyledLabel>
-                    <Styles.StyledSubtitle>Виберіть групу</Styles.StyledSubtitle>
-                    <SelectComponent
-                        options={groups}
-                        value={selectedGroup ? { value: selectedGroup, label: selectedGroupName } : null}
-                        onChange={handleGroupChange}
-                        placeholder="Оберіть групу"
+            <DialogContent dividers>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        <Typography variant="subtitle2" fontSize={12}>Фото техніки</Typography>
+                        <Button variant="contained" size="small" component="label">
+                            {editTechniqueId ? 'Змінити фото' : 'Додати фото'}
+                            <input type="file" hidden accept="image/*" onChange={handlePhotoChange} />
+                        </Button>
+                    </div>
+                    <Avatar
+                        src={techniquePhoto instanceof Blob ? URL.createObjectURL(techniquePhoto) : techniquePhoto}
+                        variant="square"
+                        sx={{ width: 100, height: 140, border: '1px solid grey' }}
                     />
-                </Styles.StyledLabel>
-
-                <Styles.StyledLabel>
-                    <Styles.StyledSubtitle>Тип обладнання</Styles.StyledSubtitle>
-                    <SelectComponent
-                        options={fieldOperations}
-                        value={fieldOperation ? { value: fieldOperation, label: fieldOperation } : null}
-                        onChange={handleFieldOperationChange}
-                        placeholder="Оберіть операцію"
-                    />
-                </Styles.StyledLabel>
-
-                <Styles.StyledLabel>
-                    <Styles.StyledSubtitle>Найменування</Styles.StyledSubtitle>
-                    <Styles.StyledInput value={name} onChange={(e) => setName(e.target.value)} />
-                </Styles.StyledLabel>
-
-                <Styles.StyledLabel>
-                    <Styles.StyledSubtitle>Номер RFID мітки</Styles.StyledSubtitle>
-                    <Styles.StyledInput value={rfid} onChange={(e) => setRfid(e.target.value)} />
-                </Styles.StyledLabel>
-
-                <Styles.StyledLabel>
-                    <Styles.StyledSubtitle>Унікальний номер</Styles.StyledSubtitle>
-                    <Styles.StyledInput value={uniqNum} onChange={(e) => setUniqNum(e.target.value)} />
-                </Styles.StyledLabel>
-
-                <Styles.StyledLabel>
-                    <Styles.StyledSubtitle>Ширина, м</Styles.StyledSubtitle>
-                    <Styles.StyledInput value={width} onChange={(e) => setWidth(e.target.value)} />
-                </Styles.StyledLabel>
-
-                <Styles.StyledLabel>
-                    <Styles.StyledSubtitle>Макс. швидкість, км/год</Styles.StyledSubtitle>
-                    <Styles.StyledInput value={speed} onChange={(e) => setSpeed(e.target.value)} />
-                </Styles.StyledLabel>
-
-                <Styles.StyledLabel>
-                    <Styles.StyledTextArea maxLength={250} value={note} onChange={(e) => setNote(e.target.value)} />
-                </Styles.StyledLabel>
-
-                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                    <Button text={'Зберегти'} onClick={handleSave} />
                 </div>
-            </Styles.StyledModal>
-        </Styles.StyledWrapper>
+
+                <FormControl fullWidth margin="dense">
+                    <InputLabel sx={{ fontSize: 12 }}>Група</InputLabel>
+                    <Select value={selectedGroup || ''} onChange={handleGroupChange} size="small" label="Група">
+                        {groups.map(g => (
+                            <MenuItem key={g._id} value={g._id} sx={{ fontSize: 12 }}>{g.name}</MenuItem>
+                        ))}
+                    </Select>
+                </FormControl>
+
+                <FormControl fullWidth margin="dense">
+                    <InputLabel sx={{ fontSize: 12 }}>Тип обладнання</InputLabel>
+                    <Select value={fieldOperation || ''} onChange={handleFieldOperationChange} size="small" label="Тип обладнання">
+                        {fieldOperations.map(f => (
+                            <MenuItem key={f._id} value={f._id} sx={{ fontSize: 12 }}>{f.name}</MenuItem>
+                        ))}
+                    </Select>
+                </FormControl>
+
+                <TextField label="Найменування" fullWidth margin="dense" size="small" value={name} onChange={(e) => setName(e.target.value)} />
+                <TextField label="Номер RFID мітки" fullWidth margin="dense" size="small" value={rfid} onChange={(e) => setRfid(e.target.value)} />
+                <TextField label="Унікальний номер" fullWidth margin="dense" size="small" value={uniqNum} onChange={(e) => setUniqNum(e.target.value)} />
+                <TextField label="Ширина, м" fullWidth margin="dense" size="small" value={width} onChange={(e) => setWidth(e.target.value)} />
+                <TextField label="Макс. швидкість, км/год" fullWidth margin="dense" size="small" value={speed} onChange={(e) => setSpeed(e.target.value)} />
+                
+                <TextField
+                    label="Примітка"
+                    fullWidth
+                    margin="dense"
+                    size="small"
+                    multiline
+                    rows={3}
+                    inputProps={{ maxLength: 250, style: { fontSize: 12 } }}
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                />
+            </DialogContent>
+
+            <DialogActions>
+                <Button variant="contained" size="small" onClick={handleSave}>Зберегти</Button>
+            </DialogActions>
+        </Dialog>
     );
 }
