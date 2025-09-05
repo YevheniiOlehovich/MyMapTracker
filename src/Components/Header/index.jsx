@@ -4,7 +4,6 @@ import {
   Toolbar,
   Box,
   Typography,
-  IconButton,
   Drawer,
   List,
   ListItem,
@@ -12,6 +11,7 @@ import {
   ListItemText,
   useMediaQuery,
   useTheme,
+  IconButton,
 } from "@mui/material";
 import {
   Map,
@@ -22,8 +22,6 @@ import {
   Terrain,
   MyLocation,
   Logout,
-  Menu as MenuIcon,
-  Close as CloseIcon,
 } from "@mui/icons-material";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
@@ -109,25 +107,6 @@ export default function Header() {
 
   return (
     <>
-      {/* <AppBar
-        position="fixed"
-        sx={{
-          bgcolor: "transparent",
-          boxShadow: "none",
-          zIndex: (theme) => theme.zIndex.drawer + 1, // завжди вище Drawer
-        }}
-      > */}
-      {/* <AppBar
-        position="fixed"
-        sx={{
-          width: "calc(100% - 410px)", // ширина екрана мінус ширина бокової панелі
-          marginLeft: "410px", // зсунемо вправо, якщо бокова панель зліва
-          bgcolor: "transparent",
-          boxShadow: "none",
-          zIndex: (theme) => theme.zIndex.drawer + 1,
-        }}
-      > */}
-
       <AppBar
         position="fixed"
         sx={{
@@ -136,19 +115,15 @@ export default function Header() {
           zIndex: 10,
         }}
       >
-
         <Toolbar
-          sx={{ display: "flex", justifyContent: "center", gap: 1, minHeight: 48 }}
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            gap: 1,
+            minHeight: 48,
+          }}
         >
-          {isMobile ? (
-            // Мобільна версія з бургером
-            <Box sx={{ flexGrow: 1, display: "flex", justifyContent: "flex-end" }}>
-              <IconButton onClick={() => setDrawerOpen(!drawerOpen)}>
-                {drawerOpen ? <CloseIcon /> : <MenuIcon />}
-              </IconButton>
-            </Box>
-          ) : (
-            // Планшет і десктоп
+          {!isMobile &&
             buttons.map((btn, idx) => (
               <Box
                 key={idx}
@@ -158,20 +133,23 @@ export default function Header() {
                   flexDirection: "row",
                   alignItems: "center",
                   gap: 0.5,
-                  border: "1px solid #bbb",
+                  border: "1px solid #ccc",
                   borderRadius: 2,
-                  px: 1,
-                  py: 0.5,
-                  bgcolor: "#fff",
-                  color: "#888",
+                  px: 1.5,
+                  py: 0.7,
+                  bgcolor: btn.isLogout ? "#ff4d4d" : "#ffffff",
+                  color: btn.isLogout ? "#fff" : "#000",
+                  fontWeight: 600,
                   cursor: "pointer",
                   transition: "all 0.2s",
-                  "& svg": { color: "#888", transition: "color 0.2s" },
+                  "& svg": {
+                    color: btn.isLogout ? "#fff" : "#000",
+                    transition: "color 0.2s",
+                  },
                   "&:hover": {
-                    bgcolor: btn.isLogout ? "#ff4d4d" : "#e0e0e0",
-                    borderColor: btn.isLogout ? "#ff1a1a" : "#999",
-                    color: btn.isLogout ? "#fff" : "#333",
-                    "& svg": { color: btn.isLogout ? "#fff" : "#333" },
+                    bgcolor: btn.isLogout ? "#e60000" : "#f0f0f0",
+                    borderColor: btn.isLogout ? "#cc0000" : "#000",
+                    "& svg": { color: btn.isLogout ? "#fff" : "#000" },
                   },
                 }}
               >
@@ -180,10 +158,71 @@ export default function Header() {
                   <Typography variant="caption">{btn.title}</Typography>
                 )}
               </Box>
-            ))
-          )}
+            ))}
         </Toolbar>
       </AppBar>
+
+      {/* Бургер завжди зверху */}
+      {isMobile && (
+        <IconButton
+          onClick={() => setDrawerOpen(!drawerOpen)}
+          sx={{
+            position: "fixed",
+            top: 12,
+            right: 12,
+            width: 44,
+            height: 44,
+            borderRadius: "50%",
+            bgcolor: "#fff",
+            boxShadow: 3,
+            zIndex: 2000,
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            alignItems: "center",
+            gap: 0.6,
+            transition: "all 0.3s ease",
+          }}
+        >
+          {/* Верхня риска */}
+          <Box
+            sx={{
+              width: 22,
+              height: 2,
+              bgcolor: "#000",
+              borderRadius: 1,
+              transition: "0.3s",
+              transform: drawerOpen
+                ? "rotate(45deg) translate(4px, 4px)"
+                : "none",
+            }}
+          />
+          {/* Середня риска */}
+          <Box
+            sx={{
+              width: 22,
+              height: 2,
+              bgcolor: "#000",
+              borderRadius: 1,
+              transition: "0.3s",
+              opacity: drawerOpen ? 0 : 1,
+            }}
+          />
+          {/* Нижня риска */}
+          <Box
+            sx={{
+              width: 22,
+              height: 2,
+              bgcolor: "#000",
+              borderRadius: 1,
+              transition: "0.3s",
+              transform: drawerOpen
+                ? "rotate(-45deg) translate(5px, -5px)"
+                : "none",
+            }}
+          />
+        </IconButton>
+      )}
 
       {/* Drawer для мобільних */}
       <Drawer
