@@ -203,6 +203,7 @@ import { fieldOperations } from "../../helpres";
 import { useGroupsData } from "../../hooks/useGroupsData";
 import { useTechniquesData, useSaveTechnique, useUpdateTechnique } from "../../hooks/useTechniquesData";
 import { createBlobFromImagePath, convertImageToWebP } from "../../helpres/imageUtils";
+import { BACKEND_URL } from "../../helpres";
 
 export default function AddTechniqueModal({ onClose }) {
   const { editGroupId, editTechniqueId } = useSelector((state) => state.modals);
@@ -226,9 +227,15 @@ export default function AddTechniqueModal({ onClose }) {
   const [speed, setSpeed] = useState(editTechnique?.speed || "");
   const [note, setNote] = useState(editTechnique?.note || "");
 
+  // const [techniquePhoto, setTechniquePhoto] = useState(
+  //   editTechnique?.photoPath
+  //     ? '/src/' + editTechnique.photoPath.substring(3).replace(/\\/g, '/')
+  //     : QuestionIco
+  // );
+
   const [techniquePhoto, setTechniquePhoto] = useState(
     editTechnique?.photoPath
-      ? '/src/' + editTechnique.photoPath.substring(3).replace(/\\/g, '/')
+      ? `${BACKEND_URL}/${editTechnique.photoPath.replace(/\\/g, '/')}`
       : QuestionIco
   );
 

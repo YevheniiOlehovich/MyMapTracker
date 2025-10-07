@@ -1,0 +1,21 @@
+{
+    "name": "gps-service",
+    "version": "1.0.0",
+    "description": "TCP сервер для прийому AVL даних від GPS трекерів та збереження у MongoDB",
+    "main": "src/index.js",
+    "scripts": {
+        "start": "node src/index.js",
+        "dev": "nodemon src/index.js"
+    },
+    "dependencies": {
+        "mongodb": "^5.8.0"
+    },
+    "devDependencies": {
+        "nodemon": "^3.0.1"
+    },
+    "engines": {
+        "node": ">=18"
+    },
+    "author": "Your Name",
+    "license": "MIT"
+}

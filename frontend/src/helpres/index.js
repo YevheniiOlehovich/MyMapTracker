@@ -53,3 +53,6 @@ export const fieldOperations = [
     { _id: 'Борона', name: 'Борона' },
     { _id: 'Сівалка', name: 'Сівалка' },
 ]
+
+
+export const BACKEND_URL = 'http://localhost:5000';

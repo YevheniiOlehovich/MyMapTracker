@@ -150,6 +150,7 @@ import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import QuestionIco from "../../assets/ico/10965421.webp";
+import { BACKEND_URL } from "../../helpres";
 
 export default function TechniqueList({ open = true }) {
   const dispatch = useDispatch();
@@ -230,9 +231,13 @@ export default function TechniqueList({ open = true }) {
           }}
         >
           {techniques.map((tech) => {
-            const imgSrc = tech.photoPath
-              ? '/src/' + tech.photoPath.substring(3).replace(/\\/g, '/')
-              : QuestionIco;
+                // const imgSrc = tech.photoPath
+                //   ? '/src/' + tech.photoPath.substring(3).replace(/\\/g, '/')
+                //   : QuestionIco;
+
+              const imgSrc = tech.photoPath
+                ? `${BACKEND_URL}/${tech.photoPath.replace(/\\/g, '/')}`
+                : QuestionIco;
 
             return (
               <Paper

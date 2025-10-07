@@ -146,12 +146,15 @@ import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import QuestionIco from '../../assets/ico/10965421.webp';
+import { BACKEND_URL } from "../../helpres";
 
 export default function PersonnelList({ open = true }) {
   const dispatch = useDispatch();
   const { data: personnel = [], isLoading, isError, error } = usePersonnelData();
   const { data: groups = [] } = useGroupsData();
   const deletePersonnel = useDeletePersonnel();
+
+  console.log(personnel);
 
   // ✅ слухаємо роль
   const role = useSelector((state) => state.user.role);
@@ -236,8 +239,12 @@ export default function PersonnelList({ open = true }) {
                 {getGroupName(groupId)}
               </Typography>
               {people.map((person) => {
+                // const imgSrc = person.photoPath
+                //   ? '/src/' + person.photoPath.substring(3).replace(/\\/g, '/')
+                //   : QuestionIco;
+
                 const imgSrc = person.photoPath
-                  ? '/src/' + person.photoPath.substring(3).replace(/\\/g, '/')
+                  ? `${BACKEND_URL}/${person.photoPath.replace(/\\/g, '/')}`
                   : QuestionIco;
 
                 return (
@@ -297,3 +304,9 @@ export default function PersonnelList({ open = true }) {
     </Slide>
   );
 }
+
+
+
+
+
+

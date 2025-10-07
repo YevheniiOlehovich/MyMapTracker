@@ -684,6 +684,7 @@ import { createBlobFromImagePath, convertImageToWebP } from "../../helpres/image
 import { useGroupsData } from "../../hooks/useGroupsData";
 import { useVehiclesData, useSaveVehicle, useUpdateVehicle } from "../../hooks/useVehiclesData";
 import { usePersonnelData } from "../../hooks/usePersonnelData";
+import { BACKEND_URL } from "../../helpres";
 
 export default function AddVehicleModal({ onClose }) {
   const { editGroupId, editVehicleId } = useSelector((state) => state.modals);
@@ -710,9 +711,15 @@ export default function AddVehicleModal({ onClose }) {
   const [fuelCapacity, setFuelCapacity] = useState(editVehicle?.fuelCapacity || "");
 
   // 🖼 Фото
+  // const [vehiclePhoto, setVehiclePhoto] = useState(
+  //   editVehicle?.photoPath
+  //     ? "/src/" + editVehicle.photoPath.substring(3).replace(/\\/g, "/")
+  //     : QuestionIco
+  // );
+
   const [vehiclePhoto, setVehiclePhoto] = useState(
     editVehicle?.photoPath
-      ? "/src/" + editVehicle.photoPath.substring(3).replace(/\\/g, "/")
+      ? `${BACKEND_URL}/${editVehicle.photoPath.replace(/\\/g, '/')}`
       : QuestionIco
   );
 

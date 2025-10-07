@@ -219,6 +219,7 @@ import LocationOnIcon from "@mui/icons-material/LocationOn";
 
 import QuestionIco from "../../assets/ico/10965421.webp";
 import { vehicleTypes } from "../../helpres";
+import { BACKEND_URL } from "../../helpres";
 
 export default function VehicleList({ open = true }) {
   const dispatch = useDispatch();
@@ -340,7 +341,7 @@ export default function VehicleList({ open = true }) {
                     <Typography sx={{ fontStyle: "italic", mb: 0.5 }}>{typeName}</Typography>
                     {vehiclesOfType.map(vehicle => {
                       const imgSrc = vehicle.photoPath
-                        ? '/src/' + vehicle.photoPath.substring(3).replace(/\\/g, '/')
+                        ? `${BACKEND_URL}/${vehicle.photoPath.replace(/\\/g, '/')}`
                         : QuestionIco;
 
                       return (
