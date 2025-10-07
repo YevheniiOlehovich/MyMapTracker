@@ -33,6 +33,9 @@ export default function AddFieldsModal() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isEditable, setIsEditable] = useState(false);
 
+  const userRole = useSelector((state) => state.user.role);
+  const isGuest = userRole === "guest"; 
+
   const [fieldState, setFieldState] = useState({
     fieldName: "",
     mapKey: "",
@@ -318,7 +321,9 @@ export default function AddFieldsModal() {
           </IconButton>
         </Box>
         <Box>
-          <Button onClick={() => setIsEditable(true)}>Редагувати</Button>
+          <Button onClick={() => setIsEditable(true)} disabled={isGuest}>
+            Редагувати
+          </Button>
           <Button
             variant="contained"
             onClick={handleSave}

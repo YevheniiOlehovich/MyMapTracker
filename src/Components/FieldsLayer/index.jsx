@@ -19,8 +19,8 @@ export default function FieldsLayer({ fieldsData, zoomLevel, activeFieldId, onEd
                         />
 
                         {/* Приклад закоментованого коду для можливих future plots */}
-                        {/*
-                        {field.matching_plots?.map((plot, plotIndex) => (
+                        
+                        {/* {field.matching_plots?.map((plot, plotIndex) => (
                             <Polygon
                                 key={`matching-${index}-${plotIndex}`}
                                 positions={plot.geometry.coordinates[0].map(([lng, lat]) => [lat, lng])}
@@ -34,8 +34,8 @@ export default function FieldsLayer({ fieldsData, zoomLevel, activeFieldId, onEd
                                 positions={plot.geometry.coordinates[0].map(([lng, lat]) => [lat, lng])}
                                 color="green"
                             />
-                        ))}
-                        */}
+                        ))} */}
+                       
 
                         <Polygon
                             key={`${field._id}-${activeFieldId}`}

@@ -6,6 +6,7 @@ import { Provider } from 'react-redux'; // Імпортуємо Provider
 import store from './store/store'; // Імпортуємо ваш store
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'; // Імпортуємо React Router
 
+
 const GlobalStyle = createGlobalStyle`
   * {
       box-sizing: border-box; 
