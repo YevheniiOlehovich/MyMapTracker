@@ -16,6 +16,8 @@ const TrackMarkers = ({ gpsData, selectedDate, selectedImei, showTrack }) => {
     const dispatch = useDispatch();
     const [showParkingMarkers, setShowParkingMarkers] = useState(false);
 
+    console.log(gpsData)
+
     // Отримуємо дані груп з 
     // const { data: groups = [], isLoading: isGroupsLoading, isError: isGroupsError, error: groupsError } = useGroupsData();
     const { data: vehicles = [] } = useVehiclesData();

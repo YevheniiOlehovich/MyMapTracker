@@ -1,0 +1,32 @@
+version: "3.9"
+
+services:
+  backend:
+    build: ./backend
+    container_name: backend
+    restart: always
+    env_file:
+      - ./backend/.env
+    ports:
+      - "5000:5000"
+
+  gps-service:
+    build: ./gps-service
+    container_name: gps-service
+    restart: always
+    env_file:
+      - ./gps-service/.env
+    ports:
+      - "20120:20120"
+
+  frontend:
+    build: ./frontend
+    container_name: frontend
+    restart: always
+    ports:
+      - "80:80"
+    volumes:
+      - ./uploads:/usr/share/nginx/html/uploads
+    depends_on:
+      - backend
+      - gps-service

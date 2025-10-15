@@ -431,8 +431,6 @@ export default function Map() {
 
     const activeFieldId = useSelector((state) => state.activeField.activeFieldId);
 
-    console.log(activeFieldId)
-
     const [key, setKey] = useState(0);
 
     useEffect(() => {
