@@ -700,63 +700,245 @@
 
 
 
+// const net = require('net');
+// const { MongoClient } = require('mongodb');
+
+// // === Налаштування сервера ===
+// const HOST = '0.0.0.0';
+// const PORT = 20120;
+
+// // === MongoDB ===
+// const MONGODB_URI = 'mongodb+srv://keildra258:aJuvQLKxaw5Lb5xf@cluster0.k4l1p.mongodb.net/';
+// const DATABASE_NAME = 'test';
+// const COLLECTION_NAME = 'avl_records';
+
+// const client = new MongoClient(MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true });
+
+// // === Старт сервера ===
+// async function startServer() {
+//   await client.connect();
+//   console.log('Connected to MongoDB');
+
+//   const db = client.db(DATABASE_NAME);
+//   const collection = db.collection(COLLECTION_NAME);
+
+//   const server = net.createServer(socket => {
+//     console.log('Client connected:', socket.remoteAddress, socket.remotePort);
+
+//     let imei = '';
+
+//     socket.once('data', data => {
+//       imei = cleanImei(data.toString().trim());
+//       console.log('Received IMEI:', imei);
+//       sendConfirmation(socket);
+
+//       socket.on('data', packet => {
+//         console.log('Received data (hex):', packet.toString('hex'));
+//         decodeAvlData(packet, imei, collection);
+//         sendConfirmation(socket);
+//       });
+
+//       socket.on('close', () => console.log('Client disconnected.'));
+//       socket.on('error', err => console.error('Socket error:', err.message));
+//     });
+//   });
+
+//   server.listen(PORT, HOST, () => console.log(`Server listening on ${HOST}:${PORT}`));
+// }
+
+// // === Очищення IMEI ===
+// function cleanImei(imei) {
+//   return imei.replace(/\D/g, '');
+// }
+
+// // === Підтвердження клієнту ===
+// function sendConfirmation(socket) {
+//   socket.write(Buffer.from([0x01]));
+// }
+
+// // === Парсер IO (Codec8) ===
+// function parseCodec8IO(buf, ioOffset) {
+//   let offset = ioOffset;
+//   const ioMap = {};
+
+//   if (offset >= buf.length) return { ioMap, nextOffset: offset };
+
+//   try {
+//     offset += 1; // eventId
+//     const totalIO = buf.readUInt8(offset); offset += 1;
+
+//     // 1-byte IO
+//     const oneCount = buf.readUInt8(offset); offset += 1;
+//     for (let i = 0; i < oneCount; i++) {
+//       const id = buf.readUInt8(offset); offset += 1;
+//       const val = buf.readUInt8(offset); offset += 1;
+//       ioMap[id] = { size: 1, value: val, hex: val.toString(16).padStart(2, '0') };
+//     }
+
+//     // 2-byte IO
+//     const twoCount = buf.readUInt8(offset); offset += 1;
+//     for (let i = 0; i < twoCount; i++) {
+//       const id = buf.readUInt8(offset); offset += 1;
+//       const val = buf.readUInt16BE(offset); offset += 2;
+//       ioMap[id] = { size: 2, value: val, hex: val.toString(16).padStart(4, '0') };
+//     }
+
+//     // 4-byte IO
+//     const fourCount = buf.readUInt8(offset); offset += 1;
+//     for (let i = 0; i < fourCount; i++) {
+//       const id = buf.readUInt8(offset); offset += 1;
+//       const val = buf.readUInt32BE(offset); offset += 4;
+//       ioMap[id] = { size: 4, value: val, hex: val.toString(16).padStart(8, '0') };
+//     }
+
+//     // 8-byte IO
+//     const eightCount = buf.readUInt8(offset); offset += 1;
+//     for (let i = 0; i < eightCount; i++) {
+//       const id = buf.readUInt8(offset); offset += 1;
+//       const valBuf = buf.slice(offset, offset + 8); offset += 8;
+//       const hex = valBuf.toString('hex').padStart(16, '0');
+//       const value = Number(valBuf.readBigUInt64BE(0));
+//       ioMap[id] = { size: 8, value, hex };
+//     }
+
+//     return { ioMap, nextOffset: offset };
+//   } catch {
+//     return { ioMap, nextOffset: offset };
+//   }
+// }
+
+// // === Декодування AVL-даних ===
+// async function decodeAvlData(buffer, imei, collection) {
+//   try {
+//     if (buffer.length < 34) return console.error('Packet too short');
+
+//     const codecPos = 8;
+//     if (buffer[codecPos] !== 0x08) console.warn('Codec8 not found at standard offset');
+
+//     const timestampMs = buffer.readBigUInt64BE(10);
+//     const timestamp = Number(timestampMs) / 1000;
+//     if (timestamp < 0 || timestamp > 4102444800) return console.error('Invalid timestamp');
+
+//     const timestampDate = new Date(timestamp * 1000);
+//     const date = timestampDate.toISOString().split('T')[0];
+
+//     const gpsDataOffset = 19;
+//     if (buffer.length < gpsDataOffset + 15) return console.error('Packet too short for GPS');
+
+//     const longitude = buffer.readInt32BE(gpsDataOffset) / 1e7;
+//     const latitude = buffer.readInt32BE(gpsDataOffset + 4) / 1e7;
+//     const altitude = buffer.readInt16BE(gpsDataOffset + 8);
+//     const angle = buffer.readInt16BE(gpsDataOffset + 10);
+//     const satellites = buffer[gpsDataOffset + 12];
+//     const speed = buffer.readInt16BE(gpsDataOffset + 13);
+
+//     const ioStartOffset = gpsDataOffset + 15;
+//     const { ioMap } = parseCodec8IO(buffer, ioStartOffset);
+
+//     let card_id = null;
+//     if (ioMap[157] && ioMap[157].size === 8 && !/^0+$/.test(ioMap[157].hex)) {
+//       card_id = ioMap[157].hex.toLowerCase();
+//     }
+
+//     const dataRecord = { timestamp: timestampDate, longitude, latitude, altitude, angle, satellites, speed, card_id };
+
+//     const query = { date, imei };
+//     const existing = await collection.findOne(query);
+
+//     if (existing) {
+//       await collection.updateOne(query, { $push: { data: dataRecord } });
+//     } else {
+//       await collection.insertOne({ date, imei, data: [dataRecord] });
+//     }
+
+//     console.log(`Inserted: IMEI=${imei}, card_id=${card_id}`);
+//   } catch (err) {
+//     console.error('Error decoding AVL data:', err.stack || err.message);
+//   }
+// }
+
+// startServer().catch(err => console.error('Server failed to start:', err.message));
+
+
+
+
+
+
+
+
+
 const net = require('net');
 const { MongoClient } = require('mongodb');
+const fs = require('fs');
+const path = require('path');
 
-// === Налаштування сервера ===
+// === Налаштування ===
 const HOST = '0.0.0.0';
 const PORT = 20120;
-
-// === MongoDB ===
 const MONGODB_URI = 'mongodb+srv://keildra258:aJuvQLKxaw5Lb5xf@cluster0.k4l1p.mongodb.net/';
 const DATABASE_NAME = 'test';
 const COLLECTION_NAME = 'avl_records';
 
+// === Папка для логів ===
+const LOG_DIR = path.join(__dirname, 'logs');
+if (!fs.existsSync(LOG_DIR)) fs.mkdirSync(LOG_DIR);
+
+// === Допоміжна функція для запису в лог ===
+function logToFile(message) {
+  const date = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+  const logFile = path.join(LOG_DIR, `${date}.log`);
+  const timestamp = new Date().toISOString();
+  fs.appendFileSync(logFile, `[${timestamp}] ${message}\n`);
+  console.log(message);
+}
+
+// === MongoDB клієнт ===
 const client = new MongoClient(MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true });
 
 // === Старт сервера ===
 async function startServer() {
   await client.connect();
-  console.log('Connected to MongoDB');
+  logToFile('✅ Connected to MongoDB');
 
   const db = client.db(DATABASE_NAME);
   const collection = db.collection(COLLECTION_NAME);
 
   const server = net.createServer(socket => {
-    console.log('Client connected:', socket.remoteAddress, socket.remotePort);
+    logToFile(`🔌 Client connected: ${socket.remoteAddress}:${socket.remotePort}`);
 
     let imei = '';
 
     socket.once('data', data => {
       imei = cleanImei(data.toString().trim());
-      console.log('Received IMEI:', imei);
+      logToFile(`📡 Received IMEI: ${imei}`);
       sendConfirmation(socket);
 
       socket.on('data', packet => {
-        console.log('Received data (hex):', packet.toString('hex'));
+        const hexString = packet.toString('hex');
+        logToFile(`📦 RAW HEX (${imei}): ${hexString}`); // ✅ повний сирий пакет
+
         decodeAvlData(packet, imei, collection);
         sendConfirmation(socket);
       });
 
-      socket.on('close', () => console.log('Client disconnected.'));
-      socket.on('error', err => console.error('Socket error:', err.message));
+      socket.on('close', () => logToFile(`❌ Client disconnected: ${imei}`));
+      socket.on('error', err => logToFile(`⚠️ Socket error: ${err.message}`));
     });
   });
 
-  server.listen(PORT, HOST, () => console.log(`Server listening on ${HOST}:${PORT}`));
+  server.listen(PORT, HOST, () => logToFile(`🚀 Server listening on ${HOST}:${PORT}`));
 }
 
-// === Очищення IMEI ===
+// === Допоміжні функції ===
 function cleanImei(imei) {
   return imei.replace(/\D/g, '');
 }
 
-// === Підтвердження клієнту ===
 function sendConfirmation(socket) {
   socket.write(Buffer.from([0x01]));
 }
 
-// === Парсер IO (Codec8) ===
+// === IO Парсер ===
 function parseCodec8IO(buf, ioOffset) {
   let offset = ioOffset;
   const ioMap = {};
@@ -767,39 +949,20 @@ function parseCodec8IO(buf, ioOffset) {
     offset += 1; // eventId
     const totalIO = buf.readUInt8(offset); offset += 1;
 
-    // 1-byte IO
-    const oneCount = buf.readUInt8(offset); offset += 1;
-    for (let i = 0; i < oneCount; i++) {
-      const id = buf.readUInt8(offset); offset += 1;
-      const val = buf.readUInt8(offset); offset += 1;
-      ioMap[id] = { size: 1, value: val, hex: val.toString(16).padStart(2, '0') };
-    }
+    const readIO = (count, size) => {
+      const map = {};
+      for (let i = 0; i < count; i++) {
+        const id = buf.readUInt8(offset); offset += 1;
+        const valBuf = buf.slice(offset, offset + size); offset += size;
+        map[id] = { size, hex: valBuf.toString('hex') };
+      }
+      return map;
+    };
 
-    // 2-byte IO
-    const twoCount = buf.readUInt8(offset); offset += 1;
-    for (let i = 0; i < twoCount; i++) {
-      const id = buf.readUInt8(offset); offset += 1;
-      const val = buf.readUInt16BE(offset); offset += 2;
-      ioMap[id] = { size: 2, value: val, hex: val.toString(16).padStart(4, '0') };
-    }
-
-    // 4-byte IO
-    const fourCount = buf.readUInt8(offset); offset += 1;
-    for (let i = 0; i < fourCount; i++) {
-      const id = buf.readUInt8(offset); offset += 1;
-      const val = buf.readUInt32BE(offset); offset += 4;
-      ioMap[id] = { size: 4, value: val, hex: val.toString(16).padStart(8, '0') };
-    }
-
-    // 8-byte IO
-    const eightCount = buf.readUInt8(offset); offset += 1;
-    for (let i = 0; i < eightCount; i++) {
-      const id = buf.readUInt8(offset); offset += 1;
-      const valBuf = buf.slice(offset, offset + 8); offset += 8;
-      const hex = valBuf.toString('hex').padStart(16, '0');
-      const value = Number(valBuf.readBigUInt64BE(0));
-      ioMap[id] = { size: 8, value, hex };
-    }
+    Object.assign(ioMap, readIO(buf.readUInt8(offset++), 1));
+    Object.assign(ioMap, readIO(buf.readUInt8(offset++), 2));
+    Object.assign(ioMap, readIO(buf.readUInt8(offset++), 4));
+    Object.assign(ioMap, readIO(buf.readUInt8(offset++), 8));
 
     return { ioMap, nextOffset: offset };
   } catch {
@@ -807,23 +970,17 @@ function parseCodec8IO(buf, ioOffset) {
   }
 }
 
-// === Декодування AVL-даних ===
+// === Основна функція розбору AVL ===
 async function decodeAvlData(buffer, imei, collection) {
   try {
-    if (buffer.length < 34) return console.error('Packet too short');
+    if (buffer.length < 34) return logToFile(`⚠️ [${imei}] Packet too short`);
 
-    const codecPos = 8;
-    if (buffer[codecPos] !== 0x08) console.warn('Codec8 not found at standard offset');
-
-    const timestampMs = buffer.readBigUInt64BE(10);
-    const timestamp = Number(timestampMs) / 1000;
-    if (timestamp < 0 || timestamp > 4102444800) return console.error('Invalid timestamp');
-
+    const timestamp = Number(buffer.readBigUInt64BE(10)) / 1000;
     const timestampDate = new Date(timestamp * 1000);
     const date = timestampDate.toISOString().split('T')[0];
 
     const gpsDataOffset = 19;
-    if (buffer.length < gpsDataOffset + 15) return console.error('Packet too short for GPS');
+    if (buffer.length < gpsDataOffset + 15) return logToFile(`⚠️ [${imei}] Packet too short for GPS`);
 
     const longitude = buffer.readInt32BE(gpsDataOffset) / 1e7;
     const latitude = buffer.readInt32BE(gpsDataOffset + 4) / 1e7;
@@ -836,7 +993,7 @@ async function decodeAvlData(buffer, imei, collection) {
     const { ioMap } = parseCodec8IO(buffer, ioStartOffset);
 
     let card_id = null;
-    if (ioMap[157] && ioMap[157].size === 8 && !/^0+$/.test(ioMap[157].hex)) {
+    if (ioMap[157] && !/^0+$/.test(ioMap[157].hex)) {
       card_id = ioMap[157].hex.toLowerCase();
     }
 
@@ -851,10 +1008,10 @@ async function decodeAvlData(buffer, imei, collection) {
       await collection.insertOne({ date, imei, data: [dataRecord] });
     }
 
-    console.log(`Inserted: IMEI=${imei}, card_id=${card_id}`);
+    logToFile(`✅ [${imei}] Inserted record. card_id=${card_id || 'none'}`);
   } catch (err) {
-    console.error('Error decoding AVL data:', err.stack || err.message);
+    logToFile(`❌ [${imei}] Error decoding AVL data: ${err.message}`);
   }
 }
 
-startServer().catch(err => console.error('Server failed to start:', err.message));
+startServer().catch(err => logToFile(`💥 Server failed to start: ${err.message}`));

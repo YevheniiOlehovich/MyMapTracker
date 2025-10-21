@@ -9,6 +9,8 @@ services:
       - ./backend/.env
     ports:
       - "5000:5000"
+    volumes:
+      - ./uploads:/app/uploads   # змонтована зовнішня папка uploads
 
   gps-service:
     build: ./gps-service
@@ -26,7 +28,7 @@ services:
     ports:
       - "80:80"
     volumes:
-      - ./uploads:/usr/share/nginx/html/uploads
+      - ./uploads:/usr/share/nginx/html/uploads   # фронтенд бачить ті ж файли
     depends_on:
       - backend
       - gps-service
