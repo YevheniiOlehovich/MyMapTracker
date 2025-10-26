@@ -14,7 +14,7 @@ RUN npm install
 COPY . .
 
 # Копіюємо файл .env
-COPY .env .env
+# COPY .env .env
 
 # Відкриваємо порт для Node.js
 EXPOSE 5000

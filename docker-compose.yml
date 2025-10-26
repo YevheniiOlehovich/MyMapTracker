@@ -1,4 +1,41 @@
-version: "3.9"
+# version: "3.9"
+
+# services:
+#   backend:
+#     build: ./backend
+#     container_name: backend
+#     restart: always
+#     env_file:
+#       - ./backend/src/.env
+#     ports:
+#       - "5000:5000"
+#     volumes:
+#       - ./uploads:/app/uploads   # змонтована зовнішня папка uploads
+
+#   gps-service:
+#     build: ./gps-service
+#     container_name: gps-service
+#     restart: always
+#     # env_file:
+#     #   - ./gps-service/.env
+#     ports:
+#       - "20120:20120"
+
+#   frontend:
+#     build: ./frontend
+#     container_name: frontend
+#     restart: always
+#     ports:
+#       - "80:80"
+#     volumes:
+#       - ./uploads:/usr/share/nginx/html/uploads   # фронтенд бачить ті ж файли
+#     depends_on:
+#       - backend
+#       - gps-service
+
+
+
+
 
 services:
   backend:
@@ -16,10 +53,11 @@ services:
     build: ./gps-service
     container_name: gps-service
     restart: always
-    # env_file:
-    #   - ./gps-service/.env
     ports:
       - "20120:20120"
+    # Якщо згодом буде .env файл для gps-service, можна розкоментувати:
+    # env_file:
+    #   - ./gps-service/.env
 
   frontend:
     build: ./frontend
@@ -28,7 +66,7 @@ services:
     ports:
       - "80:80"
     volumes:
-      - ./uploads:/usr/share/nginx/html/uploads   # фронтенд бачить ті ж файли
+      - ./uploads:/usr/share/nginx/html/uploads  # фронтенд бачить ті ж файли
     depends_on:
       - backend
       - gps-service
