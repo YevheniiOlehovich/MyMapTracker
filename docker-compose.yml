@@ -6,7 +6,7 @@ services:
     container_name: backend
     restart: always
     env_file:
-      - ./backend/.env
+      - ./backend/src/.env
     ports:
       - "5000:5000"
     volumes:
@@ -16,8 +16,8 @@ services:
     build: ./gps-service
     container_name: gps-service
     restart: always
-    env_file:
-      - ./gps-service/.env
+    # env_file:
+    #   - ./gps-service/.env
     ports:
       - "20120:20120"
 
