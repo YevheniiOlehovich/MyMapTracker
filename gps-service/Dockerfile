@@ -17,4 +17,4 @@ COPY . .
 EXPOSE 20120
 
 # Команда запуску сервісу
-CMD ["node", "index.js"]
+CMD ["node", "src/index.js"]
