@@ -129,7 +129,7 @@ export default function Login({ onLogin }) {
         e.preventDefault();
         try {
             // const response = await fetch("http://localhost:5000/auth/login", {
-            const response = await fetch("http://192.168.88.153:5000/auth/login", {
+            const response = await fetch("http://192.168.88.153:5000/api/auth/login", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ username, password }),
