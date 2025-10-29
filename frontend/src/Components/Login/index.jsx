@@ -128,18 +128,19 @@ export default function Login({ onLogin }) {
     const handleLogin = async (e) => {
         e.preventDefault();
         try {
-            const response = await fetch("http://localhost:5000/auth/login", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ username, password }),
-            });
-
-            // Роут для авторизації на проді
-            // const response = await fetch("/api/auth/login", {
+            // Роут для локального сервера
+            // const response = await fetch("http://localhost:5000/auth/login", {
             //     method: "POST",
             //     headers: { "Content-Type": "application/json" },
-            //     body: JSON.stringify({ username, password })
+            //     body: JSON.stringify({ username, password }),
             // });
+
+            // Роут для авторизації на проді
+            const response = await fetch("/api/auth/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username, password })
+            });
 
             const data = await response.json();
             if (response.ok) {
