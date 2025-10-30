@@ -17,14 +17,14 @@ import anomalyIco from '../../assets/ico/warning.png';
 const TrackMarkers = ({ gpsData, selectedDate }) => {
   const dispatch = useDispatch();
   const map = useMap();
-  
+
   const [activeImei, setActiveImei] = useState(null);
   const [showAllMarkers, setShowAllMarkers] = useState(false);
 
   const { data: vehicles = [] } = useVehiclesData();
   const { data: personnel = [] } = usePersonnelData();
 
-  // ===== Скидання всього при зміні дати =====
+  // ===== Reset when date changes =====
   useEffect(() => {
     setActiveImei(null);
     setShowAllMarkers(false);
@@ -37,14 +37,16 @@ const TrackMarkers = ({ gpsData, selectedDate }) => {
     return gpsData.filter(item => item.date === dateStr);
   }, [gpsData, selectedDate]);
 
-  const isPointInUkraine = (lat, lon) => lat >= 44 && lat <= 52 && lon >= 22 && lon <= 40;
+  const isPointInUkraine = (lat, lon) =>
+    lat >= 44 && lat <= 52 && lon >= 22 && lon <= 40;
 
+  // ===== Route points (valid only) =====
   const routeCoordinates = useMemo(() => {
     if (!filteredGpsData || !activeImei) return [];
     const vehicleData = filteredGpsData.find(item => item.imei === activeImei);
     if (!vehicleData) return [];
     return vehicleData.data
-      .filter(p => p.latitude !== 0 && p.longitude !== 0)
+      .filter(p => p.latitude && p.longitude)
       .filter(p => isPointInUkraine(p.latitude, p.longitude))
       .map(p => [p.latitude, p.longitude]);
   }, [filteredGpsData, activeImei]);
@@ -59,65 +61,64 @@ const TrackMarkers = ({ gpsData, selectedDate }) => {
     }, 0).toFixed(2);
   }, [routeCoordinates]);
 
+  // ===== Last valid points for each IMEI =====
   const lastGpsPoints = useMemo(() => {
     return filteredGpsData
       .map(item => {
-        const validData = item.data
-          .filter(p => p.latitude !== 0 && p.longitude !== 0)
+        const valid = item.data
+          .filter(p => p.latitude && p.longitude)
           .filter(p => isPointInUkraine(p.latitude, p.longitude));
-        return validData.length > 0 ? { ...validData[validData.length - 1], imei: item.imei } : null;
+        return valid.length
+          ? { ...valid.at(-1), imei: item.imei }
+          : null;
       })
-      .filter(p => p !== null);
+      .filter(Boolean);
   }, [filteredGpsData]);
 
+  // ===== Parking detection =====
   const stationarySegments = useMemo(() => {
     if (!filteredGpsData || !activeImei) return [];
     const vehicleData = filteredGpsData.find(item => item.imei === activeImei);
     if (!vehicleData) return [];
 
     const segments = [];
-    let currentSegment = [];
+    let current = [];
 
     vehicleData.data.forEach((p, i, arr) => {
       if (i === 0) return;
       const prev = arr[i - 1];
       if (p.latitude === prev.latitude && p.longitude === prev.longitude) {
-        currentSegment.push(p);
+        current.push(p);
       } else {
-        if (currentSegment.length > 0) {
-          segments.push(currentSegment);
-          currentSegment = [];
-        }
+        if (current.length) segments.push(current);
+        current = [];
       }
     });
-    if (currentSegment.length > 0) segments.push(currentSegment);
+    if (current.length) segments.push(current);
 
-    return segments.map(segment => {
-      const startTime = new Date(segment[0].timestamp);
-      const endTime = new Date(segment[segment.length - 1].timestamp);
-      const duration = (endTime - startTime) / 1000;
-      return segment.map(p => ({ ...p, duration }));
+    return segments.map(seg => {
+      const start = new Date(seg[0].timestamp);
+      const end = new Date(seg.at(-1).timestamp);
+      const duration = (end - start) / 1000;
+      return seg.map(p => ({ ...p, duration, imei: activeImei }));
     });
   }, [filteredGpsData, activeImei]);
 
+  // ===== Anomalies: lost signal =====
   const anomalyMarkers = useMemo(() => {
     if (!filteredGpsData || !activeImei) return [];
-    const vehicleData = filteredGpsData.find(item => item.imei === activeImei);
+    const vehicleData = filteredGpsData.find(i => i.imei === activeImei);
     if (!vehicleData) return [];
 
-    const markers = [];
     let lastValid = null;
     let anomalyStart = null;
+    const result = [];
 
     vehicleData.data.forEach(p => {
-      const valid = p.latitude !== 0 && p.longitude !== 0 && isPointInUkraine(p.latitude, p.longitude);
+      const valid = p.latitude && p.longitude && isPointInUkraine(p.latitude, p.longitude);
       if (valid) {
         if (anomalyStart && lastValid) {
-          markers.push({
-            ...lastValid,
-            anomalyStartTime: anomalyStart,
-            anomalyEndTime: p.timestamp,
-          });
+          result.push({ ...lastValid, anomalyStart, anomalyEnd: p.timestamp, imei: vehicleData.imei });
           anomalyStart = null;
         }
         lastValid = p;
@@ -126,12 +127,12 @@ const TrackMarkers = ({ gpsData, selectedDate }) => {
       }
     });
 
-    return markers;
+    return result;
   }, [filteredGpsData, activeImei]);
 
-  const handleMarkerClick = (imei) => {
+  const handleMarkerClick = imei => {
     if (activeImei === imei) {
-      setShowAllMarkers(prev => !prev); // toggle
+      setShowAllMarkers(v => !v);
     } else {
       setActiveImei(imei);
       setShowAllMarkers(true);
@@ -139,126 +140,130 @@ const TrackMarkers = ({ gpsData, selectedDate }) => {
     dispatch(setImei(imei));
   };
 
-  const getIconByType = (type) => {
-    switch (type) {
-      case 'tractor': return tractorIco;
-      case 'combine': return combineIco;
-      case 'truck': return truckIco;
-      case 'car':
-      default: return carIco;
-    }
-  };
+  const getIconByType = type =>
+    ({
+      tractor: tractorIco,
+      combine: combineIco,
+      truck: truckIco,
+      car: carIco,
+    }[type] || carIco);
 
-  const getDriversForVehicle = (imei) => {
-    const vehicleData = filteredGpsData.find(item => item.imei === imei);
+  const getTrackColorByType = type =>
+    ({
+      car: 'aqua',
+      tractor: 'green',
+      combine: 'yellow',
+      truck: 'red',
+    }[type] || 'gray');
+
+  const getDriversForVehicle = imei => {
+    const vehicleData = filteredGpsData.find(i => i.imei === imei);
     if (!vehicleData?.data) return [];
-    const driversMap = new Map();
-    for (const point of vehicleData.data) {
-      const card = point.card_id ? String(point.card_id).toLowerCase() : null;
+    const set = new Map();
+    for (const p of vehicleData.data) {
+      const card = p.card_id?.toLowerCase();
       if (card && card !== 'null' && card !== '') {
-        if (!driversMap.has(card)) {
-          const driver = personnel.find(p => p.rfid?.toLowerCase() === card) || null;
-          driversMap.set(card, { driver, cardId: card, firstSeen: point.timestamp });
+        if (!set.has(card)) {
+          const driver = personnel.find(x => x.rfid?.toLowerCase() === card) || null;
+          set.set(card, { driver, cardId: card, firstSeen: p.timestamp });
         }
       }
     }
-    return Array.from(driversMap.values());
+    return [...set.values()];
+  };
+
+  const getVehicleName = imei => {
+    const vehicle = vehicles.find(v => v.imei === imei);
+    return vehicle?.mark || 'Невідома техніка';
   };
 
   return (
     <>
-      {/* Маршрут */}
-      {showAllMarkers && routeCoordinates.length > 0 && (
-        <Polyline positions={routeCoordinates} color="blue" weight={5} opacity={0.7} />
-      )}
+      {/* ROUTE LINE */}
+      {showAllMarkers && routeCoordinates.length > 0 && (() => {
+        const vehicle = vehicles.find(v => v.imei === activeImei);
+        const color = getTrackColorByType(vehicle?.vehicleType);
+        return (
+          <Polyline
+            positions={routeCoordinates}
+            pathOptions={{ color, weight: 5, opacity: 0.8 }}
+          />
+        );
+      })()}
 
-      {/* Останні точки */}
-      {lastGpsPoints.map((point, index) => {
-        const vehicle = vehicles.find(v => v.imei === point.imei);
-        const vehicleType = vehicle?.vehicleType || 'car';
-        const vehicleName = vehicle?.mark || 'Невідомий транспорт';
-        const driversInfo = getDriversForVehicle(point.imei);
-        const driverLabel = driversInfo.length > 0
-          ? driversInfo.map(d => d.driver
-              ? `${d.driver.firstName} ${d.driver.lastName} (з ${new Date(d.firstSeen).toLocaleString()})`
-              : `Картка: ${d.cardId} (не знайдена) — вперше: ${new Date(d.firstSeen).toLocaleString()}`
-            ).join('\n')
+      {/* LAST POINT MARKERS */}
+      {lastGpsPoints.map((p, i) => {
+        const vehicleName = getVehicleName(p.imei);
+        const drivers = getDriversForVehicle(p.imei);
+        const driverText = drivers.length
+          ? drivers
+              .map(d =>
+                d.driver
+                  ? `${d.driver.firstName} ${d.driver.lastName} (з ${new Date(d.firstSeen).toLocaleString()})`
+                  : `Картка ${d.cardId} — не знайдено`
+              )
+              .join('\n')
           : 'Водій не визначений';
+
+        const vehicleType = vehicles.find(v => v.imei === p.imei)?.vehicleType || 'car';
 
         return (
           <Marker
-            key={index}
-            position={[point.latitude, point.longitude]}
+            key={i}
+            position={[p.latitude, p.longitude]}
             icon={new L.Icon({
               iconUrl: getIconByType(vehicleType),
               iconSize: [50, 50],
-              iconAnchor: [12, 25],
-              popupAnchor: [0, -25],
             })}
-            zIndexOffset={1000}
-            eventHandlers={{ click: () => handleMarkerClick(point.imei) }}
+            eventHandlers={{ click: () => handleMarkerClick(p.imei) }}
           >
-            <Popup>
-              <strong>Остання точка</strong><br />
-              <b>Транспорт:</b> {vehicleName}<br />
-              <b>Водій:</b> <div style={{ whiteSpace: 'pre-wrap' }}>{driverLabel}</div><br />
-              <b>IMEI:</b> {point.imei}<br />
-              <b>Час:</b> {new Date(point.timestamp).toLocaleString()}<br />
+            <Popup autoPan={false}>
+              <b>Транспорт:</b> {vehicleName}<br/>
+              <b>Водій:</b> <div style={{ whiteSpace: 'pre-wrap' }}>{driverText}</div>
+              <b>IMEI:</b> {p.imei}<br/>
+              <b>Час:</b> {new Date(p.timestamp).toLocaleString()}<br/>
               <b>Пройдено:</b> {totalDistance} км
             </Popup>
           </Marker>
         );
       })}
 
-      {/* Стоянки */}
-      {showAllMarkers && stationarySegments.map((segment, sIndex) =>
-        segment.slice(0, -1).map((point, pIndex) => {
-          const vehicle = vehicles.find(v => v.imei === point.imei);
-          const vehicleName = vehicle?.mark || 'Невідомий транспорт';
+      {/* PARKING MARKERS */}
+      {showAllMarkers && stationarySegments.flatMap((seg, s) =>
+        seg.slice(0, -1).map((p, i) => {
+          const vehicleName = getVehicleName(p.imei);
           return (
             <Marker
-              key={`stationary-${sIndex}-${pIndex}`}
-              position={[point.latitude, point.longitude]}
-              icon={new L.Icon({
-                iconUrl: parkingIco,
-                iconSize: [25, 25],
-                iconAnchor: [12, 25],
-                popupAnchor: [0, -25],
-              })}
+              key={`park-${s}-${i}`}
+              position={[p.latitude, p.longitude]}
+              icon={new L.Icon({ iconUrl: parkingIco, iconSize: [25, 25] })}
             >
-              <Popup>
-                <strong>Техніка стоїть</strong><br />
-                <b>Транспорт:</b> {vehicleName}<br />
-                <b>IMEI:</b> {point.imei}<br />
-                <b>Час:</b> {new Date(point.timestamp).toLocaleString()}<br />
-                <b>Стоїть:</b> {Math.floor(point.duration / 60)} хв {Math.floor(point.duration % 60)} сек
+              <Popup autoPan={false}>
+                <b>Стоянка</b><br/>
+                <b>Транспорт:</b> {vehicleName}<br/>
+                <b>IMEI:</b> {p.imei}<br/>
+                <b>Тривалість:</b> {Math.floor(p.duration/60)} хв
               </Popup>
             </Marker>
           );
         })
       )}
 
-      {/* Аномалії */}
-      {showAllMarkers && anomalyMarkers.map((point, idx) => {
-        const vehicle = vehicles.find(v => v.imei === point.imei);
-        const vehicleName = vehicle?.mark || 'Невідомий транспорт';
+      {/* ANOMALY MARKERS */}
+      {showAllMarkers && anomalyMarkers.map((p, i) => {
+        const vehicleName = getVehicleName(p.imei);
         return (
           <Marker
-            key={`anomaly-${idx}`}
-            position={[point.latitude, point.longitude]}
-            icon={new L.Icon({
-              iconUrl: anomalyIco,
-              iconSize: [25, 25],
-              iconAnchor: [12, 25],
-              popupAnchor: [0, -25],
-            })}
+            key={`anom-${i}`}
+            position={[p.latitude, p.longitude]}
+            icon={new L.Icon({ iconUrl: anomalyIco, iconSize: [25, 25] })}
           >
-            <Popup>
-              <strong>Пропав сигнал</strong><br />
-              <b>Транспорт:</b> {vehicleName}<br />
-              <b>IMEI:</b> {point.imei}<br />
-              З: {new Date(point.anomalyStartTime).toLocaleString()}<br />
-              По: {new Date(point.anomalyEndTime).toLocaleString()}
+            <Popup autoPan={false}>
+              <b>Втрачено сигнал</b><br/>
+              <b>Транспорт:</b> {vehicleName}<br/>
+              <b>IMEI:</b> {p.imei}<br/>
+              З: {new Date(p.anomalyStart).toLocaleString()}<br/>
+              До: {new Date(p.anomalyEnd).toLocaleString()}
             </Popup>
           </Marker>
         );
