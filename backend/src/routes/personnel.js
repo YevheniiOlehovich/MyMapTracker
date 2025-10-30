@@ -14,7 +14,7 @@ const __dirname = path.dirname(__filename);
 // Шлях до зовнішньої папки uploads (з Docker volume)
 // const UPLOADS_DIR = path.join(__dirname, '../../../uploads/personnel'); // піднімемося на 3 рівні від routes до /uploads/personnel
 
-const UPLOADS_DIR = path.join(__dirname, 'uploads/personnel');
+const UPLOADS_DIR = path.join(__dirname, '/uploads/personnel');
 
 // Створюємо папку, якщо не існує
 if (!fs.existsSync(UPLOADS_DIR)) {
