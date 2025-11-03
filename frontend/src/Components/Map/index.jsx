@@ -525,3 +525,7 @@ export default function Map() {
         </Styles.wrapper>
     );
 }
+
+
+
+

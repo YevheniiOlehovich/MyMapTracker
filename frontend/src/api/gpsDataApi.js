@@ -7,3 +7,6 @@ export const fetchGpsDataApi = async () => {
     }
     return response.json(); // Повертаємо дані GPS
 };
+
+
+
