@@ -1,8 +1,6 @@
 // const API_BASE_URL = `http://localhost:5000`; // Локальний сервер
-// const API_BASE_URL = "http://192.168.88.153:5000";
 
 const API_BASE_URL = "/api";  // Роути для серва
-
 
 
 const apiRoutes = {
@@ -32,8 +30,9 @@ const apiRoutes = {
     getRates: `${API_BASE_URL}/rates`, // Отримати останні тарифи
     addRates: `${API_BASE_URL}/rates`, // Додати нові тарифи
 
-    getLocation: `${API_BASE_URL}/avl_records`,
-    // getLocation: (year) => `${API_BASE_URL}/track_${year}`,
+    // getLocation: `${API_BASE_URL}/avl_records`,
+    getLocation: (year) => `${API_BASE_URL}/trek_${year}`,
+    
 
     getFields: `${API_BASE_URL}/geo_data/fields`, 
     addFields: `${API_BASE_URL}/geo_data/fields`, 

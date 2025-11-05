@@ -1,33 +1,41 @@
 import express from 'express';
 import mongoose from 'mongoose';
 
-const router = express.Router(); // Створюємо екземпляр маршруту
+const router = express.Router();
 
-// Схема для GPS даних (AVL записи)
+// Базова схема GPS даних
 const AvlRecordSchema = new mongoose.Schema({
-    imei: { type: String },
-    timestamp: { type: Date },
-    longitude: { type: Number },
-    latitude: { type: Number },
-    altitude: { type: Number },
-    angle: { type: Number },
-    satellites: { type: Number },
-    speed: { type: Number }
-});
+  imei: String,
+  timestamp: Date,
+  longitude: Number,
+  latitude: Number,
+  altitude: Number,
+  angle: Number,
+  satellites: Number,
+  speed: Number
+}, { strict: false });
 
-// Створення моделі для авл записів
-export const AvlRecord = mongoose.model('avl_records', AvlRecordSchema); // Змінили назву колекції
+// Отримуємо модель з динамічною колекцією
+const getCollectionModel = (collectionName) => {
+  return mongoose.models[collectionName] 
+    || mongoose.model(collectionName, AvlRecordSchema, collectionName);
+};
 
-// Маршрут для отримання всіх AVL записів
-router.get('/', async (req, res) => {
-    try {
-        const all_avl_records = await AvlRecord.find();  // Використовуємо правильну модель
-        res.json(all_avl_records);  // Відправляємо дані клієнту
-    } catch (error) {
-        console.error('Помилка при отриманні AVL записів:', error);  // Логування помилки
-        res.status(500).json({ message: 'Error retrieving AVL records' });
-    }
+router.get('/:collection', async (req, res) => {
+  try {
+    const { collection } = req.params;
+    const Model = getCollectionModel(collection);
+
+    // Перевіримо наявність колекції в БД
+    const collections = await mongoose.connection.db.listCollections().toArray();
+    const data = await Model.find().sort({ timestamp: 1 });
+
+    res.json(data);
+
+  } catch (error) {
+    console.error('❌ Помилка отримання GPS даних:', error);
+    res.status(500).json({ message: 'Error retrieving GPS data' });
+  }
 });
 
 export default router;
-

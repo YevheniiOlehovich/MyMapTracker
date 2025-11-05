@@ -51,7 +51,7 @@ app.use('/groups', groupsRoutes);
 app.use('/personnel', personnelRoutes);
 app.use('/vehicles', vehiclesRoutes);
 app.use('/techniques', techniquesRoutes);
-app.use('/avl_records', avlRecordsRoutes);
+app.use('/', avlRecordsRoutes);
 app.use('/rates', ratesRoutes);
 app.use('/geo_data', geoDataRoutes);
 app.use('/auth', authRoutes);
