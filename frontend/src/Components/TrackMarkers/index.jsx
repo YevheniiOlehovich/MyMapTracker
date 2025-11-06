@@ -3,6 +3,7 @@ import { Marker, Polyline, Popup, useMap } from 'react-leaflet';
 import { useDispatch } from 'react-redux';
 import { setImei } from '../../store/vehicleSlice';
 import { useVehiclesData } from '../../hooks/useVehiclesData';
+import { usePersonnelData } from '../../hooks/usePersonnelData';
 import L from 'leaflet';
 
 import parkingIco from '../../assets/ico/parking-ico.png';
@@ -12,43 +13,61 @@ import combineIco from '../../assets/ico/combine-ico.png';
 import truckIco from '../../assets/ico/truck-ico.png';
 import anomalyIco from '../../assets/ico/warning.png';
 
-import { isPointInUkraine, filterGpsDataByDate } from '../../helpres/trekHelpers';
-import { getStationarySegments, getAnomalyMarkers } from '../../helpres/trackCalculations';
-import { haversineDistance } from '../../helpres/distance';
+import {
+  isPointInUkraine,
+  filterGpsDataByDate,
+} from '../../helpres/trekHelpers';
+import {
+  getStationarySegments,
+  getAnomalyMarkers,
+} from '../../helpres/trackCalculations';
 import { splitGpsSegments } from '../../helpres/splitGpsSegments';
-
 
 const TrackMarkers = ({ gpsData, selectedDate }) => {
   const dispatch = useDispatch();
   const map = useMap();
   const [activeImei, setActiveImei] = useState(null);
   const [showAllMarkers, setShowAllMarkers] = useState(false);
-
   const { data: vehicles = [] } = useVehiclesData();
+  const { data: personnel = [] } = usePersonnelData();
 
+  /** ♻️ Скидання при зміні дати */
   useEffect(() => {
     setActiveImei(null);
     setShowAllMarkers(false);
     if (map) map.closePopup();
   }, [selectedDate, map]);
 
-  const getIconByType = type => ({
-    tractor: tractorIco,
-    combine: combineIco,
-    truck: truckIco,
-    car: carIco,
-  }[type] || carIco);
+  /** 🚗 Іконки за типом техніки */
+  const getIconByType = type =>
+    ({
+      tractor: tractorIco,
+      combine: combineIco,
+      truck: truckIco,
+      car: carIco,
+    }[type] || carIco);
 
-  const getTrackColorByType = type => ({
-    car: 'aqua',
-    tractor: 'green',
-    combine: 'yellow',
-    truck: 'red',
-  }[type] || 'gray');
+  /** 🎨 Кольори ліній за типом техніки */
+  const getColorByType = type =>
+    ({
+      car: '#007bff',      // голубий
+      tractor: '#28a745',  // зелений
+      combine: '#ffc107',  // жовтий
+      truck: '#dc3545',    // червоний
+    }[type] || '#007bff');
 
-  const getVehicleName = imei => vehicles.find(v => v.imei === imei)?.mark || 'Невідома техніка';
+  /** 🏷️ Назва техніки */
+  const getVehicleName = imei =>
+    vehicles.find(v => v.imei === imei)?.mark || 'Невідома техніка';
 
-  const formatTime = iso => new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  /** 🕒 Формат часу */
+  const formatTime = iso =>
+    new Date(iso).toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+
+  /** 🕓 Формат тривалості */
   const formatDuration = secs => {
     if (!secs || secs <= 0) return '0 хв';
     const h = Math.floor(secs / 3600);
@@ -56,73 +75,67 @@ const TrackMarkers = ({ gpsData, selectedDate }) => {
     return `${h ? h + ' год ' : ''}${m ? m + ' хв' : ''}`.trim();
   };
 
+  /** 🔎 Фільтр по даті */
   const filteredGpsData = useMemo(
     () => filterGpsDataByDate(gpsData, selectedDate),
     [gpsData, selectedDate]
   );
 
-  const activeVehicleData = filteredGpsData.find(item => item.imei === activeImei)?.data;
+  /** 🚘 Поточне авто */
+  const activeVehicleData = filteredGpsData.find(
+    item => item.imei === activeImei
+  )?.data;
 
-  /** ✅ Рухові сегменти */
+  /** 🧭 Сегменти руху з домінуючим водієм */
   const vehicleSegments = useMemo(() => {
     if (!activeVehicleData) return [];
-    return splitGpsSegments(activeVehicleData);
-  }, [activeVehicleData]);
 
-  /** ✅ Інфо про сегмент */
-  const segmentInfo = useMemo(() => {
-    return vehicleSegments.map(seg => {
-      const pts = seg.points;
-      let dist = 0;
+    const segments = splitGpsSegments(activeVehicleData);
 
-      for (let i = 1; i < pts.length; i++) {
-        dist += haversineDistance(
-          pts[i - 1].latitude,
-          pts[i - 1].longitude,
-          pts[i].latitude,
-          pts[i].longitude
-        );
-      }
-
-      const start = pts[0].timestamp;
-      const end = pts.at(-1).timestamp;
-      const duration = (new Date(end) - new Date(start)) / 1000;
-      return { start, end, duration, distance: dist };
+    return segments.map(seg => {
+      const driver = personnel.find(p => p.rfid === seg.driverCardId);
+      const driverName = driver ? `${driver.firstName} ${driver.lastName}` : null;
+      return { ...seg, driverName };
     });
+  }, [activeVehicleData, personnel]);
+
+  /** 📏 Загальна дистанція */
+  const totalSegmentsDistance = useMemo(() => {
+    return vehicleSegments
+      .reduce((sum, seg) => sum + Number(seg.distance || 0), 0)
+      .toFixed(2);
   }, [vehicleSegments]);
 
-  /** ✅ Координати маршруту */
-  const routeCoordinates = useMemo(() => {
-    if (!filteredGpsData || !activeImei) return [];
-    const vehicleData = filteredGpsData.find(i => i.imei === activeImei)?.data;
-    if (!vehicleData) return [];
-
-    return vehicleData
-      .filter(p => p.latitude && p.longitude && isPointInUkraine(p.latitude, p.longitude))
-      .map(p => [p.latitude, p.longitude]);
-  }, [filteredGpsData, activeImei]);
-
-  /** ✅ Останні точки всіх авто */
-  const lastGpsPoints = useMemo(() =>
-    filteredGpsData
-      .map(item => {
-        const valid = item.data.filter(p => p.latitude && p.longitude && isPointInUkraine(p.latitude, p.longitude));
-        return valid.length ? { ...valid.at(-1), imei: item.imei } : null;
-      })
-      .filter(Boolean),
+  /** 🧩 Останні точки всіх авто */
+  const lastGpsPoints = useMemo(
+    () =>
+      filteredGpsData
+        .map(item => {
+          const valid = item.data.filter(
+            p =>
+              p.latitude &&
+              p.longitude &&
+              isPointInUkraine(p.latitude, p.longitude)
+          );
+          return valid.length ? { ...valid.at(-1), imei: item.imei } : null;
+        })
+        .filter(Boolean),
     [filteredGpsData]
   );
 
-  const stationarySegments = useMemo(() =>
-    getStationarySegments(activeVehicleData, activeImei),
+  /** 🅿️ Стоянки */
+  const stationarySegments = useMemo(
+    () => getStationarySegments(activeVehicleData, activeImei),
     [activeVehicleData, activeImei]
   );
 
-  const anomalyMarkers = useMemo(() =>
-    getAnomalyMarkers(activeVehicleData, activeImei),
+  /** ⚠️ Аномалії */
+  const anomalyMarkers = useMemo(
+    () => getAnomalyMarkers(activeVehicleData, activeImei),
     [activeVehicleData, activeImei]
   );
 
+  /** 🎯 Обробка кліку */
   const handleMarkerClick = imei => {
     if (activeImei === imei) setShowAllMarkers(v => !v);
     else {
@@ -132,117 +145,130 @@ const TrackMarkers = ({ gpsData, selectedDate }) => {
     dispatch(setImei(imei));
   };
 
-  /** ✅ Повна дистанція маршруту (по всіх точках) */
-  const totalDistance = useMemo(() => {
-    if (!activeVehicleData || activeVehicleData.length < 2) return 0;
-
-    let dist = 0;
-    for (let i = 1; i < activeVehicleData.length; i++) {
-      const prev = activeVehicleData[i - 1];
-      const curr = activeVehicleData[i];
-      if (!prev.latitude || !prev.longitude || !curr.latitude || !curr.longitude) continue;
-
-      dist += haversineDistance(
-        prev.latitude,
-        prev.longitude,
-        curr.latitude,
-        curr.longitude
-      );
-    }
-    return dist; // у км
-  }, [activeVehicleData]);
-
   return (
     <>
-      {showAllMarkers && routeCoordinates.length > 0 && (() => {
-        const vehicle = vehicles.find(v => v.imei === activeImei);
-        return (
-          <Polyline
-            positions={routeCoordinates}
-            pathOptions={{ color: getTrackColorByType(vehicle?.vehicleType), weight: 5, opacity: 0.8 }}
-          />
-        );
-      })()}
-
+      {/* 🚗 Маркери останніх точок */}
       {lastGpsPoints.map((p, i) => {
-        const vehicleName = getVehicleName(p.imei);
-        const vehicleType = vehicles.find(v => v.imei === p.imei)?.vehicleType || 'car';
+        const vehicle = vehicles.find(v => v.imei === p.imei);
+        const vehicleName = vehicle?.mark || 'Невідома техніка';
+        const vehicleType = vehicle?.vehicleType || 'car';
+        const lineColor = getColorByType(vehicleType);
 
         return (
           <Marker
             key={i}
             position={[p.latitude, p.longitude]}
-            icon={new L.Icon({ iconUrl: getIconByType(vehicleType), iconSize: [50, 50] })}
+            icon={
+              new L.Icon({ iconUrl: getIconByType(vehicleType), iconSize: [50, 50] })
+            }
             eventHandlers={{ click: () => handleMarkerClick(p.imei) }}
           >
-        
-            <Popup autoPan={false} minWidth={280}>
-              <div style={{ fontSize: 13, lineHeight: 1.4 }}>
-                <div><b>Транспорт:</b> {vehicleName}</div>
+            <Popup autoPan={false} minWidth={260}>
+              <div style={{ fontSize: 12.5, lineHeight: 1.3 }}>
+                <div><b>🚜 Транспорт:</b> {vehicleName}</div>
                 <div><b>IMEI:</b> {p.imei}</div>
-                <div><b>Останній час:</b> {new Date(p.timestamp).toLocaleString()}</div>
-                <hr />
+                <div><b>🕒 Остання точка:</b> {new Date(p.timestamp).toLocaleString()}</div>
 
-                <b>Рухові сегменти:</b>
-                {segmentInfo.length ? segmentInfo.map((s, idx) => (
-                  <div key={idx} style={{ marginTop: 4 }}>
-                    🕒 {formatTime(s.start)} → {formatTime(s.end)} &nbsp;|&nbsp;
-                    ⏳ {formatDuration(s.duration)} &nbsp;|&nbsp;
-                    📍 {s.distance.toFixed(2)} км
-                  </div>
-                )) : <div>Немає руху</div>}
+                {vehicleSegments.length > 0 && (
+                  <>
+                    <hr style={{ margin: '6px 0' }} />
+                    <b>📊 Сегменти руху:</b>
 
-                {totalDistance > 0 && (
-                  <div style={{ marginTop: 6, fontWeight: 'bold' }}>
-                    Загальна дистанція: {totalDistance.toFixed(2)} км
-                  </div>
+                    <div style={{ marginTop: 6 }}>
+                      {vehicleSegments.map((seg, idx) => (
+                        <div
+                          key={idx}
+                          style={{
+                            marginBottom: 8,
+                            paddingBottom: 6,
+                            borderBottom: '1px solid #ececec',
+                          }}
+                        >
+                          <div style={{ fontWeight: 600 }}>
+                            Сегмент {idx + 1} — {formatTime(seg.startTime)} → {formatTime(seg.endTime)}
+                          </div>
+
+                          <div style={{ color: '#222' }}>
+                            🪪 Водій: <b>{seg.driverName || seg.driverCardId || '—'}</b> &nbsp; | &nbsp;
+                            📏 <b>{Number(seg.distance).toFixed(2)} км</b>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div
+                      style={{
+                        marginTop: 4,
+                        fontWeight: 700,
+                        textAlign: 'right',
+                      }}
+                    >
+                      🔹 Всього: {totalSegmentsDistance} км
+                    </div>
+                  </>
                 )}
               </div>
             </Popup>
-            
 
+            {/* 🚦 Полілінії сегментів */}
+            {showAllMarkers &&
+              vehicleSegments.map((seg, idx) => (
+                <Polyline
+                  key={`seg-${idx}`}
+                  positions={seg.points.map(p => [p.latitude, p.longitude])}
+                  pathOptions={{
+                    color: lineColor,
+                    weight: 5,
+                    opacity: 0.8,
+                  }}
+                >
+                  <Popup autoPan={false}>
+                    <b>Сегмент #{idx + 1}</b> <br />
+                    🪪 Водій: <b>{seg.driverName || seg.driverCardId || '—'}</b> <br />
+                    ⏱ {formatTime(seg.points[0]?.timestamp)} →{' '}
+                    {formatTime(seg.points.at(-1)?.timestamp)} <br />
+                    📏 {Number(seg.distance).toFixed(2)} км
+                  </Popup>
+                </Polyline>
+              ))}
           </Marker>
         );
       })}
 
-      {showAllMarkers && stationarySegments.flatMap((seg, s) =>
-        seg.slice(0, -1).map((p, i) => (
+      {/* 🅿️ Стоянки */}
+      {showAllMarkers &&
+        stationarySegments.flatMap((seg, s) =>
+          seg.slice(0, -1).map((p, i) => (
+            <Marker
+              key={`park-${s}-${i}`}
+              position={[p.latitude, p.longitude]}
+              icon={new L.Icon({ iconUrl: parkingIco, iconSize: [25, 25] })}
+            >
+              <Popup autoPan={false}>
+                <b>Стоянка</b><br />
+                {Math.floor(p.duration / 60)} хв
+              </Popup>
+            </Marker>
+          ))
+        )}
+
+      {/* ⚠️ Аномалії */}
+      {showAllMarkers &&
+        anomalyMarkers.map((p, i) => (
           <Marker
-            key={`park-${s}-${i}`}
+            key={`anom-${i}`}
             position={[p.latitude, p.longitude]}
-            icon={new L.Icon({ iconUrl: parkingIco, iconSize: [25, 25] })}
+            icon={new L.Icon({ iconUrl: anomalyIco, iconSize: [25, 25] })}
           >
             <Popup autoPan={false}>
-              <b>Стоянка</b><br />
-              {Math.floor(p.duration / 60)} хв
+              <b>Втрачено сигнал</b><br />
+              З: {new Date(p.anomalyStart).toLocaleString()}<br />
+              До: {new Date(p.anomalyEnd).toLocaleString()}
             </Popup>
           </Marker>
-        ))
-      )}
-
-      {showAllMarkers && anomalyMarkers.map((p, i) => (
-        <Marker
-          key={`anom-${i}`}
-          position={[p.latitude, p.longitude]}
-          icon={new L.Icon({ iconUrl: anomalyIco, iconSize: [25, 25] })}
-        >
-          <Popup autoPan={false}>
-            <b>Втрачено сигнал</b><br />
-            З: {new Date(p.anomalyStart).toLocaleString()}<br />
-            До: {new Date(p.anomalyEnd).toLocaleString()}
-          </Popup>
-        </Marker>
-      ))}
+        ))}
     </>
   );
 };
 
 export default TrackMarkers;
-
-
-
-
-
-
-
-

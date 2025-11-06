@@ -3,8 +3,6 @@ import apiRoutes from '../helpres/ApiRoutes';
 export const fetchGpsDataApi = async (year) => {
     const url = apiRoutes.getLocation(year);
 
-    console.log(year)
-
     const response = await fetch(url);
 
     if (!response.ok) {
