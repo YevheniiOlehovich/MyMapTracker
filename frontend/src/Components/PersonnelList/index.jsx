@@ -105,7 +105,7 @@ export default function PersonnelList({ open = true }) {
                 
                 // Зображення на проді
                 const imgSrc = person.photoPath
-                  ? `${BACKEND_URL}/${person.photoPath.replace(/\\/g, '/')}`
+                  ? `/uploads/${person.photoPath.replace(/\\/g, '/').split('uploads/')[1]}`
                   : QuestionIco;
                 return (
                   <Paper
