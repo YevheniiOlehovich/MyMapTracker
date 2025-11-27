@@ -6,7 +6,6 @@ const path = require('path');
 // === Settings ===
 const HOST = '0.0.0.0';
 const PORT = 20120;
-
 const MONGODB_URI = 'mongodb+srv://keildra258:aJuvQLKxaw5Lb5xf@cluster0.k4l1p.mongodb.net/';
 const DATABASE_NAME = 'test';
 
@@ -36,10 +35,8 @@ function sendConfirmation(socket) {
 // === IO parser ===
 function parseCodec8IO(buf, offset) {
   const ioMap = {};
-
   try {
     offset += 2; // skip eventID + totalIO
-
     const readIO = (count, size) => {
       const m = {};
       for (let i = 0; i < count; i++) {
@@ -50,16 +47,12 @@ function parseCodec8IO(buf, offset) {
       }
       return m;
     };
-
     let count;
-
     count = buf.readUInt8(offset++); Object.assign(ioMap, readIO(count, 1));
     count = buf.readUInt8(offset++); Object.assign(ioMap, readIO(count, 2));
     count = buf.readUInt8(offset++); Object.assign(ioMap, readIO(count, 4));
     count = buf.readUInt8(offset++); Object.assign(ioMap, readIO(count, 8));
-
   } catch {}
-
   return { ioMap };
 }
 
@@ -75,20 +68,26 @@ async function decodeAvlData(buf, imei, db) {
     logToFile(`📦 RAW HEX (${imei}): ${raw_hex}`);
     logToFile(`📏 Packet length: ${buf.length} bytes`);
 
+    // === GPS parsing ===
+    const gpsOffset = 19;
+    if (buf.length < gpsOffset + 15) {
+      logToFile(`⚠️ Packet too short for GPS parsing: ${buf.length} bytes`);
+      return;
+    }
+
     const ts = Number(buf.readBigUInt64BE(10)) / 1000;
     const dt = new Date(ts * 1000);
     const date = dt.toISOString().split('T')[0];
     const year = dt.getFullYear();
 
-    const gps = 19;
-    const lng = buf.readInt32BE(gps) / 1e7;
-    const lat = buf.readInt32BE(gps + 4) / 1e7;
-    const alt = buf.readInt16BE(gps + 8);
-    const ang = buf.readInt16BE(gps + 10);
-    const sats = buf[gps + 12];
-    const spd = buf.readInt16BE(gps + 13);
+    const lng = buf.readInt32BE(gpsOffset) / 1e7;
+    const lat = buf.readInt32BE(gpsOffset + 4) / 1e7;
+    const alt = buf.readInt16BE(gpsOffset + 8);
+    const ang = buf.readInt16BE(gpsOffset + 10);
+    const sats = buf[gpsOffset + 12];
+    const spd = buf.readInt16BE(gpsOffset + 13);
 
-    const ioOffset = gps + 15;
+    const ioOffset = gpsOffset + 15;
     const { ioMap } = parseCodec8IO(buf, ioOffset);
 
     let card_id = null;
@@ -112,8 +111,9 @@ async function decodeAvlData(buf, imei, db) {
     const col = db.collection(collectionName);
 
     const q = { date, imei };
-    const exists = await col.findOne(q);
+    logToFile(`🔍 Query: ${JSON.stringify(q)}`);
 
+    const exists = await col.findOne(q);
     if (exists) {
       await col.updateOne(q, { $push: { data: record } });
     } else {
@@ -139,37 +139,40 @@ async function start() {
 
       let imei = '';
 
-      // перший пакет IMEI
-      sock.once('data', data => {
-        logToFile(`📥 FIRST PACKET RAW: ${data.toString('hex')}`);
-        imei = cleanImei(data.toString());
-        logToFile(`📡 IMEI parsed: ${imei}`);
-        sendConfirmation(sock);
+      sock.on('data', async data => {
+        try {
+          // перший пакет IMEI
+          if (!imei) {
+            logToFile(`📥 FIRST PACKET RAW: ${data.toString('hex')}`);
+            imei = cleanImei(data.toString());
+            logToFile(`📡 IMEI parsed: ${imei}`);
+            sendConfirmation(sock);
+            return;
+          }
 
-        // усі наступні пакети AVL
-        sock.on('data', pkt => {
-          logToFile(`📥 AVL PACKET RAW (${imei}): ${pkt.toString('hex')}`);
-          logToFile(`📏 Packet length: ${pkt.length} bytes`);
+          // усі наступні пакети AVL
+          logToFile(`📥 AVL PACKET RAW (${imei}): ${data.toString('hex')}`);
+          logToFile(`📏 Packet length: ${data.length} bytes`);
 
-          decodeAvlData(pkt, imei, db);
+          await decodeAvlData(data, imei, db);
           sendConfirmation(sock);
-        });
 
-        sock.on('close', () => logToFile(`🔴 Disconnected: ${imei}`));
-        sock.on('error', e => logToFile(`⚠️ Socket error: ${e.message}`));
+        } catch (err) {
+          logToFile(`❌ Socket data handler error: ${err.message}`);
+        }
       });
+
+      sock.on('close', () => logToFile(`🔴 Disconnected: ${imei}`));
+      sock.on('error', e => logToFile(`⚠️ Socket error: ${e.message}`));
     });
 
     server.listen(PORT, HOST, () =>
       logToFile(`🚀 Listening TCP ${HOST}:${PORT}`)
     );
+
   } catch (e) {
     logToFile(`💥 Fatal: ${e.message}`);
   }
 }
 
 start();
-
-
-
-
