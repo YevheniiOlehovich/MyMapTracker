@@ -174,7 +174,6 @@
 
 
 
-
 const net = require('net');
 const { MongoClient } = require('mongodb');
 const fs = require('fs');
@@ -202,7 +201,7 @@ const client = new MongoClient(MONGODB_URI);
 
 // === Helpers ===
 function cleanImei(raw) {
-  // Беремо все до символу ';', прибираємо нецифри і залишаємо тільки перші 15 цифр
+  // Фікс: беремо все до символу ';', прибираємо нецифри і залишаємо тільки перші 15 цифр
   const part = raw.split(';')[0];
   const digits = part.replace(/\D/g, '');
   return digits.slice(0, 15);
@@ -338,8 +337,8 @@ async function start() {
 
       // перший пакет IMEI
       sock.once('data', data => {
-        const raw = data.toString();
-        logToFile(`📥 FIRST PACKET RAW: ${raw.trim()}`);
+        const raw = data.toString().trim();
+        logToFile(`📥 FIRST PACKET RAW: ${raw}`);
 
         imei = cleanImei(raw);
 
