@@ -371,24 +371,47 @@ async function start() {
   const server = net.createServer(sock => {
     console.log(`🔌 Client connected: ${sock.remoteAddress}:${sock.remotePort}`);
 
+    let imei = null;
+    let initialized = false;
+
     sock.on('data', async data => {
       try {
-        // Просто зберігаємо в хексі
+        if (!initialized) {
+          // Перший пакет – IMEI
+          if (data.length < 15) {
+            console.log(`⚠️ Invalid IMEI packet length: ${data.length}`);
+            sock.write(Buffer.from([0x00])); // не підтверджуємо
+            sock.end();
+            return;
+          }
+
+          imei = data.slice(0, 15).toString('ascii');
+          console.log(`📡 IMEI received: ${imei}`);
+
+          // Підтвердження з'єднання
+          sock.write(Buffer.from([0x01]));
+          initialized = true;
+          return;
+        }
+
+        // Зберігаємо будь-який пакет після ініціалізації
         const collection = db.collection('raw_packets');
         await collection.insertOne({
+          imei,
           timestamp: new Date(),
           raw: data.toString('hex')
         });
-        console.log(`✅ Saved packet (${data.length} bytes)`);
+        console.log(`✅ Saved packet for IMEI ${imei} (${data.length} bytes)`);
 
-        // Відповідаємо 0x01
+        // Відповідаємо 0x01 на будь-який пакет
         sock.write(Buffer.from([0x01]));
+
       } catch (e) {
         console.log('❌ Error handling data:', e.message);
       }
     });
 
-    sock.on('close', () => console.log('🔴 Client disconnected'));
+    sock.on('close', () => console.log(`🔴 Client disconnected: ${imei}`));
     sock.on('error', e => console.log(`⚠️ Socket error: ${e.message}`));
   });
 
