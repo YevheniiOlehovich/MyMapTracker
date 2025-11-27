@@ -175,8 +175,6 @@
 
 
 
-
-
 const net = require('net');
 const { MongoClient } = require('mongodb');
 const fs = require('fs');
@@ -203,8 +201,11 @@ function logToFile(message) {
 const client = new MongoClient(MONGODB_URI);
 
 // === Helpers ===
-function cleanImei(imei) {
-  return imei.replace(/\D/g, '');
+function cleanImei(raw) {
+  // Беремо все до символу ';', прибираємо нецифри і залишаємо тільки перші 15 цифр
+  const part = raw.split(';')[0];
+  const digits = part.replace(/\D/g, '');
+  return digits.slice(0, 15);
 }
 
 function sendConfirmation(socket) {
@@ -337,13 +338,26 @@ async function start() {
 
       // перший пакет IMEI
       sock.once('data', data => {
-        logToFile(`📥 FIRST PACKET RAW: ${data.toString('hex')}`);
-        imei = cleanImei(data.toString());
+        const raw = data.toString();
+        logToFile(`📥 FIRST PACKET RAW: ${raw.trim()}`);
+
+        imei = cleanImei(raw);
+
+        if (!imei || imei.length !== 15) {
+          logToFile(`⚠️ Invalid IMEI received: ${imei}. Closing socket.`);
+          sock.destroy();
+          return;
+        }
+
         logToFile(`📡 IMEI parsed: ${imei}`);
         sendConfirmation(sock);
 
         // усі наступні пакети AVL
         sock.on('data', pkt => {
+          if (pkt.length < 34) {
+            logToFile(`⚠️ Packet too short (${pkt.length} bytes) from ${imei}`);
+            return;
+          }
           decodeAvlData(pkt, imei, db);
           sendConfirmation(sock);
         });
