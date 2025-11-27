@@ -176,8 +176,6 @@
 
 
 
-
-
 const net = require('net');
 const { MongoClient } = require('mongodb');
 const fs = require('fs');
@@ -224,7 +222,31 @@ function crc16Teltonika(buf) {
   return crc & 0xFFFF;
 }
 
-// === Save AVL + CRC to DB ===
+// === IO parser (для card_id 157) ===
+function parseCodec8IO(buf, offset) {
+  const ioMap = {};
+  try {
+    offset += 2; // skip eventID + totalIO
+    const readIO = (count, size) => {
+      const m = {};
+      for (let i = 0; i < count; i++) {
+        const id = buf.readUInt8(offset++);
+        const v = buf.slice(offset, offset + size);
+        offset += size;
+        m[id] = { size, hex: v.toString('hex') };
+      }
+      return m;
+    };
+    let count;
+    count = buf.readUInt8(offset++); Object.assign(ioMap, readIO(count, 1));
+    count = buf.readUInt8(offset++); Object.assign(ioMap, readIO(count, 2));
+    count = buf.readUInt8(offset++); Object.assign(ioMap, readIO(count, 4));
+    count = buf.readUInt8(offset++); Object.assign(ioMap, readIO(count, 8));
+  } catch {}
+  return { ioMap };
+}
+
+// === Save AVL + CRC to DB in old format ===
 async function savePacketToDb(hexStr, imei, db) {
   try {
     const buf = Buffer.from(hexStr, 'hex');
@@ -233,35 +255,65 @@ async function savePacketToDb(hexStr, imei, db) {
       return;
     }
 
-    // Останні 4 байти – CRC
+    // CRC
     const crcRawBytes = buf.slice(-4);
     const crcRaw = crcRawBytes.toString('hex').toUpperCase();
-
-    // Розрахунок CRC16 по AVL (усі байти крім останніх 4)
     const avlBytes = buf.slice(0, -4);
     const crcCalcVal = crc16Teltonika(avlBytes);
     const crcCalc = crcCalcVal.toString(16).padStart(4, '0').toUpperCase();
-
-    // Порівняння: додаємо 0000 на початку
-    const crcCompare = ('0000' + crcCalc).toUpperCase();
     const statusOk = crcRaw.endsWith(crcCalc) ? '✅' : '❌';
 
-    // Запис у MongoDB
-    const year = new Date().getFullYear();
-    const collectionName = `trek_${year}`;
-    const col = db.collection(collectionName);
+    // GPS + IO
+    const ts = Number(buf.readBigUInt64BE(10)) / 1000;
+    const dt = new Date(ts * 1000);
+    const date = dt.toISOString().split('T')[0];
+
+    const gps = 19;
+    const lng = buf.readInt32BE(gps) / 1e7;
+    const lat = buf.readInt32BE(gps + 4) / 1e7;
+    const alt = buf.readInt16BE(gps + 8);
+    const ang = buf.readInt16BE(gps + 10);
+    const sats = buf[gps + 12];
+    const spd = buf.readInt16BE(gps + 13);
+
+    const ioOffset = gps + 15;
+    const { ioMap } = parseCodec8IO(buf, ioOffset);
+
+    let card_id = null;
+    if (ioMap[157] && !/^0+$/.test(ioMap[157].hex)) {
+      card_id = ioMap[157].hex.toLowerCase();
+    }
 
     const record = {
-      timestamp: new Date(),
-      imei,
+      timestamp: dt,
+      longitude: lng,
+      latitude: lat,
+      altitude: alt,
+      angle: ang,
+      satellites: sats,
+      speed: spd,
+      card_id,
       raw_hex: hexStr.toUpperCase(),
       crc_raw: crcRaw,
       crc_calc: crcCalc,
       status: statusOk
     };
 
-    await col.insertOne(record);
+    const year = dt.getFullYear();
+    const collectionName = `trek_${year}`;
+    const col = db.collection(collectionName);
+
+    const q = { date, imei };
+    const exists = await col.findOne(q);
+
+    if (exists) {
+      await col.updateOne(q, { $push: { data: record } });
+    } else {
+      await col.insertOne({ date, imei, data: [record] });
+    }
+
     logToFile(`✅ Saved packet from IMEI=${imei}, CRC status=${statusOk}`);
+
   } catch (e) {
     logToFile(`❌ Error saving packet [IMEI=${imei}]: ${e.message}`);
   }
@@ -278,13 +330,11 @@ async function start() {
       logToFile(`🔌 New client connected: ${sock.remoteAddress}:${sock.remotePort}`);
       let imei = '';
 
-      // перший пакет IMEI
       sock.once('data', data => {
         imei = cleanImei(data.toString());
         logToFile(`📡 IMEI parsed: ${imei}`);
         sendConfirmation(sock);
 
-        // усі наступні пакети AVL
         sock.on('data', pkt => {
           const hexStr = pkt.toString('hex');
           logToFile(`📥 Received packet: ${hexStr}`);
