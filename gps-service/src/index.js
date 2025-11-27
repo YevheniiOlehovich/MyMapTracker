@@ -353,7 +353,6 @@
 
 // start();
 
-
 const net = require('net');
 const { MongoClient } = require('mongodb');
 
@@ -372,54 +371,24 @@ async function start() {
   const server = net.createServer(sock => {
     console.log(`🔌 Client connected: ${sock.remoteAddress}:${sock.remotePort}`);
 
-    let imei = null;
-    let initialized = false;
-
     sock.on('data', async data => {
       try {
-        // --- Пакет ініціалізації ---
-        if (!initialized) {
-          if (data.length < 17) {
-            console.log('⚠️ Пакет занадто короткий для ініціалізації');
-            sock.write(Buffer.from([0x00])); // не підтверджуємо
-            sock.end();
-            return;
-          }
-
-          // Перші 2 байти — службові
-          const header = data.slice(0, 2);
-          if (header[0] !== 0x00 || header[1] !== 0x0F) {
-            console.log('⚠️ Невірний заголовок пакету ініціалізації');
-            sock.write(Buffer.from([0x00]));
-            sock.end();
-            return;
-          }
-
-          // Останні 15 байт — IMEI у ASCII
-          imei = data.slice(2, 17).toString('ascii');
-          console.log(`📡 IMEI received: ${imei}`);
-
-          sock.write(Buffer.from([0x01])); // підтвердження з'єднання
-          initialized = true;
-          return;
-        }
-
-        // --- Прийом AVL/RAW пакетів ---
-        const collection = db.collection(`packets_${imei}`);
+        // Просто зберігаємо в хексі
+        const collection = db.collection('raw_packets');
         await collection.insertOne({
           timestamp: new Date(),
           raw: data.toString('hex')
         });
-        console.log(`✅ Saved packet for IMEI ${imei} (${data.length} bytes)`);
+        console.log(`✅ Saved packet (${data.length} bytes)`);
 
-        sock.write(Buffer.from([0x01])); // підтвердження пакету
-
+        // Відповідаємо 0x01
+        sock.write(Buffer.from([0x01]));
       } catch (e) {
         console.log('❌ Error handling data:', e.message);
       }
     });
 
-    sock.on('close', () => console.log(`🔴 Client disconnected: ${imei || 'unknown'}`));
+    sock.on('close', () => console.log('🔴 Client disconnected'));
     sock.on('error', e => console.log(`⚠️ Socket error: ${e.message}`));
   });
 
