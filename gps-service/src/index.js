@@ -354,87 +354,78 @@
 // start();
 
 
-
 const net = require('net');
 const { MongoClient } = require('mongodb');
-const fs = require('fs');
-const path = require('path');
 
-// === Налаштування ===
 const HOST = '0.0.0.0';
 const PORT = 20120;
 const MONGODB_URI = 'mongodb+srv://keildra258:aJuvQLKxaw5Lb5xf@cluster0.k4l1p.mongodb.net/';
 const DATABASE_NAME = 'test';
 
-// === Логи ===
-const LOG_DIR = path.join(__dirname, 'logs');
-if (!fs.existsSync(LOG_DIR)) fs.mkdirSync(LOG_DIR);
-
-function logToFile(msg) {
-  const date = new Date().toISOString().split('T')[0];
-  const file = path.join(LOG_DIR, `${date}.log`);
-  fs.appendFileSync(file, `[${new Date().toISOString()}] ${msg}\n`);
-  console.log(msg);
-}
-
-// === MongoDB ===
 const client = new MongoClient(MONGODB_URI);
 
 async function start() {
   await client.connect();
   const db = client.db(DATABASE_NAME);
-  logToFile('✅ MongoDB connected');
+  console.log('✅ MongoDB connected');
 
   const server = net.createServer(sock => {
-    logToFile(`🔌 Client connected: ${sock.remoteAddress}:${sock.remotePort}`);
+    console.log(`🔌 Client connected: ${sock.remoteAddress}:${sock.remotePort}`);
 
     let imei = null;
     let initialized = false;
 
     sock.on('data', async data => {
       try {
-        // --- Етап ініціалізації IMEI ---
+        // --- Пакет ініціалізації ---
         if (!initialized) {
-          if (data.length !== 15) {
-            logToFile(`⚠️ Invalid IMEI length: ${data.length} bytes`);
+          if (data.length < 17) {
+            console.log('⚠️ Пакет занадто короткий для ініціалізації');
             sock.write(Buffer.from([0x00])); // не підтверджуємо
             sock.end();
             return;
           }
 
-          imei = data.toString('ascii');
-          logToFile(`📡 IMEI received: ${imei}`);
+          // Перші 2 байти — службові
+          const header = data.slice(0, 2);
+          if (header[0] !== 0x00 || header[1] !== 0x0F) {
+            console.log('⚠️ Невірний заголовок пакету ініціалізації');
+            sock.write(Buffer.from([0x00]));
+            sock.end();
+            return;
+          }
 
-          // підтвердження з'єднання
-          sock.write(Buffer.from([0x01]));
+          // Останні 15 байт — IMEI у ASCII
+          imei = data.slice(2, 17).toString('ascii');
+          console.log(`📡 IMEI received: ${imei}`);
+
+          sock.write(Buffer.from([0x01])); // підтвердження з'єднання
           initialized = true;
           return;
         }
 
-        // --- Етап прийому AVL пакетів ---
-        const collection = db.collection('raw_packets');
+        // --- Прийом AVL/RAW пакетів ---
+        const collection = db.collection(`packets_${imei}`);
         await collection.insertOne({
-          imei,
           timestamp: new Date(),
           raw: data.toString('hex')
         });
-        logToFile(`✅ Saved packet for IMEI ${imei} (${data.length} bytes)`);
+        console.log(`✅ Saved packet for IMEI ${imei} (${data.length} bytes)`);
 
-        // підтвердження пакету
-        sock.write(Buffer.from([0x01]));
+        sock.write(Buffer.from([0x01])); // підтвердження пакету
 
       } catch (e) {
-        logToFile(`❌ Error handling data: ${e.message}`);
+        console.log('❌ Error handling data:', e.message);
       }
     });
 
-    sock.on('close', () => logToFile(`🔴 Disconnected: ${imei}`));
-    sock.on('error', e => logToFile(`⚠️ Socket error: ${e.message}`));
+    sock.on('close', () => console.log(`🔴 Client disconnected: ${imei || 'unknown'}`));
+    sock.on('error', e => console.log(`⚠️ Socket error: ${e.message}`));
   });
 
   server.listen(PORT, HOST, () =>
-    logToFile(`🚀 TCP Server listening on ${HOST}:${PORT}`)
+    console.log(`🚀 TCP Server listening on ${HOST}:${PORT}`)
   );
 }
 
-start().catch(e => logToFile(`💥 Fatal: ${e.message}`));
+start().catch(e => console.log('💥 Fatal:', e.message));
