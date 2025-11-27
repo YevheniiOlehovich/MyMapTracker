@@ -66,10 +66,14 @@
 // // === Decode AVL ===
 // async function decodeAvlData(buf, imei, db) {
 //   try {
-//     if (buf.length < 34) return;
+//     if (buf.length < 34) {
+//       logToFile(`⚠️ Packet too short (${buf.length} bytes) from ${imei}`);
+//       return;
+//     }
 
 //     const raw_hex = buf.toString('hex');
 //     logToFile(`📦 RAW HEX (${imei}): ${raw_hex}`);
+//     logToFile(`📏 Packet length: ${buf.length} bytes`);
 
 //     const ts = Number(buf.readBigUInt64BE(10)) / 1000;
 //     const dt = new Date(ts * 1000);
@@ -125,36 +129,52 @@
 
 // // === Server start ===
 // async function start() {
-//   await client.connect();
-//   const db = client.db(DATABASE_NAME);
-//   logToFile(`✅ MongoDB connected`);
+//   try {
+//     await client.connect();
+//     const db = client.db(DATABASE_NAME);
+//     logToFile(`✅ MongoDB connected`);
 
-//   const server = net.createServer(sock => {
-//     logToFile(`🔌 Client: ${sock.remoteAddress}:${sock.remotePort}`);
+//     const server = net.createServer(sock => {
+//       logToFile(`🔌 New client connected: ${sock.remoteAddress}:${sock.remotePort}`);
 
-//     let imei = '';
+//       let imei = '';
 
-//     sock.once('data', data => {
-//       imei = cleanImei(data.toString());
-//       logToFile(`📡 IMEI: ${imei}`);
-//       sendConfirmation(sock);
-
-//       sock.on('data', pkt => {
-//         decodeAvlData(pkt, imei, db);
+//       // перший пакет IMEI
+//       sock.once('data', data => {
+//         logToFile(`📥 FIRST PACKET RAW: ${data.toString('hex')}`);
+//         imei = cleanImei(data.toString());
+//         logToFile(`📡 IMEI parsed: ${imei}`);
 //         sendConfirmation(sock);
+
+//         // усі наступні пакети AVL
+//         sock.on('data', pkt => {
+//           logToFile(`📥 AVL PACKET RAW (${imei}): ${pkt.toString('hex')}`);
+//           logToFile(`📏 Packet length: ${pkt.length} bytes`);
+
+//           decodeAvlData(pkt, imei, db);
+//           sendConfirmation(sock);
+//         });
+
+//         sock.on('close', () => logToFile(`🔴 Disconnected: ${imei}`));
+//         sock.on('error', e => logToFile(`⚠️ Socket error: ${e.message}`));
 //       });
-
-//       sock.on('close', () => logToFile(`🔴 Disconnected: ${imei}`));
-//       sock.on('error', e => logToFile(`⚠️ Socket error: ${e.message}`));
 //     });
-//   });
 
-//   server.listen(PORT, HOST, () =>
-//     logToFile(`🚀 Listening TCP ${HOST}:${PORT}`)
-//   );
+//     server.listen(PORT, HOST, () =>
+//       logToFile(`🚀 Listening TCP ${HOST}:${PORT}`)
+//     );
+//   } catch (e) {
+//     logToFile(`💥 Fatal: ${e.message}`);
+//   }
 // }
 
-// start().catch(e => logToFile(`💥 Fatal: ${e.message}`));
+// start();
+
+
+
+
+
+
 
 
 
@@ -166,7 +186,6 @@ const path = require('path');
 // === Settings ===
 const HOST = '0.0.0.0';
 const PORT = 20120;
-
 const MONGODB_URI = 'mongodb+srv://keildra258:aJuvQLKxaw5Lb5xf@cluster0.k4l1p.mongodb.net/';
 const DATABASE_NAME = 'test';
 
@@ -193,97 +212,58 @@ function sendConfirmation(socket) {
   socket.write(Buffer.from([0x01]));
 }
 
-// === IO parser ===
-function parseCodec8IO(buf, offset) {
-  const ioMap = {};
-
-  try {
-    offset += 2; // skip eventID + totalIO
-
-    const readIO = (count, size) => {
-      const m = {};
-      for (let i = 0; i < count; i++) {
-        const id = buf.readUInt8(offset++);
-        const v = buf.slice(offset, offset + size);
-        offset += size;
-        m[id] = { size, hex: v.toString('hex') };
-      }
-      return m;
-    };
-
-    let count;
-
-    count = buf.readUInt8(offset++); Object.assign(ioMap, readIO(count, 1));
-    count = buf.readUInt8(offset++); Object.assign(ioMap, readIO(count, 2));
-    count = buf.readUInt8(offset++); Object.assign(ioMap, readIO(count, 4));
-    count = buf.readUInt8(offset++); Object.assign(ioMap, readIO(count, 8));
-
-  } catch {}
-
-  return { ioMap };
+// === CRC16 Teltonika ===
+function crc16Teltonika(buf) {
+  let crc = 0x0000;
+  for (let b of buf) {
+    crc ^= b;
+    for (let i = 0; i < 8; i++) {
+      crc = (crc & 1) ? (crc >> 1) ^ 0xA001 : crc >> 1;
+    }
+  }
+  return crc & 0xFFFF;
 }
 
-// === Decode AVL ===
-async function decodeAvlData(buf, imei, db) {
+// === Save AVL + CRC to DB ===
+async function savePacketToDb(hexStr, imei, db) {
   try {
-    if (buf.length < 34) {
-      logToFile(`⚠️ Packet too short (${buf.length} bytes) from ${imei}`);
+    const buf = Buffer.from(hexStr, 'hex');
+    if (buf.length < 4) {
+      logToFile(`⚠️ Packet too short from IMEI=${imei}`);
       return;
     }
 
-    const raw_hex = buf.toString('hex');
-    logToFile(`📦 RAW HEX (${imei}): ${raw_hex}`);
-    logToFile(`📏 Packet length: ${buf.length} bytes`);
+    // Останні 4 байти – CRC
+    const crcRawBytes = buf.slice(-4);
+    const crcRaw = crcRawBytes.toString('hex').toUpperCase();
 
-    const ts = Number(buf.readBigUInt64BE(10)) / 1000;
-    const dt = new Date(ts * 1000);
-    const date = dt.toISOString().split('T')[0];
-    const year = dt.getFullYear();
+    // Розрахунок CRC16 по AVL (усі байти крім останніх 4)
+    const avlBytes = buf.slice(0, -4);
+    const crcCalcVal = crc16Teltonika(avlBytes);
+    const crcCalc = crcCalcVal.toString(16).padStart(4, '0').toUpperCase();
 
-    const gps = 19;
-    const lng = buf.readInt32BE(gps) / 1e7;
-    const lat = buf.readInt32BE(gps + 4) / 1e7;
-    const alt = buf.readInt16BE(gps + 8);
-    const ang = buf.readInt16BE(gps + 10);
-    const sats = buf[gps + 12];
-    const spd = buf.readInt16BE(gps + 13);
+    // Порівняння: додаємо 0000 на початку
+    const crcCompare = ('0000' + crcCalc).toUpperCase();
+    const statusOk = crcRaw.endsWith(crcCalc) ? '✅' : '❌';
 
-    const ioOffset = gps + 15;
-    const { ioMap } = parseCodec8IO(buf, ioOffset);
-
-    let card_id = null;
-    if (ioMap[157] && !/^0+$/.test(ioMap[157].hex)) {
-      card_id = ioMap[157].hex.toLowerCase();
-    }
-
-    const record = {
-      timestamp: dt,
-      longitude: lng,
-      latitude: lat,
-      altitude: alt,
-      angle: ang,
-      satellites: sats,
-      speed: spd,
-      card_id,
-      raw_hex
-    };
-
+    // Запис у MongoDB
+    const year = new Date().getFullYear();
     const collectionName = `trek_${year}`;
     const col = db.collection(collectionName);
 
-    const q = { date, imei };
-    const exists = await col.findOne(q);
+    const record = {
+      timestamp: new Date(),
+      imei,
+      raw_hex: hexStr.toUpperCase(),
+      crc_raw: crcRaw,
+      crc_calc: crcCalc,
+      status: statusOk
+    };
 
-    if (exists) {
-      await col.updateOne(q, { $push: { data: record } });
-    } else {
-      await col.insertOne({ date, imei, data: [record] });
-    }
-
-    logToFile(`✅ [${imei}] Saved to ${collectionName} card=${card_id || 'none'}`);
-
+    await col.insertOne(record);
+    logToFile(`✅ Saved packet from IMEI=${imei}, CRC status=${statusOk}`);
   } catch (e) {
-    logToFile(`❌ Decode error [${imei}]: ${e.message}`);
+    logToFile(`❌ Error saving packet [IMEI=${imei}]: ${e.message}`);
   }
 }
 
@@ -296,22 +276,19 @@ async function start() {
 
     const server = net.createServer(sock => {
       logToFile(`🔌 New client connected: ${sock.remoteAddress}:${sock.remotePort}`);
-
       let imei = '';
 
       // перший пакет IMEI
       sock.once('data', data => {
-        logToFile(`📥 FIRST PACKET RAW: ${data.toString('hex')}`);
         imei = cleanImei(data.toString());
         logToFile(`📡 IMEI parsed: ${imei}`);
         sendConfirmation(sock);
 
         // усі наступні пакети AVL
         sock.on('data', pkt => {
-          logToFile(`📥 AVL PACKET RAW (${imei}): ${pkt.toString('hex')}`);
-          logToFile(`📏 Packet length: ${pkt.length} bytes`);
-
-          decodeAvlData(pkt, imei, db);
+          const hexStr = pkt.toString('hex');
+          logToFile(`📥 Received packet: ${hexStr}`);
+          savePacketToDb(hexStr, imei, db);
           sendConfirmation(sock);
         });
 
@@ -320,11 +297,9 @@ async function start() {
       });
     });
 
-    server.listen(PORT, HOST, () =>
-      logToFile(`🚀 Listening TCP ${HOST}:${PORT}`)
-    );
+    server.listen(PORT, HOST, () => logToFile(`🚀 TCP server listening on ${HOST}:${PORT}`));
   } catch (e) {
-    logToFile(`💥 Fatal: ${e.message}`);
+    logToFile(`💥 Fatal error: ${e.message}`);
   }
 }
 
