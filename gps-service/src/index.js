@@ -176,6 +176,7 @@
 
 
 
+
 const net = require('net');
 const { MongoClient } = require('mongodb');
 const fs = require('fs');
@@ -246,27 +247,32 @@ function parseCodec8IO(buf, offset) {
   return { ioMap };
 }
 
-// === Save AVL + CRC to DB in old format ===
-async function savePacketToDb(hexStr, imei, db) {
+// === Decode AVL & Save to DB ===
+async function decodeAvlData(buf, imei, db) {
   try {
-    const buf = Buffer.from(hexStr, 'hex');
-    if (buf.length < 4) {
-      logToFile(`⚠️ Packet too short from IMEI=${imei}`);
+    if (buf.length < 34) {
+      logToFile(`⚠️ Packet too short (${buf.length} bytes) from ${imei}`);
       return;
     }
 
-    // CRC
+    const raw_hex = buf.toString('hex');
+    logToFile(`📦 RAW HEX (${imei}): ${raw_hex}`);
+
+    // === CRC обчислення ===
     const crcRawBytes = buf.slice(-4);
     const crcRaw = crcRawBytes.toString('hex').toUpperCase();
+
     const avlBytes = buf.slice(0, -4);
     const crcCalcVal = crc16Teltonika(avlBytes);
     const crcCalc = crcCalcVal.toString(16).padStart(4, '0').toUpperCase();
+
     const statusOk = crcRaw.endsWith(crcCalc) ? '✅' : '❌';
 
-    // GPS + IO
+    // === GPS + IO ===
     const ts = Number(buf.readBigUInt64BE(10)) / 1000;
     const dt = new Date(ts * 1000);
     const date = dt.toISOString().split('T')[0];
+    const year = dt.getFullYear();
 
     const gps = 19;
     const lng = buf.readInt32BE(gps) / 1e7;
@@ -293,13 +299,12 @@ async function savePacketToDb(hexStr, imei, db) {
       satellites: sats,
       speed: spd,
       card_id,
-      raw_hex: hexStr.toUpperCase(),
-      crc_raw: crcRaw,
+      raw_hex,
+      crc_raw,
       crc_calc: crcCalc,
       status: statusOk
     };
 
-    const year = dt.getFullYear();
     const collectionName = `trek_${year}`;
     const col = db.collection(collectionName);
 
@@ -312,10 +317,9 @@ async function savePacketToDb(hexStr, imei, db) {
       await col.insertOne({ date, imei, data: [record] });
     }
 
-    logToFile(`✅ Saved packet from IMEI=${imei}, CRC status=${statusOk}`);
-
+    logToFile(`✅ [${imei}] Saved to ${collectionName} card=${card_id || 'none'} CRC=${statusOk}`);
   } catch (e) {
-    logToFile(`❌ Error saving packet [IMEI=${imei}]: ${e.message}`);
+    logToFile(`❌ Decode error [${imei}]: ${e.message}`);
   }
 }
 
@@ -328,17 +332,19 @@ async function start() {
 
     const server = net.createServer(sock => {
       logToFile(`🔌 New client connected: ${sock.remoteAddress}:${sock.remotePort}`);
+
       let imei = '';
 
+      // перший пакет IMEI
       sock.once('data', data => {
+        logToFile(`📥 FIRST PACKET RAW: ${data.toString('hex')}`);
         imei = cleanImei(data.toString());
         logToFile(`📡 IMEI parsed: ${imei}`);
         sendConfirmation(sock);
 
+        // усі наступні пакети AVL
         sock.on('data', pkt => {
-          const hexStr = pkt.toString('hex');
-          logToFile(`📥 Received packet: ${hexStr}`);
-          savePacketToDb(hexStr, imei, db);
+          decodeAvlData(pkt, imei, db);
           sendConfirmation(sock);
         });
 
@@ -347,7 +353,9 @@ async function start() {
       });
     });
 
-    server.listen(PORT, HOST, () => logToFile(`🚀 TCP server listening on ${HOST}:${PORT}`));
+    server.listen(PORT, HOST, () =>
+      logToFile(`🚀 TCP server listening on ${HOST}:${PORT}`)
+    );
   } catch (e) {
     logToFile(`💥 Fatal error: ${e.message}`);
   }
