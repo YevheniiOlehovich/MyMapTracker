@@ -355,21 +355,21 @@
 
 
 
-
 const net = require('net');
 const { MongoClient } = require('mongodb');
 const fs = require('fs');
 const path = require('path');
 
-// === Settings ===
+// === Налаштування ===
 const HOST = '0.0.0.0';
 const PORT = 20120;
 const MONGODB_URI = 'mongodb+srv://keildra258:aJuvQLKxaw5Lb5xf@cluster0.k4l1p.mongodb.net/';
 const DATABASE_NAME = 'test';
 
-// === Logs ===
+// === Логи ===
 const LOG_DIR = path.join(__dirname, 'logs');
 if (!fs.existsSync(LOG_DIR)) fs.mkdirSync(LOG_DIR);
+
 function logToFile(msg) {
   const date = new Date().toISOString().split('T')[0];
   const file = path.join(LOG_DIR, `${date}.log`);
@@ -380,7 +380,6 @@ function logToFile(msg) {
 // === MongoDB ===
 const client = new MongoClient(MONGODB_URI);
 
-// === Start server ===
 async function start() {
   await client.connect();
   const db = client.db(DATABASE_NAME);
@@ -390,34 +389,39 @@ async function start() {
     logToFile(`🔌 Client connected: ${sock.remoteAddress}:${sock.remotePort}`);
 
     let imei = null;
-    let readyForData = false; // після IMEI очікуємо AVL пакети
+    let initialized = false;
 
     sock.on('data', async data => {
       try {
-        if (!imei) {
-          // перший пакет — IMEI
-          imei = data.toString().replace(/\D/g, '');
+        // --- Етап ініціалізації IMEI ---
+        if (!initialized) {
+          if (data.length !== 15) {
+            logToFile(`⚠️ Invalid IMEI length: ${data.length} bytes`);
+            sock.write(Buffer.from([0x00])); // не підтверджуємо
+            sock.end();
+            return;
+          }
+
+          imei = data.toString('ascii');
           logToFile(`📡 IMEI received: ${imei}`);
 
-          // відповідаємо одиничкою
+          // підтвердження з'єднання
           sock.write(Buffer.from([0x01]));
-          readyForData = true;
+          initialized = true;
           return;
         }
 
-        // якщо IMEI встановлено, і ми готові приймати пакети
-        if (readyForData) {
-          const collection = db.collection('raw_packets');
-          await collection.insertOne({
-            imei,
-            timestamp: new Date(),
-            raw: data.toString('hex')
-          });
-          logToFile(`✅ Saved packet for IMEI ${imei} (${data.length} bytes)`);
+        // --- Етап прийому AVL пакетів ---
+        const collection = db.collection('raw_packets');
+        await collection.insertOne({
+          imei,
+          timestamp: new Date(),
+          raw: data.toString('hex')
+        });
+        logToFile(`✅ Saved packet for IMEI ${imei} (${data.length} bytes)`);
 
-          // підтвердження кожного пакету
-          sock.write(Buffer.from([0x01]));
-        }
+        // підтвердження пакету
+        sock.write(Buffer.from([0x01]));
 
       } catch (e) {
         logToFile(`❌ Error handling data: ${e.message}`);
