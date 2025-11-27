@@ -356,7 +356,6 @@
 
 
 
-
 const net = require('net');
 const { MongoClient } = require('mongodb');
 const fs = require('fs');
@@ -371,17 +370,17 @@ const DATABASE_NAME = 'test';
 // === Logs ===
 const LOG_DIR = path.join(__dirname, 'logs');
 if (!fs.existsSync(LOG_DIR)) fs.mkdirSync(LOG_DIR);
-
-function logToFile(message) {
+function logToFile(msg) {
   const date = new Date().toISOString().split('T')[0];
   const file = path.join(LOG_DIR, `${date}.log`);
-  fs.appendFileSync(file, `[${new Date().toISOString()}] ${message}\n`);
-  console.log(message);
+  fs.appendFileSync(file, `[${new Date().toISOString()}] ${msg}\n`);
+  console.log(msg);
 }
 
-// === DB ===
+// === MongoDB ===
 const client = new MongoClient(MONGODB_URI);
 
+// === Start server ===
 async function start() {
   await client.connect();
   const db = client.db(DATABASE_NAME);
@@ -391,27 +390,34 @@ async function start() {
     logToFile(`🔌 Client connected: ${sock.remoteAddress}:${sock.remotePort}`);
 
     let imei = null;
+    let readyForData = false; // після IMEI очікуємо AVL пакети
 
     sock.on('data', async data => {
       try {
-        // Якщо IMEI ще не встановлено — беремо перші цифри як IMEI
         if (!imei) {
+          // перший пакет — IMEI
           imei = data.toString().replace(/\D/g, '');
           logToFile(`📡 IMEI received: ${imei}`);
+
+          // відповідаємо одиничкою
+          sock.write(Buffer.from([0x01]));
+          readyForData = true;
+          return;
         }
 
-        // Відправляємо одиничку у відповідь
-        sock.write(Buffer.from([0x01]));
+        // якщо IMEI встановлено, і ми готові приймати пакети
+        if (readyForData) {
+          const collection = db.collection('raw_packets');
+          await collection.insertOne({
+            imei,
+            timestamp: new Date(),
+            raw: data.toString('hex')
+          });
+          logToFile(`✅ Saved packet for IMEI ${imei} (${data.length} bytes)`);
 
-        // Зберігаємо пакет у MongoDB
-        const collection = db.collection('raw_packets');
-        await collection.insertOne({
-          imei,
-          timestamp: new Date(),
-          raw: data.toString('hex')
-        });
-
-        logToFile(`✅ Saved packet for IMEI ${imei} (${data.length} bytes)`);
+          // підтвердження кожного пакету
+          sock.write(Buffer.from([0x01]));
+        }
 
       } catch (e) {
         logToFile(`❌ Error handling data: ${e.message}`);
