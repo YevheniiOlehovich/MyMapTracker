@@ -574,7 +574,6 @@
 
 // start();
 
-
 const net = require('net');
 const { MongoClient } = require('mongodb');
 const fs = require('fs');
@@ -664,11 +663,9 @@ async function decodeAvlData(buf, imei, db) {
     const avlBuf = buf.slice(avlStart, avlEnd);
 
     // --- CRC ---
-    let crcCalc = crc16_teltonika(avlBuf);
-    // додаємо 2 нульові байти, щоб отримати 4-байтне значення
-    const crcCalcHex = ('0000' + crcCalc.toString(16)).slice(-4).toLowerCase();
-    const crcPacketHex = buf.slice(-4).toString('hex').toLowerCase();
-    const crcValid = crcCalcHex === crcPacketHex;
+    const crcCalc = crc16_teltonika(avlBuf); // 2 байти CRC16
+    const crcPacket = buf.readUInt16LE(buf.length - 2); // останні 2 байти з 4-байтного поля CRC у пакеті
+    const crcValidFlag = crcCalc === crcPacket ? 1 : 0;
 
     // --- Timestamp ---
     const ts = Number(avlBuf.readBigUInt64BE(2)) / 1000;
@@ -696,7 +693,7 @@ async function decodeAvlData(buf, imei, db) {
     logToFile(`📏 LENGTH: ${len} bytes`);
     logToFile(`🧩 DECODED (${imei}): lat=${lat} lng=${lng} alt=${alt} speed=${spd} angle=${ang} sats=${sats}`);
     logToFile(`🔧 IO EVENT=${eventId} IO COUNT=${Object.keys(ioMap).length} CARD=${card_id || 'none'}`);
-    logToFile(`🔐 CRC: calculated=${crcCalcHex} packet=${crcPacketHex} VALID=${crcValid ? '✔' : '❌'}`);
+    logToFile(`🔐 CRC: calculated=${crcCalc.toString(16).toLowerCase()} packet=${crcPacket.toString(16).toLowerCase()} VALID=${crcValidFlag}`);
 
     // --- DB save ---
     const collectionName = `trek_${dt.getFullYear()}`;
@@ -716,9 +713,9 @@ async function decodeAvlData(buf, imei, db) {
       card_id,
       raw: rawHex,
       crc: {
-        calculated: crcCalcHex,
-        packet: crcPacketHex,
-        valid: crcValid
+        calculated: crcCalc.toString(16).toLowerCase(),
+        packet: crcPacket.toString(16).toLowerCase(),
+        valid: crcValidFlag
       }
     };
 
