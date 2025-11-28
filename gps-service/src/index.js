@@ -377,6 +377,206 @@
 
 
 
+// const net = require('net');
+// const { MongoClient } = require('mongodb');
+// const fs = require('fs');
+// const path = require('path');
+
+// // === Settings ===
+// const HOST = '0.0.0.0';
+// const PORT = 20120;
+// const MONGODB_URI = 'mongodb+srv://keildra258:aJuvQLKxaw5Lb5xf@cluster0.k4l1p.mongodb.net/';
+// const DATABASE_NAME = 'test';
+
+// // === Logs ===
+// const LOG_DIR = path.join(__dirname, 'logs');
+// if (!fs.existsSync(LOG_DIR)) fs.mkdirSync(LOG_DIR);
+
+// function logToFile(message) {
+//   const date = new Date().toISOString().split('T')[0];
+//   const file = path.join(LOG_DIR, `${date}.log`);
+//   fs.appendFileSync(file, `[${new Date().toISOString()}] ${message}\n`);
+//   console.log(message);
+// }
+
+// // === DB ===
+// const client = new MongoClient(MONGODB_URI);
+
+// // === Helpers ===
+// function cleanImei(imei) {
+//   return imei.replace(/\D/g, '');
+// }
+
+// function sendConfirmation(socket) {
+//   socket.write(Buffer.from([0x01]));
+// }
+
+// // === CRC16/X25 (для Bitrek) ===
+// function crc16x25(buffer) {
+//   let crc = 0xFFFF;
+
+//   for (let i = 0; i < buffer.length; i++) {
+//     crc ^= buffer[i];
+//     for (let j = 0; j < 8; j++) {
+//       if (crc & 1) crc = (crc >>> 1) ^ 0x8408;
+//       else crc >>>= 1;
+//     }
+//   }
+
+//   crc = ~crc & 0xFFFF;
+//   return ((crc << 8) & 0xFF00) | (crc >> 8);
+// }
+
+// // === IO parser (Codec 8) ===
+// function parseCodec8IO(buf, offset) {
+//   const ioMap = {};
+//   try {
+//     const eventId = buf.readUInt8(offset++);
+//     const totalIO = buf.readUInt8(offset++);
+
+//     const readIO = (count, size) => {
+//       const m = {};
+//       for (let i = 0; i < count; i++) {
+//         const id = buf.readUInt8(offset++);
+//         const v = buf.slice(offset, offset + size);
+//         offset += size;
+//         m[id] = { size, value: v.toString('hex') };
+//       }
+//       return m;
+//     };
+
+//     let count;
+//     count = buf.readUInt8(offset++); Object.assign(ioMap, readIO(count, 1));
+//     count = buf.readUInt8(offset++); Object.assign(ioMap, readIO(count, 2));
+//     count = buf.readUInt8(offset++); Object.assign(ioMap, readIO(count, 4));
+//     count = buf.readUInt8(offset++); Object.assign(ioMap, readIO(count, 8));
+
+//     return { ioMap, eventId };
+//   } catch (e) {
+//     return { ioMap: {}, eventId: null };
+//   }
+// }
+
+// // === Decode AVL ===
+// async function decodeAvlData(buf, imei, db) {
+//   try {
+//     const rawHex = buf.toString('hex');
+//     const len = buf.length;
+
+//     // --- Timestamp ---
+//     const ts = Number(buf.readBigUInt64BE(10)) / 1000;
+//     const dt = new Date(ts * 1000);
+
+//     const gpsOffset = 19;
+//     const lng = buf.readInt32BE(gpsOffset) / 1e7;
+//     const lat = buf.readInt32BE(gpsOffset + 4) / 1e7;
+//     const alt = buf.readInt16BE(gpsOffset + 8);
+//     const ang = buf.readInt16BE(gpsOffset + 10);
+//     const sats = buf[gpsOffset + 12];
+//     const spd = buf.readInt16BE(gpsOffset + 13);
+
+//     const { ioMap, eventId } = parseCodec8IO(buf, gpsOffset + 15);
+
+//     let card_id = null;
+//     if (ioMap[157] && !/^0+$/.test(ioMap[157].value)) {
+//       card_id = ioMap[157].value;
+//     }
+
+//     // --- CRC ---
+//     const crcCalc = crc16x25(buf.slice(0, buf.length - 2));
+//     const crcActual = buf.readUInt16BE(buf.length - 2);
+//     const crcValid = crcCalc === crcActual;
+
+//     // --- Logging with packet timestamp ---
+//     logToFile(`📅 DATE: ${dt.toISOString()}`);
+//     logToFile(`📦 RAW HEX (${imei}): ${rawHex}`);
+//     logToFile(`📏 LENGTH: ${len} bytes`);
+//     logToFile(`🧩 DECODED (${imei}): lat=${lat} lng=${lng} alt=${alt} speed=${spd} angle=${ang} sats=${sats}`);
+//     logToFile(`🔧 IO EVENT=${eventId} IO COUNT=${Object.keys(ioMap).length} CARD=${card_id || 'none'}`);
+//     logToFile(`🔐 CRC: calculated=${crcCalc.toString(16).toUpperCase()} actual=${crcActual.toString(16).toUpperCase()} VALID=${crcValid ? '✔' : '❌'}`);
+
+//     // --- DB save ---
+//     const collectionName = `trek_${dt.getFullYear()}`;
+//     const col = db.collection(collectionName);
+//     const key = { date: dt.toISOString().split('T')[0], imei };
+
+//     const record = {
+//       timestamp: dt,
+//       latitude: lat,
+//       longitude: lng,
+//       altitude: alt,
+//       angle: ang,
+//       satellites: sats,
+//       speed: spd,
+//       io: ioMap,
+//       eventId,
+//       card_id,
+//       raw: rawHex,
+//       crc: {
+//         calculated: crcCalc,
+//         actual: crcActual,
+//         valid: crcValid
+//       }
+//     };
+
+//     const exists = await col.findOne(key);
+//     if (!exists) {
+//       await col.insertOne({ ...key, data: [record] });
+//     } else {
+//       await col.updateOne(key, { $push: { data: record } });
+//     }
+
+//     logToFile(`✅ Saved to ${collectionName}`);
+
+//   } catch (e) {
+//     logToFile(`❌ Decode error: ${e.message}`);
+//   }
+// }
+
+// // === Server start ===
+// async function start() {
+//   try {
+//     await client.connect();
+//     const db = client.db(DATABASE_NAME);
+//     logToFile(`✅ MongoDB connected`);
+
+//     const server = net.createServer(sock => {
+//       logToFile(`🔌 New client connected: ${sock.remoteAddress}:${sock.remotePort}`);
+
+//       let imei = '';
+
+//       sock.on('data', async data => {
+//         if (!imei) {
+//           logToFile(`📥 FIRST PACKET: ${data.toString('hex')}`);
+//           imei = cleanImei(data.toString());
+//           logToFile(`📡 IMEI = ${imei}`);
+//           sendConfirmation(sock);
+//           return;
+//         }
+
+//         logToFile(`📥 AVL: ${data.toString('hex')}`);
+//         await decodeAvlData(data, imei, db);
+//         sendConfirmation(sock);
+//       });
+
+//       sock.on('close', () => logToFile(`🔴 Disconnected: ${imei}`));
+//       sock.on('error', err => logToFile(`⚠️ Socket error: ${err.message}`));
+//     });
+
+//     server.listen(PORT, HOST, () =>
+//       logToFile(`🚀 Listening TCP ${HOST}:${PORT}`)
+//     );
+
+//   } catch (e) {
+//     logToFile(`💥 Fatal error: ${e.message}`);
+//   }
+// }
+
+// start();
+
+
+
+
 const net = require('net');
 const { MongoClient } = require('mongodb');
 const fs = require('fs');
@@ -411,23 +611,19 @@ function sendConfirmation(socket) {
   socket.write(Buffer.from([0x01]));
 }
 
-// === CRC16/X25 (для Bitrek) ===
-function crc16x25(buffer) {
-  let crc = 0xFFFF;
-
-  for (let i = 0; i < buffer.length; i++) {
-    crc ^= buffer[i];
+// === CRC16 Teltonika ===
+function crc16_teltonika(buf) {
+  let crc = 0x0000;
+  for (let i = 0; i < buf.length; i++) {
+    crc ^= buf[i];
     for (let j = 0; j < 8; j++) {
-      if (crc & 1) crc = (crc >>> 1) ^ 0x8408;
-      else crc >>>= 1;
+      crc = (crc & 0x0001) ? (crc >>> 1) ^ 0xA001 : crc >>> 1;
     }
   }
-
-  crc = ~crc & 0xFFFF;
-  return ((crc << 8) & 0xFF00) | (crc >> 8);
+  return crc;
 }
 
-// === IO parser (Codec 8) ===
+// === Parse Codec 8 IO ===
 function parseCodec8IO(buf, offset) {
   const ioMap = {};
   try {
@@ -463,6 +659,16 @@ async function decodeAvlData(buf, imei, db) {
     const rawHex = buf.toString('hex');
     const len = buf.length;
 
+    // --- Dat_len: перші 4 нулі + 4 байти довжини AVL ---
+    // У твоєму описі: Dat_len = buf[4]
+    // тут сприймаємо весь buf як AVL (якщо вже виділено Dat_len до виклику)
+    const avlData = buf;
+
+    // --- CRC з пакету: останні 4 байти ---
+    const crcPacket = buf.readUInt16LE(buf.length - 2); // молодші 2 байти
+    const crcCalc = crc16_teltonika(avlData.slice(0, buf.length - 4));
+    const crcValid = crcCalc === crcPacket;
+
     // --- Timestamp ---
     const ts = Number(buf.readBigUInt64BE(10)) / 1000;
     const dt = new Date(ts * 1000);
@@ -482,18 +688,13 @@ async function decodeAvlData(buf, imei, db) {
       card_id = ioMap[157].value;
     }
 
-    // --- CRC ---
-    const crcCalc = crc16x25(buf.slice(0, buf.length - 2));
-    const crcActual = buf.readUInt16BE(buf.length - 2);
-    const crcValid = crcCalc === crcActual;
-
-    // --- Logging with packet timestamp ---
+    // --- Logging ---
     logToFile(`📅 DATE: ${dt.toISOString()}`);
     logToFile(`📦 RAW HEX (${imei}): ${rawHex}`);
     logToFile(`📏 LENGTH: ${len} bytes`);
     logToFile(`🧩 DECODED (${imei}): lat=${lat} lng=${lng} alt=${alt} speed=${spd} angle=${ang} sats=${sats}`);
     logToFile(`🔧 IO EVENT=${eventId} IO COUNT=${Object.keys(ioMap).length} CARD=${card_id || 'none'}`);
-    logToFile(`🔐 CRC: calculated=${crcCalc.toString(16).toUpperCase()} actual=${crcActual.toString(16).toUpperCase()} VALID=${crcValid ? '✔' : '❌'}`);
+    logToFile(`🔐 CRC: calculated=${crcCalc.toString(16).toUpperCase()} packet=${crcPacket.toString(16).toUpperCase()} VALID=${crcValid ? '✔' : '❌'}`);
 
     // --- DB save ---
     const collectionName = `trek_${dt.getFullYear()}`;
@@ -514,7 +715,7 @@ async function decodeAvlData(buf, imei, db) {
       raw: rawHex,
       crc: {
         calculated: crcCalc,
-        actual: crcActual,
+        packet: crcPacket,
         valid: crcValid
       }
     };
@@ -527,7 +728,6 @@ async function decodeAvlData(buf, imei, db) {
     }
 
     logToFile(`✅ Saved to ${collectionName}`);
-
   } catch (e) {
     logToFile(`❌ Decode error: ${e.message}`);
   }
@@ -566,16 +766,9 @@ async function start() {
     server.listen(PORT, HOST, () =>
       logToFile(`🚀 Listening TCP ${HOST}:${PORT}`)
     );
-
   } catch (e) {
     logToFile(`💥 Fatal error: ${e.message}`);
   }
 }
 
 start();
-
-
-
-
-
-
