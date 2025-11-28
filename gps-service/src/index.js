@@ -400,7 +400,6 @@
 // start();
 
 
-
 const net = require('net');
 const { MongoClient } = require('mongodb');
 const fs = require('fs');
@@ -435,7 +434,7 @@ function sendConfirmation(socket) {
   socket.write(Buffer.from([0x01]));
 }
 
-// === CRC16 Teltonika ===
+// === CRC16 Teltonika (Modbus) ===
 function crc16Teltonika(buf) {
   let crc = 0x0000;
   for (const b of buf) {
@@ -448,7 +447,7 @@ function crc16Teltonika(buf) {
   return crc & 0xFFFF;
 }
 
-// === Decode AVL ===
+// === Decode AVL & calculate CRC like Python ===
 async function decodeAvlData(buf, imei, db) {
   try {
     if (buf.length < 34) {
@@ -458,9 +457,8 @@ async function decodeAvlData(buf, imei, db) {
 
     const raw_hex = buf.toString('hex');
     logToFile(`📦 RAW HEX (${imei}): ${raw_hex}`);
-    logToFile(`📏 Packet length: ${buf.length} bytes`);
 
-    // --- CRC calculation like Python ---
+    // --- Calculate CRC exactly like Python ---
     let crc = {
       raw_bytes: null,
       calculated: null,
@@ -468,31 +466,38 @@ async function decodeAvlData(buf, imei, db) {
     };
 
     try {
-      const avl_data_len = buf.length - 4; // exclude last 4 bytes CRC
-      const avl_bytes = buf.slice(0, avl_data_len);
+      // --- Get dat_len from bytes 8..15 ---
+      const dat_len_hex = raw_hex.slice(8, 16);
+      const dat_len = parseInt(dat_len_hex, 16);
 
-      const crc_packet_bytes = buf.slice(buf.length - 4); // last 4 bytes
-      const crc_packet = crc_packet_bytes.readUInt32BE(0); 
+      // --- AVL bytes for CRC: after preamble + dat_len (8+8 bytes) ---
+      const avl_start = 16;
+      const avl_bytes = Buffer.from(raw_hex.slice(avl_start, avl_start + dat_len * 2), 'hex');
 
+      // --- CRC bytes from the end of packet ---
+      const crc_bytes_raw = Buffer.from(raw_hex.slice(-8), 'hex');
+      const crc_packet = crc_bytes_raw.readUInt32BE(0);
+
+      // --- CRC calculation ---
       const crc_calc16 = crc16Teltonika(avl_bytes);
-      const crc_calc_full = parseInt(`0000${crc_calc16.toString(16).padStart(4,'0')}`, 16);
+      const crc_calc_full = parseInt(`0000${crc_calc16.toString(16).padStart(4, '0')}`, 16);
 
-      crc.raw_bytes = crc_packet_bytes.toString('hex').toUpperCase();
-      crc.calculated = crc_calc_full.toString(16).padStart(8,'0').toUpperCase();
+      crc.raw_bytes = crc_bytes_raw.toString('hex').toUpperCase();
+      crc.calculated = crc_calc_full.toString(16).padStart(8, '0').toUpperCase();
       crc.valid = crc_packet === crc_calc_full;
 
       logToFile(`🔹 CRC RAW BYTES: ${crc.raw_bytes}`);
       logToFile(`🔹 CRC CALC (with 0000 prefix): ${crc.calculated}`);
       logToFile(`🔹 CRC CHECK: ${crc.valid ? '✅' : '❌'}`);
     } catch (e) {
+      crc = { raw_bytes: raw_hex.slice(-8).toUpperCase(), calculated: '', valid: false, error: e.message };
       logToFile(`⚠️ CRC calculation error: ${e.message}`);
     }
 
-    // --- Save to DB (optional) ---
-    const ts = Number(buf.readBigUInt64BE(10)) / 1000;
+    // --- Timestamp for DB ---
+    let ts = 0;
+    try { ts = Number(buf.readBigUInt64BE(10)) / 1000; } catch {}
     const dt = new Date(ts * 1000);
-    const date = dt.toISOString().split('T')[0];
-    const year = dt.getFullYear();
 
     const record = {
       timestamp: dt,
@@ -500,13 +505,14 @@ async function decodeAvlData(buf, imei, db) {
       crc
     };
 
+    const year = dt.getFullYear();
     const col = db.collection(`trek_${year}`);
-    const q = { date, imei };
+    const q = { date: dt.toISOString().split('T')[0], imei };
     const exists = await col.findOne(q);
     if (exists) {
       await col.updateOne(q, { $push: { data: record } });
     } else {
-      await col.insertOne({ date, imei, data: [record] });
+      await col.insertOne({ date: dt.toISOString().split('T')[0], imei, data: [record] });
     }
 
     logToFile(`✅ [${imei}] Saved to DB collection trek_${year}`);
@@ -529,6 +535,7 @@ async function start() {
 
       sock.on('data', async data => {
         try {
+          // --- First packet: IMEI ---
           if (!imei) {
             logToFile(`📥 FIRST PACKET RAW: ${data.toString('hex')}`);
             imei = cleanImei(data.toString());
@@ -537,6 +544,7 @@ async function start() {
             return;
           }
 
+          // --- AVL packet ---
           logToFile(`📥 AVL PACKET RAW (${imei}): ${data.toString('hex')}`);
           await decodeAvlData(data, imei, db);
           sendConfirmation(sock);
