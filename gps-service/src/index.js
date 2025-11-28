@@ -664,7 +664,7 @@ async function decodeAvlData(buf, imei, db) {
 
     // --- CRC ---
     const crcCalc = crc16_teltonika(avlBuf); // 2 байти CRC16
-    const crcPacket = buf.readUInt16LE(buf.length - 2); // останні 2 байти з 4-байтного поля CRC у пакеті
+    const crcPacket = buf.readUInt16BE(buf.length - 2); // останні 2 байти з 4-байтного поля CRC у пакеті
     const crcValidFlag = crcCalc === crcPacket ? 1 : 0;
 
     // --- Timestamp ---
