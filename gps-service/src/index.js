@@ -260,70 +260,87 @@ async function decodeAvlData(buf, imei, db) {
     logToFile(`📦 RAW HEX (${imei}): ${raw_hex}`);
     logToFile(`📏 Packet length: ${buf.length} bytes`);
 
-    // === CRC check ===
-    let crc_valid = false;
+    // === CRC ===
+    let crc = {
+      raw_bytes: null,
+      calculated: null,
+      valid: false
+    };
+
     try {
-      // Беремо останні 4 байти як CRC, а перед ними - AVL data
       const avl_data_len = buf.length - 4;
       const avl_bytes = buf.slice(0, avl_data_len);
-      const crc_packet = buf.readUInt32BE(buf.length - 4);
-      const crc_calc = crc16Teltonika(avl_bytes);
-      const crc_calc_full = (0 << 16) | crc_calc;
-      crc_valid = crc_packet === crc_calc_full;
-      logToFile(`🔹 CRC check for ${imei}: ${crc_valid ? '✅' : '❌'}`);
+      const crc_packet_bytes = buf.slice(buf.length - 4);
+      const crc_packet = crc_packet_bytes.readUInt32BE(0);
+      const crc_calc16 = crc16Teltonika(avl_bytes);
+      const crc_calc_full = (0 << 16) | crc_calc16;
+
+      crc.raw_bytes = crc_packet_bytes.toString('hex').toUpperCase();
+      crc.calculated = crc_calc_full.toString(16).padStart(8, '0').toUpperCase();
+      crc.valid = crc_packet === crc_calc_full;
+
+      logToFile(`🔹 CRC RAW BYTES: ${crc.raw_bytes}`);
+      logToFile(`🔹 CRC CALC (with 0000 prefix): ${crc.calculated}`);
+      logToFile(`🔹 CRC CHECK: ${crc.valid ? '✅' : '❌'}`);
     } catch (e) {
-      logToFile(`⚠️ CRC check error: ${e.message}`);
+      logToFile(`⚠️ CRC calculation error: ${e.message}`);
     }
 
     // === GPS parsing ===
     const gpsOffset = 19;
-    if (buf.length >= gpsOffset + 15) {
-      const ts = Number(buf.readBigUInt64BE(10)) / 1000;
-      const dt = new Date(ts * 1000);
-      const date = dt.toISOString().split('T')[0];
-      const year = dt.getFullYear();
-
-      const lng = buf.readInt32BE(gpsOffset) / 1e7;
-      const lat = buf.readInt32BE(gpsOffset + 4) / 1e7;
-      const alt = buf.readInt16BE(gpsOffset + 8);
-      const ang = buf.readInt16BE(gpsOffset + 10);
-      const sats = buf[gpsOffset + 12];
-      const spd = buf.readInt16BE(gpsOffset + 13);
-
-      const ioOffset = gpsOffset + 15;
-      const { ioMap } = parseCodec8IO(buf, ioOffset);
-
-      let card_id = null;
-      if (ioMap[157] && !/^0+$/.test(ioMap[157].hex)) {
-        card_id = ioMap[157].hex.toLowerCase();
-      }
-
-      const record = {
-        timestamp: dt,
-        longitude: lng,
-        latitude: lat,
-        altitude: alt,
-        angle: ang,
-        satellites: sats,
-        speed: spd,
-        card_id,
-        raw_hex,
-        crc_valid
-      };
-
-      const collectionName = `trek_${year}`;
-      const col = db.collection(collectionName);
-      const q = { date, imei };
-
-      const exists = await col.findOne(q);
-      if (exists) {
-        await col.updateOne(q, { $push: { data: record } });
-      } else {
-        await col.insertOne({ date, imei, data: [record] });
-      }
-
-      logToFile(`✅ [${imei}] Saved to ${collectionName} card=${card_id || 'none'}`);
+    if (buf.length < gpsOffset + 15) {
+      logToFile(`⚠️ Packet too short for GPS parsing: ${buf.length} bytes`);
+      return;
     }
+
+    const ts = Number(buf.readBigUInt64BE(10)) / 1000;
+    const dt = new Date(ts * 1000);
+    const date = dt.toISOString().split('T')[0];
+    const year = dt.getFullYear();
+
+    const lng = buf.readInt32BE(gpsOffset) / 1e7;
+    const lat = buf.readInt32BE(gpsOffset + 4) / 1e7;
+    const alt = buf.readInt16BE(gpsOffset + 8);
+    const ang = buf.readInt16BE(gpsOffset + 10);
+    const sats = buf[gpsOffset + 12];
+    const spd = buf.readInt16BE(gpsOffset + 13);
+
+    const ioOffset = gpsOffset + 15;
+    const { ioMap } = parseCodec8IO(buf, ioOffset);
+
+    let card_id = null;
+    if (ioMap[157] && !/^0+$/.test(ioMap[157].hex)) {
+      card_id = ioMap[157].hex.toLowerCase();
+    }
+
+    const record = {
+      timestamp: dt,
+      longitude: lng,
+      latitude: lat,
+      altitude: alt,
+      angle: ang,
+      satellites: sats,
+      speed: spd,
+      card_id,
+      raw_hex,
+      crc
+    };
+
+    const collectionName = `trek_${year}`;
+    const col = db.collection(collectionName);
+
+    const q = { date, imei };
+    logToFile(`🔍 Query: ${JSON.stringify(q)}`);
+
+    const exists = await col.findOne(q);
+    if (exists) {
+      await col.updateOne(q, { $push: { data: record } });
+    } else {
+      await col.insertOne({ date, imei, data: [record] });
+    }
+
+    logToFile(`✅ [${imei}] Saved to ${collectionName} card=${card_id || 'none'}`);
+
   } catch (e) {
     logToFile(`❌ Decode error [${imei}]: ${e.message}`);
   }
@@ -338,10 +355,12 @@ async function start() {
 
     const server = net.createServer(sock => {
       logToFile(`🔌 New client connected: ${sock.remoteAddress}:${sock.remotePort}`);
+
       let imei = '';
 
       sock.on('data', async data => {
         try {
+          // перший пакет IMEI
           if (!imei) {
             logToFile(`📥 FIRST PACKET RAW: ${data.toString('hex')}`);
             imei = cleanImei(data.toString());
@@ -350,7 +369,7 @@ async function start() {
             return;
           }
 
-          // Усі наступні пакети AVL
+          // усі наступні пакети AVL
           logToFile(`📥 AVL PACKET RAW (${imei}): ${data.toString('hex')}`);
           logToFile(`📏 Packet length: ${data.length} bytes`);
 
@@ -369,6 +388,7 @@ async function start() {
     server.listen(PORT, HOST, () =>
       logToFile(`🚀 Listening TCP ${HOST}:${PORT}`)
     );
+
   } catch (e) {
     logToFile(`💥 Fatal: ${e.message}`);
   }
