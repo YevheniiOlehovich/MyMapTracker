@@ -575,7 +575,6 @@
 // start();
 
 
-
 const net = require('net');
 const { MongoClient } = require('mongodb');
 const fs = require('fs');
@@ -658,30 +657,33 @@ async function decodeAvlData(buf, imei, db) {
     const rawHex = buf.toString('hex');
     const len = buf.length;
 
-    // --- Dat_len ---
-    const datLen = buf.readUInt32BE(4);   // довжина AVL
+    // --- Dat_len і виділення AVL ---
+    const datLen = buf.readUInt32BE(4);
     const avlStart = 8;
     const avlEnd = avlStart + datLen;
     const avlBuf = buf.slice(avlStart, avlEnd);
 
     // --- CRC ---
-    const crcCalc = crc16_teltonika(avlBuf);        // обчислюємо CRC тільки по AVL
-    const crcPacket = buf.readUInt16LE(avlEnd);     // беремо 2 байти CRC16 з пакету (LE)
-    const crcValid = crcCalc === crcPacket;
+    let crcCalc = crc16_teltonika(avlBuf);
+    // додаємо 2 нульові байти, щоб отримати 4-байтне значення
+    const crcCalcHex = ('0000' + crcCalc.toString(16)).slice(-4).toLowerCase();
+    const crcPacketHex = buf.slice(-4).toString('hex').toLowerCase();
+    const crcValid = crcCalcHex === crcPacketHex;
 
     // --- Timestamp ---
-    const ts = Number(buf.readBigUInt64BE(avlStart + 2)) / 1000; // приклад offset
+    const ts = Number(avlBuf.readBigUInt64BE(2)) / 1000;
     const dt = new Date(ts * 1000);
 
-    const gpsOffset = avlStart + 11; // приклад, може залежати від структури
-    const lng = buf.readInt32BE(gpsOffset) / 1e7;
-    const lat = buf.readInt32BE(gpsOffset + 4) / 1e7;
-    const alt = buf.readInt16BE(gpsOffset + 8);
-    const ang = buf.readInt16BE(gpsOffset + 10);
-    const sats = buf[gpsOffset + 12];
-    const spd = buf.readInt16BE(gpsOffset + 13);
+    // --- GPS ---
+    const gpsOffset = 11;
+    const lng = avlBuf.readInt32BE(gpsOffset) / 1e7;
+    const lat = avlBuf.readInt32BE(gpsOffset + 4) / 1e7;
+    const alt = avlBuf.readInt16BE(gpsOffset + 8);
+    const ang = avlBuf.readInt16BE(gpsOffset + 10);
+    const sats = avlBuf[gpsOffset + 12];
+    const spd = avlBuf.readInt16BE(gpsOffset + 13);
 
-    const { ioMap, eventId } = parseCodec8IO(buf, gpsOffset + 15);
+    const { ioMap, eventId } = parseCodec8IO(avlBuf, gpsOffset + 15);
 
     let card_id = null;
     if (ioMap[157] && !/^0+$/.test(ioMap[157].value)) {
@@ -694,7 +696,7 @@ async function decodeAvlData(buf, imei, db) {
     logToFile(`📏 LENGTH: ${len} bytes`);
     logToFile(`🧩 DECODED (${imei}): lat=${lat} lng=${lng} alt=${alt} speed=${spd} angle=${ang} sats=${sats}`);
     logToFile(`🔧 IO EVENT=${eventId} IO COUNT=${Object.keys(ioMap).length} CARD=${card_id || 'none'}`);
-    logToFile(`🔐 CRC: calculated=${crcCalc.toString(16).toUpperCase()} packet=${crcPacket.toString(16).toUpperCase()} VALID=${crcValid ? '✔' : '❌'}`);
+    logToFile(`🔐 CRC: calculated=${crcCalcHex} packet=${crcPacketHex} VALID=${crcValid ? '✔' : '❌'}`);
 
     // --- DB save ---
     const collectionName = `trek_${dt.getFullYear()}`;
@@ -714,8 +716,8 @@ async function decodeAvlData(buf, imei, db) {
       card_id,
       raw: rawHex,
       crc: {
-        calculated: crcCalc,
-        packet: crcPacket,
+        calculated: crcCalcHex,
+        packet: crcPacketHex,
         valid: crcValid
       }
     };
