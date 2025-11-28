@@ -576,7 +576,6 @@
 
 
 
-
 const net = require('net');
 const { MongoClient } = require('mongodb');
 const fs = require('fs');
@@ -659,21 +658,22 @@ async function decodeAvlData(buf, imei, db) {
     const rawHex = buf.toString('hex');
     const len = buf.length;
 
-    // --- Dat_len: перші 4 нулі + 4 байти довжини AVL ---
-    // У твоєму описі: Dat_len = buf[4]
-    // тут сприймаємо весь buf як AVL (якщо вже виділено Dat_len до виклику)
-    const avlData = buf;
+    // --- Dat_len ---
+    const datLen = buf.readUInt32BE(4);   // довжина AVL
+    const avlStart = 8;
+    const avlEnd = avlStart + datLen;
+    const avlBuf = buf.slice(avlStart, avlEnd);
 
-    // --- CRC з пакету: останні 4 байти ---
-    const crcPacket = buf.readUInt16LE(buf.length - 2); // молодші 2 байти
-    const crcCalc = crc16_teltonika(avlData.slice(0, buf.length - 4));
+    // --- CRC ---
+    const crcCalc = crc16_teltonika(avlBuf);        // обчислюємо CRC тільки по AVL
+    const crcPacket = buf.readUInt16LE(avlEnd);     // беремо 2 байти CRC16 з пакету (LE)
     const crcValid = crcCalc === crcPacket;
 
     // --- Timestamp ---
-    const ts = Number(buf.readBigUInt64BE(10)) / 1000;
+    const ts = Number(buf.readBigUInt64BE(avlStart + 2)) / 1000; // приклад offset
     const dt = new Date(ts * 1000);
 
-    const gpsOffset = 19;
+    const gpsOffset = avlStart + 11; // приклад, може залежати від структури
     const lng = buf.readInt32BE(gpsOffset) / 1e7;
     const lat = buf.readInt32BE(gpsOffset + 4) / 1e7;
     const alt = buf.readInt16BE(gpsOffset + 8);
