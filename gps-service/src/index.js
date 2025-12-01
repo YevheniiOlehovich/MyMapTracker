@@ -212,23 +212,33 @@ function logToFile(message) {
   console.log(message);
 }
 
-// === Simple Debug Server ===
+// === Debug Server ===
 const HOST = '0.0.0.0';
 const PORT = 20120;
 
 const server = net.createServer(sock => {
   logToFile(`🔌 Client connected: ${sock.remoteAddress}:${sock.remotePort}`);
 
-  // 1️⃣ Відправляємо клієнту одиничку
-  sock.write(Buffer.from([0x01]));
-  logToFile(`➡️ Sent confirmation byte: 01`);
+  let imei = '';
 
-  // 2️⃣ Чекаємо дані від клієнта
   sock.on('data', data => {
     const hex = data.toString('hex');
-    logToFile(`📥 RECEIVED DATA (${data.length} bytes): ${hex}`);
 
-    // 3️⃣ Закриваємо сокет після прийому
+    if (!imei) {
+      // Перший пакет = IMEI
+      imei = hex;
+      logToFile(`📥 FIRST PACKET (IMEI): ${hex}`);
+
+      // Відправляємо одиничку після отримання IMEI
+      sock.write(Buffer.from([0x01]));
+      logToFile(`➡️ Sent confirmation byte: 01`);
+      return;
+    }
+
+    // Наступні пакети = AVL/дані
+    logToFile(`📥 DATA (${data.length} bytes): ${hex}`);
+
+    // Після отримання пакету закриваємо сокет
     sock.end();
     logToFile(`🔒 Socket closed after receiving data`);
   });
@@ -237,7 +247,6 @@ const server = net.createServer(sock => {
   sock.on('error', err => logToFile(`⚠️ Socket error: ${err.message}`));
 });
 
-// === Start Server ===
 server.listen(PORT, HOST, () => {
   logToFile(`🚀 Debug server listening on ${HOST}:${PORT}`);
 });
