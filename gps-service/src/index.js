@@ -198,17 +198,10 @@
 
 
 const net = require('net');
-const { MongoClient } = require('mongodb');
 const fs = require('fs');
 const path = require('path');
 
-// === Налаштування ===
-const HOST = '0.0.0.0';
-const PORT = 20120;
-const MONGODB_URI = 'mongodb+srv://keildra258:aJuvQLKxaw5Lb5xf@cluster0.k4l1p.mongodb.net/';
-const DATABASE_NAME = 'test';
-
-// === Логи ===
+// === Logs ===
 const LOG_DIR = path.join(__dirname, 'logs');
 if (!fs.existsSync(LOG_DIR)) fs.mkdirSync(LOG_DIR);
 
@@ -219,150 +212,32 @@ function logToFile(message) {
   console.log(message);
 }
 
-// === MongoDB ===
-const client = new MongoClient(MONGODB_URI);
+// === Simple Debug Server ===
+const HOST = '0.0.0.0';
+const PORT = 20120;
 
-// === Допоміжні ===
-function cleanImei(imei) {
-  return imei.replace(/\D/g, '');
-}
+const server = net.createServer(sock => {
+  logToFile(`🔌 Client connected: ${sock.remoteAddress}:${sock.remotePort}`);
 
-// === Parse Codec 8 IO ===
-function parseCodec8IO(buf, offset) {
-  const ioMap = {};
-  try {
-    const eventId = buf.readUInt8(offset++);
-    offset++; // totalIO, можна пропустити
+  // 1️⃣ Відправляємо клієнту одиничку
+  sock.write(Buffer.from([0x01]));
+  logToFile(`➡️ Sent confirmation byte: 01`);
 
-    const readIO = (count, size) => {
-      const m = {};
-      for (let i = 0; i < count; i++) {
-        const id = buf.readUInt8(offset++);
-        const v = buf.slice(offset, offset + size);
-        offset += size;
-        m[id] = { size, value: v.toString('hex') };
-      }
-      return m;
-    };
+  // 2️⃣ Чекаємо дані від клієнта
+  sock.on('data', data => {
+    const hex = data.toString('hex');
+    logToFile(`📥 RECEIVED DATA (${data.length} bytes): ${hex}`);
 
-    let count;
-    count = buf.readUInt8(offset++); Object.assign(ioMap, readIO(count, 1));
-    count = buf.readUInt8(offset++); Object.assign(ioMap, readIO(count, 2));
-    count = buf.readUInt8(offset++); Object.assign(ioMap, readIO(count, 4));
-    count = buf.readUInt8(offset++); Object.assign(ioMap, readIO(count, 8));
+    // 3️⃣ Закриваємо сокет після прийому
+    sock.end();
+    logToFile(`🔒 Socket closed after receiving data`);
+  });
 
-    return { ioMap, eventId };
-  } catch {
-    return { ioMap: {}, eventId: null };
-  }
-}
+  sock.on('close', () => logToFile(`🔴 Client disconnected`));
+  sock.on('error', err => logToFile(`⚠️ Socket error: ${err.message}`));
+});
 
-// === Decode AVL ===
-async function decodeAvlData(buf, imei, db) {
-  try {
-    const rawHex = buf.toString('hex');
-
-    const ts = Number(buf.readBigUInt64BE(10)) / 1000;
-    const dt = new Date(ts * 1000);
-
-    const gpsOffset = 19;
-    const lng = buf.readInt32BE(gpsOffset) / 1e7;
-    const lat = buf.readInt32BE(gpsOffset + 4) / 1e7;
-    const alt = buf.readInt16BE(gpsOffset + 8);
-    const ang = buf.readInt16BE(gpsOffset + 10);
-    const sats = buf[gpsOffset + 12];
-    const spd = buf.readInt16BE(gpsOffset + 13);
-
-    const { ioMap, eventId } = parseCodec8IO(buf, gpsOffset + 15);
-
-    let card_id = null;
-    if (ioMap[157] && !/^0+$/.test(ioMap[157].value)) {
-      card_id = ioMap[157].value;
-    }
-
-    // --- DB save ---
-    const collectionName = `trek_${dt.getFullYear()}`;
-    const col = db.collection(collectionName);
-    const key = { date: dt.toISOString().split('T')[0], imei };
-
-    const record = {
-      timestamp: dt,
-      latitude: lat,
-      longitude: lng,
-      altitude: alt,
-      angle: ang,
-      satellites: sats,
-      speed: spd,
-      io: ioMap,
-      eventId,
-      card_id,
-      raw: rawHex,
-    };
-
-    const exists = await col.findOne(key);
-    if (!exists) {
-      await col.insertOne({ ...key, data: [record] });
-    } else {
-      await col.updateOne(key, { $push: { data: record } });
-    }
-
-    logToFile(`✅ [${imei}] Saved record timestamp=${ts}`);
-  } catch (e) {
-    logToFile(`❌ [${imei}] Decode error: ${e.message}`);
-  }
-}
-
-// === Кеш для унікальних timestamp ===
-const lastTimestamps = new Map(); // IMEI -> Set останніх timestamp
-const MAX_LAST_TIMESTAMPS = 3;
-
-async function handlePacket(imei, packet, db) {
-  const ts = Number(packet.readBigUInt64BE(10)) / 1000;
-
-  if (!lastTimestamps.has(imei)) lastTimestamps.set(imei, new Set());
-  const set = lastTimestamps.get(imei);
-
-  if (!set.has(ts)) {
-    await decodeAvlData(packet, imei, db);
-    set.add(ts);
-    if (set.size > MAX_LAST_TIMESTAMPS) {
-      set.delete(set.values().next().value); // видаляємо найстаріший
-    }
-  } else {
-    logToFile(`⚠️ [${imei}] Duplicate packet ignored, timestamp=${ts}`);
-  }
-}
-
-// === Server start ===
-async function start() {
-  try {
-    await client.connect();
-    const db = client.db(DATABASE_NAME);
-    logToFile(`✅ MongoDB connected`);
-
-    const server = net.createServer(sock => {
-      logToFile(`🔌 New client: ${sock.remoteAddress}:${sock.remotePort}`);
-      let imei = '';
-
-      sock.on('data', async data => {
-        if (!imei) {
-          imei = cleanImei(data.toString());
-          logToFile(`📡 IMEI = ${imei}`);
-          return;
-        }
-        await handlePacket(imei, data, db);
-      });
-
-      sock.on('close', () => logToFile(`🔴 Disconnected: ${imei}`));
-      sock.on('error', err => logToFile(`⚠️ Socket error: ${err.message}`));
-    });
-
-    server.listen(PORT, HOST, () =>
-      logToFile(`🚀 TCP Server listening ${HOST}:${PORT}`)
-    );
-  } catch (e) {
-    logToFile(`💥 Fatal error: ${e.message}`);
-  }
-}
-
-start();
+// === Start Server ===
+server.listen(PORT, HOST, () => {
+  logToFile(`🚀 Debug server listening on ${HOST}:${PORT}`);
+});
