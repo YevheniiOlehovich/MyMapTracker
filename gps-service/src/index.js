@@ -286,95 +286,172 @@ function parseCodec8IO(buf, offset) {
 // === Decode AVL ===
 // Примітка: ця функція залишена близькою до твоєї оригінальної логіки,
 // вона очікує на повний пакет (header + data + crc-part) як аргумент buf.
+// async function decodeAvlData(buf, imei, db) {
+//   try {
+//     const rawHex = buf.toString('hex');
+//     const len = buf.length;
+
+//     // --- Dat_len і виділення AVL ---
+//     const datLen = buf.readUInt32BE(4);
+//     const avlStart = 8;
+//     const avlEnd = avlStart + datLen;
+//     const avlBuf = buf.slice(avlStart, avlEnd);
+
+//     // --- CRC ---
+//     const crcCalc = crc16_teltonika(avlBuf); // 2 байти CRC16 від avlBuf
+//     // У пакеті Teltonika/Bitrek зазвичай після avlBuf іде 4-байтове поле (crc + numberOfRecords)
+//     // Ми обчислюємо crcPacket як два старші байти або як останні 2 байти перед кінцем пакета,
+//     // але збережемо твою оригінальну підхід — беремо останні 2 байти пакета.
+//     let crcPacket = 0;
+//     try {
+//       crcPacket = buf.readUInt16BE(buf.length - 2);
+//     } catch (e) {
+//       crcPacket = 0;
+//     }
+//     const crcValidFlag = crcCalc === crcPacket ? 1 : 0;
+
+//     // --- Timestamp (перший AVL-record) ---
+//     // Зчитуємо перший timestamp (8 байт) з avlBuf[2..9]
+//     const ts = Number(avlBuf.readBigUInt64BE(2)) / 1000;
+//     const dt = new Date(ts * 1000);
+
+//     // --- GPS ---
+//     const gpsOffset = 11;
+//     const lng = avlBuf.readInt32BE(gpsOffset) / 1e7;
+//     const lat = avlBuf.readInt32BE(gpsOffset + 4) / 1e7;
+//     const alt = avlBuf.readInt16BE(gpsOffset + 8);
+//     const ang = avlBuf.readInt16BE(gpsOffset + 10);
+//     const sats = avlBuf[gpsOffset + 12];
+//     const spd = avlBuf.readInt16BE(gpsOffset + 13);
+
+//     const { ioMap, eventId } = parseCodec8IO(avlBuf, gpsOffset + 15);
+
+//     let card_id = null;
+//     if (ioMap[157] && !/^0+$/.test(ioMap[157].value)) {
+//       card_id = ioMap[157].value;
+//     }
+
+//     // --- Logging ---
+//     logToFile(`📅 DATE: ${dt.toISOString()}`);
+//     logToFile(`📦 RAW HEX (${imei}): ${rawHex}`);
+//     logToFile(`📏 LENGTH: ${len} bytes`);
+//     logToFile(`🧩 DECODED (${imei}): lat=${lat} lng=${lng} alt=${alt} speed=${spd} angle=${ang} sats=${sats}`);
+//     logToFile(`🔧 IO EVENT=${eventId} IO COUNT=${Object.keys(ioMap).length} CARD=${card_id || 'none'}`);
+//     logToFile(`🔐 CRC: calculated=${crcCalc.toString(16).toLowerCase()} packet=${crcPacket.toString(16).toLowerCase()} VALID=${crcValidFlag}`);
+
+//     // --- DB save ---
+//     const collectionName = `trek_${dt.getFullYear()}`;
+//     const col = db.collection(collectionName);
+//     const key = { date: dt.toISOString().split('T')[0], imei };
+
+//     const record = {
+//       timestamp: dt,
+//       latitude: lat,
+//       longitude: lng,
+//       altitude: alt,
+//       angle: ang,
+//       satellites: sats,
+//       speed: spd,
+//       io: ioMap,
+//       eventId,
+//       card_id,
+//       raw: rawHex,
+//       crc: {
+//         calculated: crcCalc.toString(16).toLowerCase(),
+//         packet: crcPacket.toString(16).toLowerCase(),
+//         valid: crcValidFlag
+//       }
+//     };
+
+//     const exists = await col.findOne(key);
+//     if (!exists) {
+//       await col.insertOne({ ...key, data: [record] });
+//     } else {
+//       await col.updateOne(key, { $push: { data: record } });
+//     }
+
+//     logToFile(`✅ Saved to ${collectionName}`);
+//   } catch (e) {
+//     logToFile(`❌ Decode error: ${e.message}`);
+//   }
+// }
+
 async function decodeAvlData(buf, imei, db) {
   try {
-    const rawHex = buf.toString('hex');
-    const len = buf.length;
+    const dataLen = buf.readUInt32BE(4);
+    const avlBuf = buf.slice(8, 8 + dataLen);
 
-    // --- Dat_len і виділення AVL ---
-    const datLen = buf.readUInt32BE(4);
-    const avlStart = 8;
-    const avlEnd = avlStart + datLen;
-    const avlBuf = buf.slice(avlStart, avlEnd);
+    const codecId = avlBuf.readUInt8(0);
+    const recordCount = avlBuf.readUInt8(1);
 
-    // --- CRC ---
-    const crcCalc = crc16_teltonika(avlBuf); // 2 байти CRC16 від avlBuf
-    // У пакеті Teltonika/Bitrek зазвичай після avlBuf іде 4-байтове поле (crc + numberOfRecords)
-    // Ми обчислюємо crcPacket як два старші байти або як останні 2 байти перед кінцем пакета,
-    // але збережемо твою оригінальну підхід — беремо останні 2 байти пакета.
-    let crcPacket = 0;
-    try {
-      crcPacket = buf.readUInt16BE(buf.length - 2);
-    } catch (e) {
-      crcPacket = 0;
-    }
-    const crcValidFlag = crcCalc === crcPacket ? 1 : 0;
+    let offset = 2;
 
-    // --- Timestamp (перший AVL-record) ---
-    // Зчитуємо перший timestamp (8 байт) з avlBuf[2..9]
-    const ts = Number(avlBuf.readBigUInt64BE(2)) / 1000;
-    const dt = new Date(ts * 1000);
+    for (let r = 0; r < recordCount; r++) {
+      // Timestamp
+      const ts = Number(avlBuf.readBigUInt64BE(offset)) / 1000;
+      offset += 8;
 
-    // --- GPS ---
-    const gpsOffset = 11;
-    const lng = avlBuf.readInt32BE(gpsOffset) / 1e7;
-    const lat = avlBuf.readInt32BE(gpsOffset + 4) / 1e7;
-    const alt = avlBuf.readInt16BE(gpsOffset + 8);
-    const ang = avlBuf.readInt16BE(gpsOffset + 10);
-    const sats = avlBuf[gpsOffset + 12];
-    const spd = avlBuf.readInt16BE(gpsOffset + 13);
+      // Priority
+      offset++;
 
-    const { ioMap, eventId } = parseCodec8IO(avlBuf, gpsOffset + 15);
+      // GPS
+      const lng = avlBuf.readInt32BE(offset) / 1e7;
+      const lat = avlBuf.readInt32BE(offset+4) / 1e7;
+      const alt = avlBuf.readInt16BE(offset+8);
+      const ang = avlBuf.readInt16BE(offset+10);
+      const sats = avlBuf[offset+12];
+      const spd = avlBuf.readInt16BE(offset+13);
+      offset += 15;
 
-    let card_id = null;
-    if (ioMap[157] && !/^0+$/.test(ioMap[157].value)) {
-      card_id = ioMap[157].value;
-    }
+      // IO
+      const { ioMap, eventId } = parseCodec8IO(avlBuf, offset);
+      offset += (
+        2 + // eventID, totalIO
+        1 + Object.keys(ioMap).filter(k=>ioMap[k].size===1).length*2 +
+        1 + Object.keys(ioMap).filter(k=>ioMap[k].size===2).length*3 +
+        1 + Object.keys(ioMap).filter(k=>ioMap[k].size===4).length*5 +
+        1 + Object.keys(ioMap).filter(k=>ioMap[k].size===8).length*9
+      );
 
-    // --- Logging ---
-    logToFile(`📅 DATE: ${dt.toISOString()}`);
-    logToFile(`📦 RAW HEX (${imei}): ${rawHex}`);
-    logToFile(`📏 LENGTH: ${len} bytes`);
-    logToFile(`🧩 DECODED (${imei}): lat=${lat} lng=${lng} alt=${alt} speed=${spd} angle=${ang} sats=${sats}`);
-    logToFile(`🔧 IO EVENT=${eventId} IO COUNT=${Object.keys(ioMap).length} CARD=${card_id || 'none'}`);
-    logToFile(`🔐 CRC: calculated=${crcCalc.toString(16).toLowerCase()} packet=${crcPacket.toString(16).toLowerCase()} VALID=${crcValidFlag}`);
-
-    // --- DB save ---
-    const collectionName = `trek_${dt.getFullYear()}`;
-    const col = db.collection(collectionName);
-    const key = { date: dt.toISOString().split('T')[0], imei };
-
-    const record = {
-      timestamp: dt,
-      latitude: lat,
-      longitude: lng,
-      altitude: alt,
-      angle: ang,
-      satellites: sats,
-      speed: spd,
-      io: ioMap,
-      eventId,
-      card_id,
-      raw: rawHex,
-      crc: {
-        calculated: crcCalc.toString(16).toLowerCase(),
-        packet: crcPacket.toString(16).toLowerCase(),
-        valid: crcValidFlag
+      let card_id = null;
+      if (ioMap[157] && !/^0+$/.test(ioMap[157].value)) {
+        card_id = ioMap[157].value;
       }
-    };
 
-    const exists = await col.findOne(key);
-    if (!exists) {
-      await col.insertOne({ ...key, data: [record] });
-    } else {
-      await col.updateOne(key, { $push: { data: record } });
+      const dt = new Date(ts * 1000);
+
+      const collectionName = `trek_${dt.getFullYear()}`;
+      const col = db.collection(collectionName);
+      const key = { date: dt.toISOString().slice(0,10), imei };
+
+      const record = {
+        timestamp: dt,
+        latitude: lat,
+        longitude: lng,
+        altitude: alt,
+        angle: ang,
+        satellites: sats,
+        speed: spd,
+        io: ioMap,
+        eventId,
+        card_id
+      };
+
+      const exists = await col.findOne(key);
+      if (!exists) {
+        await col.insertOne({ ...key, data: [record] });
+      } else {
+        await col.updateOne(key, { $push: { data: record } });
+      }
+
+      logToFile(`📌 Saved AVL record #${r+1}/${recordCount}`);
     }
 
-    logToFile(`✅ Saved to ${collectionName}`);
   } catch (e) {
-    logToFile(`❌ Decode error: ${e.message}`);
+    logToFile(`❌ decodeAvlData error: ${e.message}`);
   }
 }
+
 
 // === Server start ===
 async function start() {
