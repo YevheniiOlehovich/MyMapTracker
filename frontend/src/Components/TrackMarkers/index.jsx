@@ -13,7 +13,7 @@ import combineIco from '../../assets/ico/combine-ico.png';
 import truckIco from '../../assets/ico/truck-ico.png';
 import anomalyIco from '../../assets/ico/warning.png';
 
-import { isPointInUkraine, filterGpsDataByDate } from '../../helpres/trekHelpers';
+import { filterGpsDataByDate } from '../../helpres/trekHelpers';
 import { splitGpsSegments } from '../../helpres/splitGpsSegments';
 
 const TrackMarkers = ({ gpsData, selectedDate }) => {
@@ -23,8 +23,6 @@ const TrackMarkers = ({ gpsData, selectedDate }) => {
   const [showAllMarkers, setShowAllMarkers] = useState(false);
   const { data: vehicles = [] } = useVehiclesData();
   const { data: personnel = [] } = usePersonnelData();
-
-  console.log(gpsData)
 
   useEffect(() => {
     setActiveImei(null);
@@ -50,8 +48,6 @@ const TrackMarkers = ({ gpsData, selectedDate }) => {
 
   const activeVehicleData = filteredGpsData.find(item => item.imei === activeImei)?.data;
   
-  console.log(activeVehicleData)
-
   const vehicleSegments = useMemo(() => {
     if (!activeVehicleData) return [];
 
@@ -83,7 +79,7 @@ const TrackMarkers = ({ gpsData, selectedDate }) => {
     return filteredGpsData
       .map(item => {
         const valid = item.data.filter(
-          p => p.latitude && p.longitude && isPointInUkraine(p.latitude, p.longitude)
+          p => p.latitude && p.longitude
         );
         return valid.length ? { ...valid.at(-1), imei: item.imei } : null;
       })
@@ -149,7 +145,7 @@ const TrackMarkers = ({ gpsData, selectedDate }) => {
                             ⏱ {formatTime(seg.startTime)} → {formatTime(seg.endTime)}
                           </div>
                           <div style={{ color: '#222' }}>
-                            🪪 Водій: <b>{seg.driverName || seg.driverCardId || '—'}</b> &nbsp;|&nbsp;
+                            Водій: <b>{seg.driverName || seg.driverCardId || '—'}</b> &nbsp;|&nbsp;
                             📏 <b>{Number(seg.distance).toFixed(2)} км</b> &nbsp;|&nbsp;
                             ⏳ {formatDuration(seg.duration)}
                           </div>
@@ -190,10 +186,10 @@ const TrackMarkers = ({ gpsData, selectedDate }) => {
       {/* Стоянки */}
         {showAllMarkers &&
           vehicleSegments
-            .filter(seg => seg.type === 'idle')
+            .filter(seg => seg.type === 'parking')
             .map((seg, idx) => (
               <Marker
-                key={`idle-${idx}`}
+                key={`parking-${idx}`}
                 position={seg.coordinates.at(-1)}
                 icon={new L.Icon({ iconUrl: parkingIco, iconSize: [25, 25] })}
               >
@@ -201,7 +197,7 @@ const TrackMarkers = ({ gpsData, selectedDate }) => {
                   <b>Стоянка</b><br />
                   🚜 {seg.vehicleName}<br />
                   IMEI: {seg.imei}<br />
-                  🪪 Водій: {seg.driverName || seg.driverCardId || '—'}<br />
+                  Водій: {seg.driverName || seg.driverCardId || '—'}<br />
                   ⏱ {formatTime(seg.startTime)} → {formatTime(seg.endTime)}<br />
                   ⏳ {formatDuration(seg.duration)}
                 </Popup>
@@ -222,7 +218,7 @@ const TrackMarkers = ({ gpsData, selectedDate }) => {
                   <b>⚠️ Аномалія</b><br />
                   🚜 {seg.vehicleName}<br />
                   IMEI: {seg.imei}<br />
-                  🪪 Водій: {seg.driverName || seg.driverCardId || '—'}<br />
+                  Водій: {seg.driverName || seg.driverCardId || '—'}<br />
                   ⏱ {formatTime(seg.startTime)} → {formatTime(seg.endTime)}<br />
                   ⏳ {formatDuration(seg.duration)}
                 </Popup>
@@ -234,14 +230,3 @@ const TrackMarkers = ({ gpsData, selectedDate }) => {
 };
 
 export default TrackMarkers;
-
-
-
-
-
-
-
-
-
-
-

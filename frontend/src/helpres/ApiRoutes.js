@@ -2,7 +2,6 @@
 
 const API_BASE_URL = "/api";  // Роути для серва
 
-
 const apiRoutes = {
     getGroups: `${API_BASE_URL}/groups`,
     addGroup: `${API_BASE_URL}/groups`,
