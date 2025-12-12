@@ -72,7 +72,7 @@ export default function Map() {
     const { data: unitsData = [], isLoading: isUnitsLoading, error: unitsError } = useUnitsData();
     const { data: rentData = [], isLoading: isRentsLoading, error: rentsError } = useRentsData(); // 🆕
     const { data: propertyData = [], isLoading: isPropertyLoading, error: propertyError } = usePropertiesData();
-
+   
     const showFields = useSelector(selectShowFields);
     const showCadastre = useSelector(selectShowCadastre);
     const showGeozones = useSelector(selectShowGeozones);
@@ -85,6 +85,7 @@ export default function Map() {
     const zoomLevel = useSelector(selectZoomLevel);
     const currentLocation = useSelector(selectCurrentLocation);
     const selectedDate = useSelector((state) => state.calendar.selectedDate);
+    
     const selectedImei = useSelector((state) => state.vehicle.imei);
     const showTrack = useSelector((state) => state.vehicle.showTrack);
 

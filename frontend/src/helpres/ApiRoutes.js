@@ -30,8 +30,9 @@ const apiRoutes = {
     addRates: `${API_BASE_URL}/rates`, // Додати нові тарифи
 
     // getLocation: `${API_BASE_URL}/avl_records`,
-    getLocation: (year) => `${API_BASE_URL}/trek_${year}`,
     
+    // getLocation: (year) => `${API_BASE_URL}/trek_${year}`,
+    getLocationByDate: (year, date) => `${API_BASE_URL}/trek_${year}?date=${date}`,
 
     getFields: `${API_BASE_URL}/geo_data/fields`, 
     addFields: `${API_BASE_URL}/geo_data/fields`, 
