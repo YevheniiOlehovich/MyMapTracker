@@ -1,6 +1,8 @@
 // //Більш-менш робочий білд
 import dotenv from 'dotenv';
 
+dotenv.config();
+
 const net = require('net');
 const { MongoClient } = require('mongodb');
 const fs = require('fs');
