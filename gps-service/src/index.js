@@ -7,7 +7,7 @@ const path = require('path');
 // === Settings ===
 const HOST = '0.0.0.0';
 const PORT = 20120;
-const MONGODB_URI = 'mongodb+srv://keildra258:aJuvQLKxaw5Lb5xf@cluster0.k4l1p.mongodb.net/?appName=Cluster0';
+const MONGODB_URI = 'mongodb+srv://keildra258:x!GGzkWM_b8mwEA@cluster0.k4l1p.mongodb.net/?appName=Cluster0';
 const DATABASE_NAME = 'test';
 
 // === Logs ===
