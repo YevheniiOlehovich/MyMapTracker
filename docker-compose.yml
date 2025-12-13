@@ -18,6 +18,8 @@ services:
     build: ./gps-service
     container_name: gps-service
     restart: always
+    env_file:
+      - ./gps-service/src/.env
     ports:
       - "20120:20120"
     networks:
