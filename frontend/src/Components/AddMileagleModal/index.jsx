@@ -10,6 +10,8 @@ import {
   Box,
   Divider,
   Paper,
+  FormControlLabel,
+  Switch
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import Select from 'react-select';
@@ -19,6 +21,9 @@ import { useRatesData } from '../../hooks/useRatesData';
 import { useVehiclesData } from '../../hooks/useVehiclesData';
 import { splitGpsSegments } from '../../helpres/splitGpsSegments';
 import { usePersonnelData } from '../../hooks/usePersonnelData';
+import { vehicleTypes  } from '../../helpres';
+import { fetchGpsByImei } from '../../helpres/gpsApi';
+import { calculateMileageHelper } from '../../helpres/calculateMileageHelper';
 
 export default function AddMileageModal({ onClose }) {
   const { data: vehiclesData = [] } = useVehiclesData();
@@ -31,126 +36,76 @@ export default function AddMileageModal({ onClose }) {
   const [selectedVehicle, setSelectedVehicle] = useState(null);
   const [vehicles, setVehicles] = useState([]);
   const [results, setResults] = useState([]);
+  const [selectedVehicleType, setSelectedVehicleType] = useState(null);
+  const [isGroupCalculation, setIsGroupCalculation] = useState(false);
 
   const currentYear = new Date().getFullYear();
-  const years = Array.from({ length: 5 }, (_, i) => ({
+  
+  const years = Array.from({ length: 3 }, (_, i) => ({
     value: currentYear - i,
     label: `${currentYear - i}`,
   }));
 
+  const vehicleTypeOptions = vehicleTypes.map(t => ({
+    value: t._id,
+    label: t.name,
+  }));
+
   // ✅ Формуємо список техніки
   useEffect(() => {
-    if (vehiclesData.length > 0) {
-      const allVehicles = vehiclesData.map((v) => ({
-        value: v.regNumber,
-        label: `${v.mark} (${v.regNumber})`,
-        imei: v.imei,
-        type: v.vehicleType,
-        ...v,
-      }));
-      setVehicles(allVehicles);
-    }
-  }, [vehiclesData]);
+    if (!vehiclesData.length) return;
 
-  const handleCalculate = () => {
-    if (!selectedMonth || !selectedVehicle || !selectedYear) {
-      alert('Оберіть рік, місяць та техніку!');
+    const filtered = selectedVehicleType
+      ? vehiclesData.filter(v => v.vehicleType === selectedVehicleType.value)
+      : vehiclesData;
+
+    const mapped = filtered.map(v => ({
+      value: v.regNumber,
+      label: `${v.mark} (${v.regNumber})`,
+      imei: v.imei,
+      vehicleType: v.vehicleType,
+      ...v,
+    }));
+
+    setVehicles(mapped);
+
+    // якщо обраної техніки більше нема — скидаємо
+    if (
+      selectedVehicle &&
+      !mapped.some(v => v.imei === selectedVehicle.imei)
+    ) {
+      setSelectedVehicle(null);
+    }
+  }, [vehiclesData, selectedVehicleType]);
+
+  const handleCalculate = async () => {
+    if (!selectedMonth || !selectedYear || (!selectedVehicle && !isGroupCalculation)) {
+      alert('Оберіть рік, місяць та техніку / тип техніки!');
       return;
     }
 
-    // ✅ Фільтрація GPS-даних за технікою, місяцем і роком
-    const filteredData = gpsData.filter((data) => {
-      const gpsDate = new Date(data.date);
-      return (
-        data.imei === selectedVehicle.imei &&
-        gpsDate.getMonth() + 1 === selectedMonth.value &&
-        gpsDate.getFullYear() === selectedYear.value
+    const vehiclesForCalculation = isGroupCalculation
+      ? (selectedVehicleType
+          ? vehiclesData.filter(v => v.vehicleType === selectedVehicleType.value)
+          : vehiclesData)
+      : selectedVehicle;
+
+    try {
+      const res = await calculateMileageHelper(
+        vehiclesForCalculation,
+        selectedMonth.value,
+        selectedYear.value,
+        rates
       );
-    });
 
-    if (!filteredData.length) {
-      alert('Немає GPS-даних для вибраного періоду!');
-      return;
+      // Якщо одинична машина, res — об'єкт, інакше масив
+      setResults(Array.isArray(res) ? res.flatMap(v => v.dailyResults) : res.dailyResults);
+    } catch (err) {
+      console.error('Помилка розрахунку пробігу:', err);
+      alert('Сталася помилка під час розрахунку пробігу');
     }
-
-    const dailyResults = {};
-
-    // ✅ Розрахунок по кожному дню
-    filteredData.forEach((data) => {
-      const gpsDate = new Date(data.date);
-      const day = gpsDate.getDate();
-      const movingSegments = splitGpsSegments(data.data);
-
-      // загальна відстань
-      const totalDistance = movingSegments.reduce((acc, seg) => acc + seg.distance, 0);
-
-      // пошук найчастішого водія
-      const driverCounts = {};
-      movingSegments.forEach((seg) => {
-        if (seg.driverCardId) {
-          driverCounts[seg.driverCardId] = (driverCounts[seg.driverCardId] || 0) + 1;
-        }
-      });
-
-      const dominantDriverId =
-        Object.keys(driverCounts).length > 0
-          ? Object.entries(driverCounts).sort((a, b) => b[1] - a[1])[0][0]
-          : null;
-
-      const foundDriver = dominantDriverId
-        ? personnel.find((p) => p.rfid === dominantDriverId)
-        : null;
-
-      const driverName = foundDriver
-        ? `${foundDriver.firstName} ${foundDriver.lastName}`
-        : dominantDriverId || '—';
-
-      dailyResults[day] = {
-        distance: totalDistance,
-        driver: driverName,
-      };
-    });
-
-    // ✅ Отримуємо останній тариф з масиву
-    const latestRate = Array.isArray(rates) && rates.length > 0 ? rates[rates.length - 1] : null;
-
-    if (!latestRate) {
-      alert('Не знайдено актуальний тариф!');
-      return;
-    }
-
-    // ✅ Вибираємо ставку за типом техніки
-    let rate = 0;
-    switch (selectedVehicle.vehicleType) {
-      case 'car':
-        rate = latestRate.carRate || 0;
-        break;
-      case 'truck':
-        rate = latestRate.truckRate || 0;
-        break;
-      case 'tractor':
-        rate = latestRate.tracktorRate || 0;
-        break;
-      case 'combine':
-        rate = latestRate.combineRate || 0;
-        break;
-      default:
-        rate = 0;
-    }
-
-    // ✅ Формуємо результати
-    const finalResults = Object.keys(dailyResults)
-      .sort((a, b) => a - b)
-      .map((day) => ({
-        day,
-        date: new Date(selectedYear.value, selectedMonth.value - 1, day),
-        distance: dailyResults[day].distance,
-        cost: (dailyResults[day].distance * rate).toFixed(2),
-        driver: dailyResults[day].driver,
-      }));
-
-    setResults(finalResults);
   };
+
 
   return (
     <Dialog
@@ -201,6 +156,17 @@ export default function AddMileageModal({ onClose }) {
                 Параметри розрахунку
               </Typography>
 
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={isGroupCalculation}
+                    onChange={() => setIsGroupCalculation(v => !v)}
+                  />
+                }
+                label={isGroupCalculation ? "Груповий розрахунок" : "Індивідуальний розрахунок"}
+              />
+
+
               <Box sx={{ mb: 1.5 }}>
                 <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
                   Рік
@@ -234,17 +200,34 @@ export default function AddMileageModal({ onClose }) {
 
               <Box sx={{ mb: 1.5 }}>
                 <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+                  Тип техніки
+                </Typography>
+                <Select
+                  value={selectedVehicleType}
+                  onChange={setSelectedVehicleType}
+                  options={vehicleTypeOptions}
+                  placeholder="Оберіть тип техніки"
+                  isClearable
+                  menuPortalTarget={document.body}
+                  styles={{ menuPortal: (base) => ({ ...base, zIndex: 9999 }) }}
+                />
+              </Box>
+
+              <Box sx={{ mb: 1.5, opacity: isGroupCalculation ? 0.5 : 1 }}>
+                <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
                   Техніка
                 </Typography>
                 <Select
                   value={selectedVehicle}
                   onChange={setSelectedVehicle}
                   options={vehicles}
-                  placeholder="Оберіть техніку"
+                  placeholder={isGroupCalculation ? "Вибір недоступний у груповому режимі" : "Оберіть техніку"}
                   menuPortalTarget={document.body}
                   styles={{ menuPortal: (base) => ({ ...base, zIndex: 9999 }) }}
+                  isDisabled={isGroupCalculation}
                 />
               </Box>
+
 
               <Button variant="contained" onClick={handleCalculate} fullWidth>
                 Розрахувати
@@ -262,7 +245,7 @@ export default function AddMileageModal({ onClose }) {
               {results.length > 0 ? (
                 <>
                   {results.map((res) => (
-                    <Box key={res.day} sx={{ mb: 1, p: 1, borderBottom: '1px solid #eee' }}>
+                    <Box key={res.date.toISOString()} sx={{ mb: 1, p: 1, borderBottom: '1px solid #eee' }}>
                       <Typography>
                         <b>Дата:</b> {res.date.toLocaleDateString('uk-UA')}
                       </Typography>
@@ -270,7 +253,7 @@ export default function AddMileageModal({ onClose }) {
                         <b>Пробіг:</b> {res.distance.toFixed(2)} км
                       </Typography>
                       <Typography>
-                        <b>Вартість:</b> {res.cost} грн
+                        <b>Вартість:</b> {res.cost.toFixed(2)} грн
                       </Typography>
                       <Typography>
                         <b>Водій:</b> {res.driver}

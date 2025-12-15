@@ -30,7 +30,7 @@ const port = process.env.PORT || 5000;
 
 // Підключення до MongoDB
 const mongoURI = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@${process.env.DB_CLUSTER}/?retryWrites=true&w=majority&appName=Cluster0`;
-// const mongoURI = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@${process.env.DB_CLUSTER}`;
+
 
 
 mongoose.connect(mongoURI)
