@@ -9,6 +9,8 @@ import { isPointInUkraine } from './trekHelpers';
 export const getStationarySegments = (vehicleData, imei) => {
   if (!vehicleData || vehicleData.length === 0) return [];
 
+  console.log(vehicleData)
+
   const segments = [];
   let current = [];
 

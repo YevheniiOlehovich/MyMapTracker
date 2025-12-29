@@ -11,25 +11,37 @@ import {
   Divider,
   Paper,
   FormControlLabel,
-  Switch
+  Switch,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  Fade,
+  Grow,
+  LinearProgress,
+  CircularProgress
 } from '@mui/material';
+
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import CloseIcon from '@mui/icons-material/Close';
 import Select from 'react-select';
 import { months } from '../../helpres';
-import { useGpsData } from '../../hooks/useGpsData';
+// import { useGpsData } from '../../hooks/useGpsData';
 import { useRatesData } from '../../hooks/useRatesData';
 import { useVehiclesData } from '../../hooks/useVehiclesData';
-import { splitGpsSegments } from '../../helpres/splitGpsSegments';
-import { usePersonnelData } from '../../hooks/usePersonnelData';
+// import { splitGpsSegments } from '../../helpres/splitGpsSegments';
+// import { usePersonnelData } from '../../hooks/usePersonnelData';
 import { vehicleTypes  } from '../../helpres';
-import { fetchGpsByImei } from '../../helpres/gpsApi';
+// import { fetchGpsByImei } from '../../helpres/gpsApi';
 import { calculateMileageHelper } from '../../helpres/calculateMileageHelper';
+import { groupVehiclesByType } from '../../helpres/groupVehiclesByType';
 
 export default function AddMileageModal({ onClose }) {
   const { data: vehiclesData = [] } = useVehiclesData();
-  const { data: personnel = [] } = usePersonnelData();
-  const { data: gpsData = [] } = useGpsData();
+  // const { data: personnel = [] } = usePersonnelData();
+  // const { data: gpsData = [] } = useGpsData();
   const { data: rates = [] } = useRatesData();
+
+  const groupedVehicles = groupVehiclesByType(vehiclesData);
 
   const [selectedYear, setSelectedYear] = useState(null);
   const [selectedMonth, setSelectedMonth] = useState(null);
@@ -38,7 +50,9 @@ export default function AddMileageModal({ onClose }) {
   const [results, setResults] = useState([]);
   const [selectedVehicleType, setSelectedVehicleType] = useState(null);
   const [isGroupCalculation, setIsGroupCalculation] = useState(false);
-
+  const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState(0);
+  
   const currentYear = new Date().getFullYear();
   
   const years = Array.from({ length: 3 }, (_, i) => ({
@@ -85,26 +99,45 @@ export default function AddMileageModal({ onClose }) {
     }
 
     const vehiclesForCalculation = isGroupCalculation
+      // ? (selectedVehicleType
+      //     ? vehiclesData.filter(v => v.vehicleType === selectedVehicleType.value)
+      //     : vehiclesData)
+      // : [selectedVehicle]; // обов’язково масив для group-like розрахунку
+
       ? (selectedVehicleType
-          ? vehiclesData.filter(v => v.vehicleType === selectedVehicleType.value)
-          : vehiclesData)
-      : selectedVehicle;
+        ? groupedVehicles[selectedVehicleType.value] || []
+        : vehiclesData) // або всі машини
+    : [selectedVehicle];
 
     try {
-      const res = await calculateMileageHelper(
-        vehiclesForCalculation,
-        selectedMonth.value,
-        selectedYear.value,
-        rates
-      );
+      setLoading(true);
+      setProgress(0);
 
-      // Якщо одинична машина, res — об'єкт, інакше масив
-      setResults(Array.isArray(res) ? res.flatMap(v => v.dailyResults) : res.dailyResults);
+      const totalVehicles = vehiclesForCalculation.length;
+      const resArray = [];
+
+      for (let i = 0; i < totalVehicles; i++) {
+        const vehicle = vehiclesForCalculation[i];
+
+        // 👇 Викликаємо helper для одиничної техніки
+        const vehicleResult = await calculateMileageHelper(vehicle, selectedMonth.value, selectedYear.value, rates);
+
+        resArray.push(vehicleResult);
+
+        // 👇 Оновлюємо прогрес
+        const currentProgress = Math.round(((i + 1) / totalVehicles) * 100);
+        setProgress(currentProgress);
+      }
+
+      setResults(resArray);
     } catch (err) {
       console.error('Помилка розрахунку пробігу:', err);
       alert('Сталася помилка під час розрахунку пробігу');
+    } finally {
+      setLoading(false);
     }
   };
+
 
 
   return (
@@ -228,10 +261,23 @@ export default function AddMileageModal({ onClose }) {
                 />
               </Box>
 
-
-              <Button variant="contained" onClick={handleCalculate} fullWidth>
-                Розрахувати
+              <Button
+                variant="contained"
+                onClick={handleCalculate}
+                fullWidth
+                disabled={loading}
+                sx={{ position: 'relative' }}
+              >
+                {loading ? (
+                  <>
+                    <CircularProgress size={20} sx={{ color: '#fff', mr: 1 }} />
+                    Розрахунок...
+                  </>
+                ) : (
+                  'Розрахувати'
+                )}
               </Button>
+
             </Paper>
           </Box>
 
@@ -242,46 +288,94 @@ export default function AddMileageModal({ onClose }) {
                 Результати по днях
               </Typography>
 
-              {results.length > 0 ? (
-                <>
-                  {results.map((res) => (
-                    <Box key={res.date.toISOString()} sx={{ mb: 1, p: 1, borderBottom: '1px solid #eee' }}>
-                      <Typography>
-                        <b>Дата:</b> {res.date.toLocaleDateString('uk-UA')}
-                      </Typography>
-                      <Typography>
-                        <b>Пробіг:</b> {res.distance.toFixed(2)} км
-                      </Typography>
-                      <Typography>
-                        <b>Вартість:</b> {res.cost.toFixed(2)} грн
-                      </Typography>
-                      <Typography>
-                        <b>Водій:</b> {res.driver}
-                      </Typography>
-                    </Box>
-                  ))}
+              {/* 🔄 LOADING */}
+              {loading && (
+                <Fade in={loading}>
+                  <Box
+                    sx={{
+                      height: '100%',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 2,
+                      mt: 6,
+                    }}
+                  >
+                    <CircularProgress size={48} />
+                    <Typography variant="body2" color="text.secondary">
+                      Розрахунок пробігу… {progress}%
+                    </Typography>
 
-                  <Box sx={{ mt: 2, p: 1, borderTop: '2px solid #000' }}>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                      Підсумок за місяць
-                    </Typography>
-                    <Typography>
-                      <b>Сумарний пробіг:</b>{' '}
-                      {results.reduce((acc, r) => acc + r.distance, 0).toFixed(2)} км
-                    </Typography>
-                    <Typography>
-                      <b>Сумарна вартість:</b>{' '}
-                      {results.reduce((acc, r) => acc + parseFloat(r.cost), 0).toFixed(2)} грн
-                    </Typography>
+                    <Box sx={{ width: '60%' }}>
+                      <LinearProgress
+                        variant="determinate"
+                        value={progress}
+                      />
+                    </Box>
                   </Box>
-                </>
-              ) : (
+                </Fade>
+              )}
+
+              {/* ✅ RESULTS */}
+              {!loading && results.length > 0 && (
+                <Fade in={!loading}>
+                  <Box>
+                    {results.map((vehicleResult, index) => (
+                      <Grow in timeout={300 + index * 100} key={vehicleResult.vehicle._id}>
+                        <Accordion sx={{ mb: 1 }}>
+                          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                            <Box sx={{ width: '100%' }}>
+                              <Typography sx={{ fontWeight: 600 }}>
+                                {vehicleResult.vehicle.mark}{' '}
+                                {vehicleResult.vehicle.regNumber}
+                              </Typography>
+                              <Typography variant="body2" color="text.secondary">
+                                {vehicleResult.totalDistance.toFixed(2)} км •{' '}
+                                {vehicleResult.totalCost.toFixed(2)} грн
+                              </Typography>
+                            </Box>
+                          </AccordionSummary>
+
+                          <AccordionDetails>
+                            {vehicleResult.dailyResults.map((day) => (
+                              <Box
+                                key={day.date.toISOString()}
+                                sx={{ mb: 1, p: 1, borderBottom: '1px solid #eee' }}
+                              >
+                                <Typography>
+                                  <b>Дата:</b>{' '}
+                                  {day.date.toLocaleDateString('uk-UA')}
+                                </Typography>
+                                <Typography>
+                                  <b>Пробіг:</b> {day.distance.toFixed(2)} км
+                                </Typography>
+                                <Typography>
+                                  <b>Вартість:</b> {day.cost.toFixed(2)} грн
+                                </Typography>
+                                <Typography>
+                                  {/* <b>Водій:</b> {day.driver || '—'} */}
+                                  <b>Водій:</b> {day.driver ? String(day.driver) : '—'}
+                                </Typography>
+                              </Box>
+                            ))}
+                          </AccordionDetails>
+                        </Accordion>
+                      </Grow>
+                    ))}
+                  </Box>
+                </Fade>
+              )}
+
+              {/* 📝 EMPTY */}
+              {!loading && results.length === 0 && (
                 <Typography color="text.secondary">
-                  Введіть параметри та натисніть "Розрахувати".
+                  Введіть параметри та натисніть «Розрахувати».
                 </Typography>
               )}
             </Paper>
           </Box>
+
         </Box>
       </DialogContent>
 

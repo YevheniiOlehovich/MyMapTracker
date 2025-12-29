@@ -1,6 +1,6 @@
-// const API_BASE_URL = `http://localhost:5000`; // Локальний сервер
+const API_BASE_URL = `http://localhost:5000`; // Локальний сервер
 
-const API_BASE_URL = "/api";  
+// const API_BASE_URL = "/api";  
 
 const apiRoutes = {
     getGroups: `${API_BASE_URL}/groups`,
@@ -34,6 +34,7 @@ const apiRoutes = {
     getLocationByDate: (year, date) => `${API_BASE_URL}/trek_${year}?date=${date}`,
     getLastLocationByDate: (year, date) => `${API_BASE_URL}/trek_${year}/last?date=${date}`,
     getLocationByImei: (year, date, imei) => `${API_BASE_URL}/trek_${year}?date=${date}&imei=${imei}`,
+    
     getLocationByImeiMonth: (year, month, imei) => `${API_BASE_URL}/trek_${year}/month?month=${month}&imei=${imei}`,
 
     getFields: `${API_BASE_URL}/geo_data/fields`, 
