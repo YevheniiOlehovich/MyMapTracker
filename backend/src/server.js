@@ -29,9 +29,8 @@ const app = express();
 const port = process.env.PORT || 5000;
 
 // Підключення до MongoDB
-const mongoURI = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@${process.env.DB_CLUSTER}/?retryWrites=true&w=majority&appName=Cluster0`;
-
-
+// const mongoURI = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@${process.env.DB_CLUSTER}/?retryWrites=true&w=majority&appName=Cluster0`;
+const mongoURI = `mongodb://mongo:27017/test`
 
 mongoose.connect(mongoURI)
     .then(() => console.log('✅ Підключено до MongoDB'))
