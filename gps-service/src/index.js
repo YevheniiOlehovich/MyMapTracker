@@ -223,7 +223,7 @@ const HOST = '0.0.0.0';
 const PORT = 20120;
 
 // const MONGODB_URI = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@${process.env.DB_CLUSTER}/?retryWrites=true&w=majority&appName=Cluster0`;
-MONGODB_URI = `mongodb://mongo:27017/test`
+const MONGODB_URI = `mongodb://mongo:27017/test`
 const DATABASE_NAME = 'test';
 
 // ================= LOGGING =================
