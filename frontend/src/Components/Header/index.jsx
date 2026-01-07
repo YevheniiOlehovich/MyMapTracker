@@ -47,14 +47,15 @@ export default function Header() {
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   // const handleLogout = () => {
-  //   sessionStorage.removeItem("token");
-  //   window.location.reload();
+  //   navigate("/"); // редіректимо на Main
+  //   sessionStorage.removeItem("token"); // видаляємо токен
+  //   window.location.reload(); // опціонально, щоб скинути стан
   // };
 
   const handleLogout = () => {
-    navigate("/"); // редіректимо на Main
-    sessionStorage.removeItem("token"); // видаляємо токен
-    window.location.reload(); // опціонально, щоб скинути стан
+    sessionStorage.clear(); // очищаємо всі дані сесії
+    navigate("/"); // редірект на стартову сторінку / Main
+    window.location.reload(); // опціонально, щоб скинути стан React
   };
 
   const handleLocateMe = () => {

@@ -67,8 +67,9 @@ export default function Map() {
     const dispatch = useDispatch();
 
     const { data: gpsData = [], isLoading: isGpsLoading, isError: isGpsError, error: gpsError } = useGpsData();
-    const { data: cadastreData, isLoading: isCadastreLoading, error: cadastreError } = useCadastreData();
+    
     const { data: fieldsData, isLoading: isFieldsLoading, error: fieldsError } = useFieldsData();
+    const { data: cadastreData, isLoading: isCadastreLoading, error: cadastreError } = useCadastreData();
     const { data: geozoneData, isLoading: isGeozoneLoading, error: geozoneError } = useGeozoneData();
     const { data: unitsData = [], isLoading: isUnitsLoading, error: unitsError } = useUnitsData();
     const { data: rentData = [], isLoading: isRentsLoading, error: rentsError } = useRentsData(); // 🆕

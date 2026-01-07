@@ -2,11 +2,24 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchGroupsApi, saveGroupApi, updateGroupApi, deleteGroupApi } from '../api/groupsApi';
 
 // Отримання списку груп
+// export const useGroupsData = () =>
+//     useQuery({
+//         queryKey: ['groups'],
+//         queryFn: fetchGroupsApi,
+//     });
+
 export const useGroupsData = () =>
-    useQuery({
-        queryKey: ['groups'],
-        queryFn: fetchGroupsApi,
-    });
+  useQuery({
+    queryKey: ['groups'],
+    queryFn: fetchGroupsApi,
+    initialData: () => {
+      const saved = sessionStorage.getItem("groups");
+      return saved ? JSON.parse(saved) : undefined;
+    },
+    onSuccess: (data) => {
+      sessionStorage.setItem("groups", JSON.stringify(data));
+    }
+  });
 
 // Додавання нової групи
 export const useSaveGroup = () => {
