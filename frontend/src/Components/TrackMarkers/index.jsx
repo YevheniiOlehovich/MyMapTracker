@@ -4,6 +4,7 @@ import { useDispatch } from 'react-redux';
 import { setImei } from '../../store/vehicleSlice';
 import { useVehiclesData } from '../../hooks/useVehiclesData';
 import { usePersonnelData } from '../../hooks/usePersonnelData';
+import { useTechniquesData } from '../../hooks/useTechniquesData'
 import { useGpsByImei } from '../../hooks/useGpsByImei';
 import L from 'leaflet';
 
@@ -29,6 +30,7 @@ const TrackMarkers = ({ gpsData, selectedDate }) => {
   const { data: vehicles = [] } = useVehiclesData();
   const { data: personnel = [] } = usePersonnelData();
   const { data: imeiData } = useGpsByImei(activeImei);
+  const { data : techniques = []} = useTechniquesData();
 
   // ---------------- EFFECTS ----------------
   useEffect(() => {
@@ -124,6 +126,8 @@ const TrackMarkers = ({ gpsData, selectedDate }) => {
   };
 
   // ---------------- RENDER ----------------
+  console.log(lastGpsPoints)
+
   return (
     <>
       {/* LAST POINT MARKERS (ALL VEHICLES) */}
@@ -142,9 +146,27 @@ const TrackMarkers = ({ gpsData, selectedDate }) => {
           >
             <Popup autoPan={false} minWidth={260}>
               <div style={{ fontSize: 12.5, lineHeight: 1.3 }}>
-                <b>🚜 {vehicleName}</b> {vehicleRegNum} <br/>
+                <b>🚜 {vehicleName}</b> {vehicleRegNum} <br />
                 IMEI: {p.imei}<br />
-                🕒 {new Date(p.timestamp).toLocaleString()}
+                🕒 {new Date(p.timestamp).toLocaleString()}<br />
+
+                {/* ------------------ Водій ------------------ */}
+                {(() => {
+                  const driverObj = personnel.find(d => d.rfid === p.io?.[157]);
+                  return driverObj ? (
+                    <div>Водій: {driverObj.firstName} {driverObj.lastName}</div>
+                  ) : (
+                    <div> Водій не визначений</div>
+                  );
+                })()}
+
+                {/* ------------------ BLE мітка ------------------ */}
+                <div>
+                  📌 BLE-тег техніки: {(() => {
+                    const tech = techniques.find(t => t.rfid === String(p.io?.[131]));
+                    return tech ? tech.name : 'не визначено';
+                  })()}
+                </div>
 
                 {movingSegments.length > 0 && (
                   <>
@@ -167,6 +189,7 @@ const TrackMarkers = ({ gpsData, selectedDate }) => {
                 )}
               </div>
             </Popup>
+
           </Marker>
         );
       })}
