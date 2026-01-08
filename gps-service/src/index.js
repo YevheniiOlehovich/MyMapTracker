@@ -207,7 +207,229 @@
 // import dotenv from 'dotenv';
 // dotenv.config();
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // ================= CORE =================
+// import net from 'net';
+// import fs from 'fs';
+// import path from 'path';
+// import { MongoClient } from 'mongodb';
+// import { fileURLToPath } from 'url';
+
+// // ================= __dirname (ESM) =================
+// const __filename = fileURLToPath(import.meta.url);
+// const __dirname = path.dirname(__filename);
+
+// // ================= SETTINGS =================
+// const HOST = '0.0.0.0';
+// const PORT = 20120;
+
+// // const MONGODB_URI = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@${process.env.DB_CLUSTER}/?retryWrites=true&w=majority&appName=Cluster0`;
+// const MONGODB_URI = `mongodb://mongo:27017/test`
+
+// console.log(1)
+
+// const DATABASE_NAME = 'test';
+
+// // ================= LOGGING =================
+// const LOG_DIR = path.join(__dirname, 'logs');
+// if (!fs.existsSync(LOG_DIR)) {
+//   fs.mkdirSync(LOG_DIR, { recursive: true });
+// }
+
+// function log(message) {
+//   const date = new Date().toISOString().split('T')[0];
+//   const file = path.join(LOG_DIR, `${date}.log`);
+//   const line = `[${new Date().toISOString()}] ${message}\n`;
+
+//   fs.appendFileSync(file, line);
+//   console.log(message);
+// }
+
+// // ================= DB =================
+// const client = new MongoClient(MONGODB_URI);
+
+// // ================= HELPERS =================
+// const cleanImei = imei => imei.replace(/\D/g, '');
+
+// const sendConfirmation = socket => {
+//   socket.write(Buffer.from([0x01]));
+// };
+
+// // ================= CRC16 TELTONIKA =================
+// function crc16Teltonika(buf) {
+//   let crc = 0x0000;
+
+//   for (let i = 0; i < buf.length; i++) {
+//     crc ^= buf[i];
+//     for (let j = 0; j < 8; j++) {
+//       crc = crc & 1 ? (crc >>> 1) ^ 0xA001 : crc >>> 1;
+//     }
+//   }
+
+//   return crc;
+// }
+
+// // ================= PARSE IO =================
+// function parseCodec8IO(buf, offset) {
+//   const io = {};
+//   try {
+//     const eventId = buf.readUInt8(offset++);
+//     offset++; // total IO (не використовуємо)
+
+//     const read = (count, size) => {
+//       for (let i = 0; i < count; i++) {
+//         const id = buf.readUInt8(offset++);
+//         const value = buf.slice(offset, offset + size).toString('hex');
+//         offset += size;
+//         io[id] = value;
+//       }
+//     };
+
+//     read(buf.readUInt8(offset++), 1);
+//     read(buf.readUInt8(offset++), 2);
+//     read(buf.readUInt8(offset++), 4);
+//     read(buf.readUInt8(offset++), 8);
+
+//     return { io, eventId };
+//   } catch {
+//     return { io: {}, eventId: null };
+//   }
+// }
+
+// // ================= DECODE AVL =================
+// async function decodeAVL(buffer, imei, db) {
+//   try {
+//     const rawHex = buffer.toString('hex');
+
+//     const dataLen = buffer.readUInt32BE(4);
+//     const avlStart = 8;
+//     const avlBuf = buffer.slice(avlStart, avlStart + dataLen);
+
+//     const crcCalc = crc16Teltonika(avlBuf);
+//     const crcPacket = buffer.readUInt16BE(buffer.length - 2);
+//     const crcValid = crcCalc === crcPacket;
+
+//     const timestamp = Number(avlBuf.readBigUInt64BE(2)) / 1000;
+//     const dateObj = new Date(timestamp * 1000);
+
+//     const gpsOffset = 11;
+//     const longitude = avlBuf.readInt32BE(gpsOffset) / 1e7;
+//     const latitude = avlBuf.readInt32BE(gpsOffset + 4) / 1e7;
+//     const altitude = avlBuf.readInt16BE(gpsOffset + 8);
+//     const angle = avlBuf.readInt16BE(gpsOffset + 10);
+//     const satellites = avlBuf[gpsOffset + 12];
+//     const speed = avlBuf.readInt16BE(gpsOffset + 13);
+
+//     const { io, eventId } = parseCodec8IO(avlBuf, gpsOffset + 15);
+//     const card_id = io[157] && !/^0+$/.test(io[157]) ? io[157] : null;
+
+//     const collection = `trek_${dateObj.getFullYear()}`;
+//     const col = db.collection(collection);
+
+//     const key = {
+//       date: dateObj.toISOString().split('T')[0],
+//       imei
+//     };
+
+//     const record = {
+//       timestamp: dateObj,
+//       latitude,
+//       longitude,
+//       altitude,
+//       angle,
+//       satellites,
+//       speed,
+//       io,
+//       eventId,
+//       card_id,
+//       raw: rawHex,
+//       crc: {
+//         calculated: crcCalc.toString(16),
+//         packet: crcPacket.toString(16),
+//         valid: crcValid ? 1 : 0
+//       }
+//     };
+
+//     await col.updateOne(
+//       key,
+//       { $push: { data: record } },
+//       { upsert: true }
+//     );
+
+//     log(`✅ ${imei} saved ${key.date}`);
+//   } catch (err) {
+//     log(`❌ Decode error: ${err.message}`);
+//   }
+// }
+
+// // ================= SERVER =================
+// async function start() {
+//   try {
+//     await client.connect();
+//     const db = client.db(DATABASE_NAME);
+
+//     log('✅ MongoDB connected');
+
+//     const server = net.createServer(socket => {
+//       log(`🔌 Client ${socket.remoteAddress}:${socket.remotePort}`);
+
+//       let imei = '';
+
+//       socket.on('data', async data => {
+//         if (!imei) {
+//           imei = cleanImei(data.toString());
+//           log(`📡 IMEI ${imei}`);
+//           sendConfirmation(socket);
+//           return;
+//         }
+
+//         await decodeAVL(data, imei, db);
+//         sendConfirmation(socket);
+//       });
+
+//       socket.on('close', () => log(`🔴 Disconnect ${imei}`));
+//       socket.on('error', err => log(`⚠️ Socket error ${err.message}`));
+//     });
+
+//     server.listen(PORT, HOST, () => {
+//       log(`🚀 TCP listening on ${HOST}:${PORT}`);
+//     });
+//   } catch (err) {
+//     log(`💥 Fatal error: ${err.message}`);
+//     process.exit(1);
+//   }
+// }
+
+// start();
+
+
+
+
+
+
+
+
+
+
+
+
+
 import net from 'net';
 import fs from 'fs';
 import path from 'path';
@@ -221,12 +443,7 @@ const __dirname = path.dirname(__filename);
 // ================= SETTINGS =================
 const HOST = '0.0.0.0';
 const PORT = 20120;
-
-// const MONGODB_URI = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@${process.env.DB_CLUSTER}/?retryWrites=true&w=majority&appName=Cluster0`;
-const MONGODB_URI = `mongodb://mongo:27017/test`
-
-console.log(1)
-
+const MONGODB_URI = `mongodb://mongo:27017/test`;
 const DATABASE_NAME = 'test';
 
 // ================= LOGGING =================
@@ -249,23 +466,28 @@ const client = new MongoClient(MONGODB_URI);
 
 // ================= HELPERS =================
 const cleanImei = imei => imei.replace(/\D/g, '');
-
-const sendConfirmation = socket => {
-  socket.write(Buffer.from([0x01]));
-};
+const sendConfirmation = socket => socket.write(Buffer.from([0x01]));
 
 // ================= CRC16 TELTONIKA =================
 function crc16Teltonika(buf) {
   let crc = 0x0000;
-
   for (let i = 0; i < buf.length; i++) {
     crc ^= buf[i];
     for (let j = 0; j < 8; j++) {
       crc = crc & 1 ? (crc >>> 1) ^ 0xA001 : crc >>> 1;
     }
   }
-
   return crc;
+}
+
+// ================= HEX → DEC =================
+function hexToDec(value) {
+  if (!value) return null;
+  try {
+    return parseInt(value, 16);
+  } catch {
+    return null;
+  }
 }
 
 // ================= PARSE IO =================
@@ -275,12 +497,22 @@ function parseCodec8IO(buf, offset) {
     const eventId = buf.readUInt8(offset++);
     offset++; // total IO (не використовуємо)
 
+    // BLE-поля, які конвертуємо у DEC
+    const BLE_IDS_IO = [131];
+
     const read = (count, size) => {
       for (let i = 0; i < count; i++) {
         const id = buf.readUInt8(offset++);
-        const value = buf.slice(offset, offset + size).toString('hex');
+        const valueHex = buf.slice(offset, offset + size).toString('hex');
         offset += size;
-        io[id] = value;
+
+        // конвертуємо BLE у десяткове
+        if (BLE_IDS_IO.includes(id)) {
+          const dec = hexToDec(valueHex);
+          io[id] = dec !== null ? dec : valueHex;
+        } else {
+          io[id] = valueHex;
+        }
       }
     };
 
@@ -320,6 +552,7 @@ async function decodeAVL(buffer, imei, db) {
     const speed = avlBuf.readInt16BE(gpsOffset + 13);
 
     const { io, eventId } = parseCodec8IO(avlBuf, gpsOffset + 15);
+
     const card_id = io[157] && !/^0+$/.test(io[157]) ? io[157] : null;
 
     const collection = `trek_${dateObj.getFullYear()}`;
