@@ -67,6 +67,7 @@ export default function Map() {
     const dispatch = useDispatch();
 
     const { data: gpsData = [], isLoading: isGpsLoading, isError: isGpsError, error: gpsError } = useGpsData();
+    console.log(gpsData)
     
     const { data: fieldsData, isLoading: isFieldsLoading, error: fieldsError } = useFieldsData();
     const { data: cadastreData, isLoading: isCadastreLoading, error: cadastreError } = useCadastreData();

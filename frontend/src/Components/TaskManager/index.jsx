@@ -41,6 +41,7 @@ import bgPic from "../../assets/field_3.webp";
 export default function TasksTab() {
   const dispatch = useDispatch();
   const { data: tasks = [], isLoading, isError, error } = useTasksData();
+
   useFieldsData();
 
   const deleteTask = useDeleteTask();
@@ -95,6 +96,20 @@ export default function TasksTab() {
           cell: (info) => {
             const value = info.getValue();
             return typeof value === "number" ? value.toFixed(2) : value;
+          },
+        }
+      ),
+      columnHelper.accessor(
+        (row) => row.processedArea,
+        {
+          id: "processedArea",
+          header: "Оброблена площа (га)",
+          cell: (info) => {
+            const value = info.getValue();
+            if (value === null || value === undefined || value === 0) {
+              return "немає інформації";
+            }
+            return Number(value).toFixed(4); // 4 знаки після коми
           },
         }
       ),
