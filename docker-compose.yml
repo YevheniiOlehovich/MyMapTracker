@@ -51,6 +51,18 @@ services:
     networks:
       - app-network
 
+  nginx:
+    image: nginx:alpine
+    container_name: nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./frontend/build:/usr/share/nginx/html
+      - ./certs/cloudflare.crt:/etc/ssl/certs/cloudflare.crt:ro
+      - ./certs/cloudflare.key:/etc/ssl/private/cloudflare.key:ro
+
 networks:
   app-network:
     driver: bridge
