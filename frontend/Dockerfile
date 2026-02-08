@@ -19,8 +19,8 @@
 # # Копіюємо збірку фронтенду з попереднього етапу
 # COPY --from=build /app/dist /usr/share/nginx/html
 
-# # Мапимо папку uploads
-# COPY ../uploads /usr/share/nginx/html/uploads
+# # НЕ копіюємо uploads — буде змонтовано як volume
+# # COPY ../uploads /usr/share/nginx/html/uploads  <- закоментовано / видалено
 
 # # Копіюємо кастомний конфіг Nginx
 # COPY nginx.conf /etc/nginx/conf.d/default.conf
@@ -52,20 +52,14 @@ COPY . .
 # Створюємо production build
 RUN npm run build
 
-# 2. Nginx stage: хостинг фронтенду
-FROM nginx:alpine
+# 2. Final stage: просто build файли, без Nginx
+FROM alpine:3.18
+
+WORKDIR /usr/share/nginx/html
 
 # Копіюємо збірку фронтенду з попереднього етапу
-COPY --from=build /app/dist /usr/share/nginx/html
+COPY --from=build /app/dist .
 
-# НЕ копіюємо uploads — буде змонтовано як volume
-# COPY ../uploads /usr/share/nginx/html/uploads  <- закоментовано / видалено
-
-# Копіюємо кастомний конфіг Nginx
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-
-# Відкриваємо порт 80
-EXPOSE 80
-
-# Запуск Nginx
-CMD ["nginx", "-g", "daemon off;"]
+# Не експортуємо порти
+# EXPOSE 80  <- видаляємо
+# CMD не потрібен, бо Nginx буде окремо

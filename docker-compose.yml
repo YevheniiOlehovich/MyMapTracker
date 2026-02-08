@@ -1,3 +1,74 @@
+# version: "3.9"
+
+# services:
+#   mongo:
+#     image: mongo:6
+#     container_name: mongo
+#     restart: always
+#     ports:
+#       - "27017:27017"         # доступ до MongoDB з VPS
+#     volumes:
+#       - ./mongo_data:/data/db # зберігання даних на VPS, щоб не втратити після перезапуску
+#     networks:
+#       - app-network
+
+#   backend:
+#     build: ./backend
+#     container_name: backend
+#     restart: always
+#     env_file:
+#       - ./backend/src/.env
+#     expose:
+#       - "5000"                # тільки всередині мережі, бо Nginx буде звертатися по імені
+#     volumes:
+#       - ./uploads:/app/uploads
+#     depends_on:
+#       - mongo                 # бекенд чекає, поки MongoDB підніметься
+#     networks:
+#       - app-network
+
+#   gps-service:
+#     build: ./gps-service
+#     container_name: gps-service
+#     restart: always
+#     env_file:
+#       - ./gps-service/src/.env
+#     ports:
+#       - "20120:20120"
+#     networks:
+#       - app-network
+
+#   frontend:
+#     build: ./frontend
+#     container_name: frontend
+#     restart: always
+#     ports:
+#       - "80:80"               # фронт доступний зовні
+#     volumes:
+#       - ./uploads:/usr/share/nginx/html/uploads
+#     depends_on:
+#       - backend
+#     networks:
+#       - app-network
+
+#   nginx:
+#     image: nginx:alpine
+#     container_name: nginx
+#     ports:
+#       - "80:80"
+#       - "443:443"
+#     volumes:
+#       - ./nginx/conf.d:/etc/nginx/conf.d
+#       - ./frontend/build:/usr/share/nginx/html
+#       - ./certs/cloudflare.crt:/etc/ssl/certs/cloudflare.crt:ro
+#       - ./certs/cloudflare.key:/etc/ssl/private/cloudflare.key:ro
+
+# networks:
+#   app-network:
+#     driver: bridge
+
+
+
 version: "3.9"
 
 services:
@@ -6,9 +77,9 @@ services:
     container_name: mongo
     restart: always
     ports:
-      - "27017:27017"         # доступ до MongoDB з VPS
+      - "27017:27017"
     volumes:
-      - ./mongo_data:/data/db # зберігання даних на VPS, щоб не втратити після перезапуску
+      - ./mongo_data:/data/db
     networks:
       - app-network
 
@@ -19,11 +90,11 @@ services:
     env_file:
       - ./backend/src/.env
     expose:
-      - "5000"                # тільки всередині мережі, бо Nginx буде звертатися по імені
+      - "5000"  # тільки всередині мережі
     volumes:
       - ./uploads:/app/uploads
     depends_on:
-      - mongo                 # бекенд чекає, поки MongoDB підніметься
+      - mongo
     networks:
       - app-network
 
@@ -42,9 +113,9 @@ services:
     build: ./frontend
     container_name: frontend
     restart: always
-    ports:
-      - "80:80"               # фронт доступний зовні
+    # Видаляємо ports, бо фронт не слухає самостійно
     volumes:
+      - ./frontend/build:/usr/share/nginx/html
       - ./uploads:/usr/share/nginx/html/uploads
     depends_on:
       - backend
@@ -54,6 +125,7 @@ services:
   nginx:
     image: nginx:alpine
     container_name: nginx
+    restart: always
     ports:
       - "80:80"
       - "443:443"
@@ -62,6 +134,10 @@ services:
       - ./frontend/build:/usr/share/nginx/html
       - ./certs/cloudflare.crt:/etc/ssl/certs/cloudflare.crt:ro
       - ./certs/cloudflare.key:/etc/ssl/private/cloudflare.key:ro
+    depends_on:
+      - frontend
+    networks:
+      - app-network
 
 networks:
   app-network:
