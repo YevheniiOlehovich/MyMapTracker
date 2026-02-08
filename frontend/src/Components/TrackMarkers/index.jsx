@@ -101,7 +101,7 @@ const TrackMarkers = ({ gpsData, selectedDate }) => {
     () => vehicleSegments.filter(seg => seg.type === 'moving'),
     [vehicleSegments]
   );
-
+  
   const totalSegmentsDistance = useMemo(
     () =>
       movingSegments.reduce((sum, seg) => sum + Number(seg.distance || 0), 0).toFixed(2),
@@ -124,9 +124,6 @@ const TrackMarkers = ({ gpsData, selectedDate }) => {
     }
     dispatch(setImei(imei));
   };
-
-  // ---------------- RENDER ----------------
-  console.log(lastGpsPoints)
 
   return (
     <>
@@ -243,3 +240,123 @@ const TrackMarkers = ({ gpsData, selectedDate }) => {
 };
 
 export default TrackMarkers;
+
+
+
+
+
+// Наглядно показать дані з трекера
+
+// import React, { useMemo, useState, useEffect } from 'react';
+// import { Marker, Polyline, Popup, useMap } from 'react-leaflet';
+// import { useDispatch } from 'react-redux';
+// import { setImei } from '../../store/vehicleSlice';
+// import { useVehiclesData } from '../../hooks/useVehiclesData';
+// import { usePersonnelData } from '../../hooks/usePersonnelData';
+// import { useTechniquesData } from '../../hooks/useTechniquesData';
+// import { useGpsByImei } from '../../hooks/useGpsByImei';
+// import L from 'leaflet';
+
+// import carIco from '../../assets/ico/car-ico.png';
+// import tractorIco from '../../assets/ico/tractor-ico.png';
+// import combineIco from '../../assets/ico/combine-ico.png';
+// import truckIco from '../../assets/ico/truck-ico.png';
+
+// import { filterGpsDataByDate } from '../../helpres/trekHelpers';
+
+// const TrackMarkers = ({ gpsData, selectedDate }) => {
+//   const dispatch = useDispatch();
+//   const map = useMap();
+
+//   const [activeImei, setActiveImei] = useState(null);
+//   const { data: vehicles = [] } = useVehiclesData();
+//   const { data: personnel = [] } = usePersonnelData();
+//   const { data: imeiData } = useGpsByImei(activeImei);
+//   const { data: techniques = [] } = useTechniquesData();
+
+//   useEffect(() => {
+//     setActiveImei(null);
+//     map?.closePopup();
+//   }, [selectedDate, map]);
+
+//   const getIconByType = type =>
+//     ({ tractor: tractorIco, combine: combineIco, truck: truckIco, car: carIco }[type] || carIco);
+
+//   const getColorByType = type =>
+//     ({ car: '#007bff', tractor: '#28a745', combine: '#ffc107', truck: '#dc3545' }[type] || '#007bff');
+
+//   const filteredGpsData = useMemo(
+//     () => filterGpsDataByDate(gpsData, selectedDate),
+//     [gpsData, selectedDate]
+//   );
+
+//   const activeVehicleData = useMemo(() => {
+//     if (!activeImei) return null;
+
+//     if (imeiData?.length) {
+//       const doc = imeiData.find(d => d.imei === activeImei);
+//       return doc?.data || null;
+//     }
+
+//     const fallback = filteredGpsData.find(d => d.imei === activeImei);
+//     return fallback?.data || null;
+//   }, [imeiData, filteredGpsData, activeImei]);
+
+//   const handleMarkerClick = imei => {
+//     setActiveImei(imei);
+//     dispatch(setImei(imei));
+//   };
+
+//   // ---------------- POSITIONS FOR POLYLINE ----------------
+//   const polylinePositions = useMemo(() => {
+//     if (!activeVehicleData) return [];
+//     return activeVehicleData
+//       .filter(p => p.latitude && p.longitude)
+//       .map(p => [p.latitude, p.longitude]);
+//   }, [activeVehicleData]);
+
+//   // ---------------- LAST POINT ----------------
+//   const lastGpsPoints = useMemo(() => {
+//     return gpsData.filter(p => p.latitude && p.longitude);
+//   }, [gpsData]);
+
+//   return (
+//     <>
+//       {/* LAST POINT MARKERS */}
+//       {lastGpsPoints.map((p, i) => {
+//         const vehicle = vehicles.find(v => v.imei === p.imei);
+//         const vehicleName = vehicle?.mark || 'Невідома техніка';
+//         const vehicleType = vehicle?.vehicleType || 'car';
+
+//         return (
+//           <Marker
+//             key={`last-${i}`}
+//             position={[p.latitude, p.longitude]}
+//             icon={new L.Icon({ iconUrl: getIconByType(vehicleType), iconSize: [50, 50] })}
+//             eventHandlers={{ click: () => handleMarkerClick(p.imei) }}
+//           >
+//             <Popup>
+//               <b>{vehicleName}</b><br />
+//               IMEI: {p.imei}<br />
+//               🕒 {new Date(p.timestamp).toLocaleString()}
+//             </Popup>
+//           </Marker>
+//         );
+//       })}
+
+//       {/* POLYLINE FOR ACTIVE VEHICLE */}
+//       {polylinePositions.length > 1 && (
+//         <Polyline
+//           positions={polylinePositions}
+//           pathOptions={{
+//             color: getColorByType(activeVehicleData?.[0]?.vehicleType || 'car'),
+//             weight: 5,
+//             opacity: 0.85,
+//           }}
+//         />
+//       )}
+//     </>
+//   );
+// };
+
+// export default TrackMarkers;
