@@ -68,7 +68,6 @@
 #     driver: bridge
 
 
-
 version: "3.9"
 
 services:
@@ -90,7 +89,7 @@ services:
     env_file:
       - ./backend/src/.env
     expose:
-      - "5000"  # тільки всередині мережі
+      - "5000"
     volumes:
       - ./uploads:/app/uploads
     depends_on:
@@ -109,19 +108,17 @@ services:
     networks:
       - app-network
 
+  # 🔹 Фронт тільки збирається
   frontend:
     build: ./frontend
     container_name: frontend
-    restart: always
-    # Видаляємо ports, бо фронт не слухає самостійно
+    restart: "no"   # він просто будує dist і завершується
     volumes:
-      - ./frontend/build:/usr/share/nginx/html
-      - ./uploads:/usr/share/nginx/html/uploads
-    depends_on:
-      - backend
+      - ./frontend/dist:/app/dist
     networks:
       - app-network
 
+  # 🔥 ГОЛОВНИЙ
   nginx:
     image: nginx:alpine
     container_name: nginx
@@ -131,11 +128,12 @@ services:
       - "443:443"
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d
-      - ./frontend/build:/usr/share/nginx/html
+      - ./frontend/dist:/usr/share/nginx/html
+      - ./uploads:/usr/share/nginx/html/uploads
       - ./certs/cloudflare.crt:/etc/ssl/certs/cloudflare.crt:ro
       - ./certs/cloudflare.key:/etc/ssl/private/cloudflare.key:ro
     depends_on:
-      - frontend
+      - backend
     networks:
       - app-network
 
