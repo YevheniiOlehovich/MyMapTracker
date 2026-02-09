@@ -26,6 +26,7 @@ import authRoutes from './routes/auth.js';
 dotenv.config();
 
 const app = express();
+app.set('trust proxy', 1); 
 const port = process.env.PORT || 5000;
 
 // const mongoURI = 'mongodb://localhost:27018/test' //Локал
