@@ -76,4 +76,5 @@ COPY . .
 
 RUN npm run build
 
-CMD mkdir -p /host_dist && cp -r dist/* /host_dist
+CMD rm -rf /host_dist/* && cp -r dist/* /host_dist
+
