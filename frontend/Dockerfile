@@ -37,29 +37,43 @@
 
 
 
-# 1. Build stage: збірка фронтенду
+# # 1. Build stage: збірка фронтенду
+# FROM node:20 as build
+
+# WORKDIR /app
+
+# # Копіюємо package.json і package-lock.json та встановлюємо залежності
+# COPY package*.json ./
+# RUN npm install
+
+# # Копіюємо весь код фронтенду
+# COPY . .
+
+# # Створюємо production build
+# RUN npm run build
+
+# # 2. Final stage: просто build файли, без Nginx
+# FROM alpine:3.18
+
+# # WORKDIR /usr/share/nginx/html
+# WORKDIR /app
+# # Копіюємо збірку фронтенду з попереднього етапу
+# # COPY --from=build /app/dist .
+# COPY --from=build /app/dist ./dist
+# # Не експортуємо порти
+# # EXPOSE 80  <- видаляємо
+# # CMD не потрібен, бо Nginx буде окремо
+
+
+
 FROM node:20 as build
 
 WORKDIR /app
-
-# Копіюємо package.json і package-lock.json та встановлюємо залежності
 COPY package*.json ./
 RUN npm install
-
-# Копіюємо весь код фронтенду
 COPY . .
-
-# Створюємо production build
 RUN npm run build
 
-# 2. Final stage: просто build файли, без Nginx
-FROM alpine:3.18
-
-# WORKDIR /usr/share/nginx/html
-WORKDIR /app
-# Копіюємо збірку фронтенду з попереднього етапу
-# COPY --from=build /app/dist .
-COPY --from=build /app/dist ./dist
-# Не експортуємо порти
-# EXPOSE 80  <- видаляємо
-# CMD не потрібен, бо Nginx буде окремо
+# ВАЖЛИВО
+# Копіюємо назад на хост
+CMD cp -r dist /host_dist

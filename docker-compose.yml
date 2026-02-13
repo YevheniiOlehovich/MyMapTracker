@@ -56,7 +56,7 @@ services:
     container_name: frontend
     restart: "no"   # він просто будує dist і завершується
     volumes:
-      - ./frontend/dist:/app/dist
+      - ./frontend/dist:/host_dist
     networks:
       - app-network
 
