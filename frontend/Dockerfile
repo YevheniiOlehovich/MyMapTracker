@@ -55,11 +55,11 @@ RUN npm run build
 # 2. Final stage: просто build файли, без Nginx
 FROM alpine:3.18
 
-WORKDIR /usr/share/nginx/html
-
+# WORKDIR /usr/share/nginx/html
+WORKDIR /app
 # Копіюємо збірку фронтенду з попереднього етапу
-COPY --from=build /app/dist .
-
+# COPY --from=build /app/dist .
+COPY --from=build /app/dist ./dist
 # Не експортуємо порти
 # EXPOSE 80  <- видаляємо
 # CMD не потрібен, бо Nginx буде окремо
