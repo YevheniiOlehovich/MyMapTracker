@@ -9,19 +9,41 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'; // І
 
 const GlobalStyle = createGlobalStyle`
   * {
-      box-sizing: border-box; 
+    box-sizing: border-box; 
   }
 
   body {
-      margin: 0; 
-      padding: 0; 
-      width: 100%; 
-      height: 100vh; 
-      overflow: hidden;
-      box-sizing: border-box;
-      background-color: rgba(0, 0, 0, 0.2);
+    margin: 0; 
+    padding: 0; 
+    width: 100%; 
+    height: 100vh; 
+    overflow: hidden;
+    box-sizing: border-box;
+    background-color: rgba(0, 0, 0, 0.2);
+  }
+
+  /* ================= MAP MARKERS ================= */
+
+  /* неактивні */
+  .dim-marker {
+    opacity: 0.75;
+    filter: grayscale(40%);
+    transition: all 0.2s ease;
+  }
+
+  /* активний */
+  .active-marker {
+    filter: drop-shadow(0 0 10px #00bfff);
+    z-index: 1000 !important;
+    transition: all 0.2s ease;
+  }
+
+  /* щоб масштабування виглядало красиво */
+  .leaflet-marker-icon {
+    transform-origin: bottom center;
   }
 `;
+
 
 function App() {
   return (

@@ -29,9 +29,9 @@ const app = express();
 app.set('trust proxy', 1); 
 const port = process.env.PORT || 5000;
 
-// const mongoURI = 'mongodb://localhost:27018/test' //Локал
+const mongoURI = 'mongodb://localhost:27018/test' //Локал
 
-const mongoURI = `mongodb://mongo:27017/test` //Прод
+// const mongoURI = `mongodb://mongo:27017/test` //Прод
 
 mongoose.connect(mongoURI)
     .then(() => console.log('✅ Підключено до MongoDB'))
