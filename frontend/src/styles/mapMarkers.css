@@ -1,0 +1,18 @@
+/* неактивні */
+.dim-marker {
+  opacity: 0.75;
+  filter: grayscale(40%);
+  transition: all 0.2s ease;
+}
+
+/* активний */
+.active-marker {
+  filter: drop-shadow(0 0 10px #00bfff);
+  z-index: 1000 !important;
+  transition: all 0.2s ease;
+}
+
+/* щоб масштабування виглядало красиво */
+.leaflet-marker-icon {
+  transform-origin: bottom center;
+}
