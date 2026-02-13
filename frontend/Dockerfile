@@ -65,15 +65,15 @@
 # # CMD не потрібен, бо Nginx буде окремо
 
 
-
-FROM node:20 as build
+FROM node:20
 
 WORKDIR /app
+
 COPY package*.json ./
 RUN npm install
+
 COPY . .
+
 RUN npm run build
 
-# ВАЖЛИВО
-# Копіюємо назад на хост
-CMD cp -r dist /host_dist
+CMD mkdir -p /host_dist && cp -r dist/* /host_dist

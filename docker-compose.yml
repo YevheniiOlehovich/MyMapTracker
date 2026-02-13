@@ -50,11 +50,11 @@ services:
       - app-network
 
 
-  # 🔹 Фронт тільки збирається
+  # 🔹 Фронт тільки збирається  # 🔹 Фронт тільки збирається
   frontend:
     build: ./frontend
     container_name: frontend
-    restart: "no"   # він просто будує dist і завершується
+    restart: "no"
     volumes:
       - ./frontend/dist:/host_dist
     networks:
