@@ -6,7 +6,8 @@ import {
   DirectionsCar, 
   Build, 
   Map, 
-  Layers 
+  Layers,
+  Checklist,
 } from "@mui/icons-material";
 import GroupsList from "../GroupsList";
 import PersonnelList from "../PersonnelList";
@@ -16,6 +17,7 @@ import FieldsList from "../FieldsList";
 import LayersList from "../LayersList";
 import { CalendarMonth } from "@mui/icons-material";
 import CalendarList from "../CalendarList";
+import TaskList from "../TaskList";
 
 export default function Aside() {
   const [activeTab, setActiveTab] = useState(null);
@@ -28,6 +30,7 @@ export default function Aside() {
     { name: "fields", icon: <Map />, label: "Поля", component: <FieldsList /> },
     { name: "layers", icon: <Layers />, label: "Шари карти", component: <LayersList /> },
     { name: "calendar", icon: <CalendarMonth />, label: "Календар", component: <CalendarList /> },
+    { name: "tasks", icon: <Checklist />, label: "Завдання", component: <TaskList /> }
   ];
 
   return (

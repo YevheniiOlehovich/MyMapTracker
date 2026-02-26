@@ -40,6 +40,9 @@ export default function AddTaskModal() {
   const { data: vehicles = [] } = useVehiclesData();
   const { data: tasks = [] } = useTasksData();
 
+  console.log(operations)
+  console.log(techniques)
+
   const editTask = tasks.find((t) => t._id === editTaskId);
 
   // state

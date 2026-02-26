@@ -40,17 +40,104 @@ function extractId(val) {
 }
 
 // GET всі таски
+
+// router.get('/', async (req, res) => {
+//   try {
+//     const tasks = await Task.find()
+//       .sort({ order: -1 })
+//       .populate('groupId personnelId techniqueId vehicleId fieldId operationId varietyId cropId');
+//     res.json(tasks);
+//   } catch (error) {
+//     console.error('Error fetching tasks:', error);
+//     res.status(500).json({ message: 'Error fetching tasks', error: error.message });
+//   }
+// });
+
+// GET всі таски (з фільтром по даті)
+// router.get('/', async (req, res) => {
+//   try {
+//     const { date } = req.query;
+
+//     let filter = {};
+
+//     // 🔥 Якщо передано дату — фільтр по startDate
+//     if (date) {
+//       const start = new Date(date);
+//       const end = new Date(date);
+//       end.setDate(end.getDate() + 1);
+
+//       filter.startDate = { $gte: start, $lt: end };
+//     }
+
+//     const tasks = await Task.find(filter)
+//       .sort({ order: -1 })
+//       .populate(
+//         'groupId personnelId techniqueId vehicleId fieldId operationId varietyId cropId'
+//       );
+
+//     res.json(tasks);
+
+//   } catch (error) {
+//     console.error('Error fetching tasks:', error);
+//     res.status(500).json({
+//       message: 'Error fetching tasks',
+//       error: error.message
+//     });
+//   }
+// });
+
+
 router.get('/', async (req, res) => {
   try {
-    const tasks = await Task.find()
+    const { date } = req.query;
+
+    let filter = {};
+
+    if (date) {
+      const day = new Date(date);
+
+      filter = {
+        $expr: {
+          $and: [
+
+            // startDate <= selected day
+            { $lte: ["$startDate", day] },
+
+            // startDate + daysToComplete > selected day
+            {
+              $gt: [
+                {
+                  $add: [
+                    "$startDate",
+                    { $multiply: ["$daysToComplete", 86400000] }
+                  ]
+                },
+                day
+              ]
+            }
+
+          ]
+        }
+      };
+    }
+
+    const tasks = await Task.find(filter)
       .sort({ order: -1 })
-      .populate('groupId personnelId techniqueId vehicleId fieldId operationId varietyId cropId');
+      .populate(
+        'groupId personnelId techniqueId vehicleId fieldId operationId varietyId cropId'
+      );
+
     res.json(tasks);
+
   } catch (error) {
     console.error('Error fetching tasks:', error);
-    res.status(500).json({ message: 'Error fetching tasks', error: error.message });
+    res.status(500).json({
+      message: 'Error fetching tasks',
+      error: error.message
+    });
   }
 });
+
 
 // GET таску по ID
 router.get('/:id', async (req, res) => {

@@ -9,7 +9,6 @@ export const fetchTasksApi = async () => {
 
 // Створити нову таску
 export const saveTaskApi = async (taskData) => {
-  console.log(taskData);
   const response = await fetch(apiRoutes.addTask, {
     method: 'POST',
     body: taskData,  // taskData - це FormData
@@ -20,8 +19,6 @@ export const saveTaskApi = async (taskData) => {
 
 // Оновити таску
 export const updateTaskApi = async ({ taskId, taskData }) => {
-  console.log(taskId);
-  console.log(taskData);
   const response = await fetch(apiRoutes.updateTask(taskId), {
     method: 'PUT',
     body: taskData,  // FormData
@@ -37,4 +34,27 @@ export const deleteTaskApi = async (taskId) => {
   });
   if (!response.ok) throw new Error('Не вдалося видалити таску');
   return taskId;
+};
+
+export const fetchTasksByDateApi = async (date) => {
+  const url = date
+    ? `${apiRoutes.getTasks}?date=${date}`
+    : apiRoutes.getTasks;
+
+  const response = await fetch(url);
+
+  if (!response.ok)
+    throw new Error('Не вдалося отримати таски');
+
+  return await response.json();
+};
+
+export const fetchTasksByRangeApi = async (from, to) => {
+  const url = `${apiRoutes.getTasks}?from=${from}&to=${to}`;
+  const response = await fetch(url);
+
+  if (!response.ok)
+    throw new Error("Не вдалося отримати таски");
+
+  return response.json();
 };

@@ -67,9 +67,7 @@ export default function Map() {
     const dispatch = useDispatch();
 
     const { data: gpsData = [], isLoading: isGpsLoading, isError: isGpsError, error: gpsError } = useGpsData();
-    
-    console.log('gpsData', gpsData)
-    
+       
     const { data: fieldsData, isLoading: isFieldsLoading, error: fieldsError } = useFieldsData();
     const { data: cadastreData, isLoading: isCadastreLoading, error: cadastreError } = useCadastreData();
     const { data: geozoneData, isLoading: isGeozoneLoading, error: geozoneError } = useGeozoneData();
@@ -132,9 +130,6 @@ export default function Map() {
             </p>
         );
     }
-
-    console.log('lastGpsData', lastGpsData);
-    console.log('lastGpsData length', lastGpsData.length);
 
     return (
         <Styles.wrapper>
