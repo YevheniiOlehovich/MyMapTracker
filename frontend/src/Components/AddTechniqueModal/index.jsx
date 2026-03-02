@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useSelector } from "react-redux";
 import {
   Dialog,
@@ -25,6 +25,7 @@ import { useGroupsData } from "../../hooks/useGroupsData";
 import { useTechniquesData, useSaveTechnique, useUpdateTechnique } from "../../hooks/useTechniquesData";
 import { createBlobFromImagePath, convertImageToWebP } from "../../helpres/imageUtils";
 import { BACKEND_URL } from "../../helpres";
+import { useOperationsData } from "../../hooks/useOperationsData";
 
 export default function AddTechniqueModal({ onClose }) {
   const { editGroupId, editTechniqueId } = useSelector((state) => state.modals);
@@ -36,7 +37,8 @@ export default function AddTechniqueModal({ onClose }) {
 
   const { data: groups = [] } = useGroupsData();
   const { data: techniques = [] } = useTechniquesData();
-
+  const { data: operations = []} = useOperationsData();
+  
   const editTechnique = techniques.find(t => t._id === editTechniqueId);
 
   const [selectedGroup, setSelectedGroup] = useState(editTechnique?.groupId || editGroupId || "");
@@ -47,6 +49,18 @@ export default function AddTechniqueModal({ onClose }) {
   const [width, setWidth] = useState(editTechnique?.width || "");
   const [speed, setSpeed] = useState(editTechnique?.speed || "");
   const [note, setNote] = useState(editTechnique?.note || "");
+
+  useEffect(() => {
+    if (!editTechnique || operations.length === 0) return;
+
+    const opId =
+      operations.find(o => o._id === editTechnique.fieldOperation)?._id ||
+      operations.find(o => o.name === editTechnique.fieldOperation)?. _id ||
+      editTechnique.fieldOperation || "";
+
+    setFieldOperation(opId);
+
+  }, [editTechnique, operations]);
 
   //Локально
   // const [techniquePhoto, setTechniquePhoto] = useState(
@@ -150,11 +164,16 @@ export default function AddTechniqueModal({ onClose }) {
             onChange={(e) => setFieldOperation(e.target.value)}
             size="small"
           >
-            {fieldOperations.map(f => (
+            {/* {fieldOperations.map(f => (
               <MenuItem key={f._id} value={f._id} sx={{ fontSize: 12 }}>{f.name}</MenuItem>
+            ))} */}
+            {operations.map(op => (
+              <MenuItem key={op._id} value={op._id} sx={{ fontSize: 12 }}>
+                {op.name}
+              </MenuItem>
             ))}
           </MuiSelect>
-        </FormControl>
+        </FormControl> 
 
         {/* Поля */}
         <TextField disabled={isGuest} label="Найменування" fullWidth margin="dense" size="small" value={name} onChange={(e) => setName(e.target.value)} />

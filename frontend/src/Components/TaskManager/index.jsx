@@ -6,6 +6,7 @@ import {
   getSortedRowModel,
   getFilteredRowModel,
   getPaginationRowModel,
+  getExpandedRowModel,
   useReactTable,
   flexRender,
 } from "@tanstack/react-table";
@@ -30,7 +31,6 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import DescriptionIcon from "@mui/icons-material/Description";
 
 import { useTasksData, useDeleteTask } from "../../hooks/useTasksData";
-import { useFieldsData } from "../../hooks/useFieldsData";
 import { openAddTaskModal, openTaskReportModal } from "../../store/modalSlice";
 
 import Header from "../Header";
@@ -41,138 +41,176 @@ import bgPic from "../../assets/field_3.webp";
 export default function TasksTab() {
   const dispatch = useDispatch();
   const { data: tasks = [], isLoading, isError, error } = useTasksData();
-
-  useFieldsData();
-
   const deleteTask = useDeleteTask();
 
   const [globalFilter, setGlobalFilter] = useState("");
   const [sorting, setSorting] = useState([]);
+  const [expanded, setExpanded] = useState({});
 
   const columnHelper = createColumnHelper();
 
   const handleAdd = () => dispatch(openAddTaskModal());
-  const handleEdit = (taskId) => dispatch(openAddTaskModal(taskId));
+  // const handleEdit = (taskId) => dispatch(openAddTaskModal(taskId));
+
+  const handleEdit = (taskId) => {
+    console.log("EDIT ID:", taskId);
+    dispatch(openAddTaskModal(taskId));
+  };
 
   const handleDelete = (taskId) => {
     if (window.confirm("Ви дійсно хочете видалити цей таск?")) {
-      deleteTask.mutate(taskId, {
-        onError: (err) => {
-          console.error("Помилка при видаленні таска:", err);
-          alert("Помилка видалення");
-        },
-      });
+      deleteTask.mutate(taskId);
     }
   };
 
+  /* ---------- Compact renderer ---------- */
+
+  const renderCompact = (row, key, formatter) => {
+    if (!row.assignments?.length) return "—";
+
+    const first = row.assignments[0]?.[key];
+    const count = row.assignments.length - 1;
+
+    if (!first) return "—";
+
+    const label = formatter(first);
+    return count > 0 ? `${label} +${count}` : label;
+  };
+
+  /* ---------- Columns ---------- */
+
   const columns = useMemo(
     () => [
-      columnHelper.accessor((row) => row.order ?? 0, { id: "order", header: "#" }),
-      columnHelper.accessor((row) => row.groupId?.name || "—", { id: "group", header: "Група" }),
-      columnHelper.accessor((row) => row.fieldId?.properties?.name || "—", { id: "field", header: "Поле" }),
-      columnHelper.accessor((row) => row.operationId?.name || "—", { id: "operation", header: "Операція" }),
-      columnHelper.accessor("status", { header: "Статус" }),
+      columnHelper.accessor((row) => row.order ?? 0, {
+        id: "order",
+        header: "#",
+      }),
+
+      columnHelper.accessor((row) => row.groupId?.name || "—", {
+        id: "group",
+        header: "Група",
+      }),
+
       columnHelper.accessor(
-        (row) => (row.vehicleId ? `${row.vehicleId.mark} (${row.vehicleId.regNumber})` : "—"),
+        (row) => row.fieldId?.properties?.name || "—",
+        { id: "field", header: "Поле" }
+      ),
+
+      columnHelper.accessor((row) => row.operationId?.name || "—", {
+        id: "operation",
+        header: "Операція",
+      }),
+
+      columnHelper.accessor("status", {
+        header: "Статус",
+      }),
+
+      columnHelper.accessor(
+        (row) =>
+          renderCompact(row, "vehicleId", (v) =>
+            `${v.mark || ""} (${v.regNumber || ""})`
+          ),
         { id: "vehicle", header: "Транспорт" }
       ),
-      columnHelper.accessor((row) => row.techniqueId?.name || "—", { id: "technique", header: "Техніка" }),
+
       columnHelper.accessor(
-        (row) => (row.personnelId ? `${row.personnelId.lastName} ${row.personnelId.firstName}` : "—"),
+        (row) =>
+          renderCompact(row, "techniqueId", (t) => t.name),
+        { id: "technique", header: "Техніка" }
+      ),
+
+      columnHelper.accessor(
+        (row) =>
+          renderCompact(row, "personnelId", (p) =>
+            `${p.lastName || ""} ${p.firstName || ""}`.trim()
+          ),
         { id: "executor", header: "Виконавець" }
       ),
-      columnHelper.accessor((row) => row.cropId?.name || "—", { id: "crop", header: "Культура" }),
-      columnHelper.accessor((row) => row.varietyId?.name || "—", { id: "variety", header: "Сорт" }),
-      columnHelper.accessor("note", { header: "Примітка", cell: (info) => info.getValue() || "—" }),
+
       columnHelper.accessor(
-        (row) => dayjs(row.createdAt).format("DD.MM.YYYY HH:mm"),
-        { id: "createdAt", header: "Дата створення" }
-      ),
-      columnHelper.accessor(
-        (row) => row.fieldId?.properties?.calculated_area ?? "—",
+        (row) => row.fieldId?.properties?.calculated_area ?? null,
         {
           id: "area",
           header: "Площа (га)",
           cell: (info) => {
             const value = info.getValue();
-            return typeof value === "number" ? value.toFixed(2) : value;
+            return typeof value === "number"
+              ? value.toFixed(2)
+              : "—";
           },
         }
       ),
+
       columnHelper.accessor(
-        (row) => row.processedArea,
+        (row) => row.processedArea ?? null,
         {
           id: "processedArea",
-          header: "Оброблена площа (га)",
+          header: "Оброблено (га)",
           cell: (info) => {
             const value = info.getValue();
-            if (value === null || value === undefined || value === 0) {
-              return "немає інформації";
-            }
-            return Number(value).toFixed(4); // 4 знаки після коми
+            if (!value) return "—";
+            return Number(value).toFixed(2);
           },
         }
       ),
+
+
+      columnHelper.accessor(
+        (row) => dayjs(row.createdAt).format("DD.MM.YYYY HH:mm"),
+        { id: "createdAt", header: "Дата створення" }
+      ),
+
       {
         id: "actions",
         header: "Дії",
         enableSorting: false,
         cell: (info) => (
-          <Box sx={{ display: "flex", gap: 1 }}>
-            {/* Edit */}
+          <Box sx={{ display: "flex", gap: 0.5 }}>
             <IconButton
+              size="small"
               onClick={() => handleEdit(info.row.original._id)}
-              size="small"
-              sx={{
-                color: "blue",
-                "&:hover": {  transform: "scale(1.1)" },
-              }}
             >
-              <EditIcon fontSize="small" />
+              <EditIcon fontSize="inherit" />
             </IconButton>
 
-            {/* Delete */}
             <IconButton
+              size="small"
               onClick={() => handleDelete(info.row.original._id)}
-              size="small"
-              sx={{
-                color: "red",
-                "&:hover": { transform: "scale(1.1)" },
-              }}
             >
-              <DeleteIcon fontSize="small" />
+              <DeleteIcon fontSize="inherit" />
             </IconButton>
 
-            {/* Report */}
             <IconButton
-              onClick={() => dispatch(openTaskReportModal(info.row.original))}
               size="small"
-              sx={{
-                color: "green",
-                "&:hover": { transform: "scale(1.1)" },
-              }}
+              onClick={() =>
+                dispatch(openTaskReportModal(info.row.original))
+              }
             >
-              <DescriptionIcon fontSize="small" />
+              <DescriptionIcon fontSize="inherit" />
             </IconButton>
           </Box>
         ),
-      }
-
+      },
     ],
     []
   );
 
+  /* ---------- Table config ---------- */
+
   const table = useReactTable({
     data: tasks,
     columns,
-    state: { globalFilter, sorting },
+    state: { globalFilter, sorting, expanded },
     onGlobalFilterChange: setGlobalFilter,
     onSortingChange: setSorting,
+    onExpandedChange: setExpanded,
+    getRowCanExpand: (row) =>
+      row.original.assignments?.length > 1,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
-    initialState: { pagination: { pageSize: 20, pageIndex: 0 } },
+    getExpandedRowModel: getExpandedRowModel(),
   });
 
   if (isLoading) return <div>Завантаження...</div>;
@@ -182,146 +220,130 @@ export default function TasksTab() {
     <Box
       sx={{
         minHeight: "100vh",
-        width: "100%",
-        display: "flex",
-        flexDirection: "column",
         backgroundImage: `url(${bgPic})`,
         backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundRepeat: "no-repeat",
       }}
     >
       <Header />
 
-      <Box
-        sx={{
-          position: "relative",
-          left: "50%",
-          transform: "translateX(-50%)",
-          // maxWidth: 1400,
-          width: "100%",
-          display: "flex",
-          flexDirection: "column",
-          padding: "80px 20px 20px 20px",
-        }}
-      >
-        {/* Верхня панель */}
-        <Paper
-          elevation={2}
-          sx={{
-            // mb: 2,
-            borderRadius: 2,
-            p: 2,
-            display: "flex",
-            justifyContent: "space-between",
-            gap: 2,
-            flexWrap: "wrap",
-            borderTopLeftRadius: 8,
-            borderTopRightRadius: 8,
-            borderBottomLeftRadius: 0,
-            borderBottomRightRadius: 0,
-            border: "1px solid #ddd",
-            bgcolor: "rgba(255,255,255,0.85)",
-          }}
-        >
+      <Box sx={{ padding: "80px 20px 20px 20px" }}>
+        <Paper sx={{ p: 1.5, mb: 2 }}>
           <TextField
             size="small"
             placeholder="Пошук..."
             value={globalFilter}
             onChange={(e) => setGlobalFilter(e.target.value)}
-            sx={{ width: 250 }}
+            sx={{ width: 220, mr: 2 }}
           />
-          <Button variant="contained" onClick={handleAdd} size="small">
+          <Button variant="contained" size="small" onClick={handleAdd}>
             Додати
           </Button>
         </Paper>
 
-        {/* Таблиця */}
-        <Paper
-          elevation={2}
-          sx={{
-            borderRadius: 2,
-            border: "1px solid #ddd",
-            bgcolor: "rgba(255,255,255,0.9)",
-            display: "flex",
-            flexDirection: "column",
-            height: 700, // фіксована висота для таблиці + пагінації
-          }}
-        >
-          <TableContainer
-            sx={{
-              flexGrow: 1,
-              overflowY: "auto", // скрол тільки для body таблиці
-            }}
-          >
+        <Paper sx={{ height: 650, display: "flex", flexDirection: "column" }}>
+          <TableContainer sx={{ flexGrow: 1 }}>
             <Table stickyHeader size="small">
               <TableHead>
-                {table.getHeaderGroups().map((headerGroup) => (
-                  <TableRow key={headerGroup.id}>
-                    {headerGroup.headers.map((header) => (
+                {table.getHeaderGroups().map((hg) => (
+                  <TableRow key={hg.id}>
+                    {hg.headers.map((header) => (
                       <TableCell
                         key={header.id}
-                        onClick={
-                          header.column.getCanSort()
-                            ? header.column.getToggleSortingHandler()
-                            : undefined
-                        }
-                        sx={{
-                          cursor: header.column.getCanSort() ? "pointer" : "default",
-                          fontWeight: 600,
-                          fontSize: 11,
-                          px: 1,
-                          py: 0.5,
-                          whiteSpace: "nowrap",
-                        }}
+                        sx={{ fontSize: 11, py: 0.5 }}
                       >
-                        {flexRender(header.column.columnDef.header, header.getContext())}
-                        {header.column.getIsSorted() === "asc"
-                          ? " 🔼"
-                          : header.column.getIsSorted() === "desc"
-                          ? " 🔽"
-                          : ""}
+                        {flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
                       </TableCell>
                     ))}
                   </TableRow>
                 ))}
               </TableHead>
+
               <TableBody>
                 {table.getRowModel().rows.map((row) => (
-                  <TableRow key={row.id} hover>
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell
-                        key={cell.id}
-                        sx={{
-                          fontSize: 11,
-                          px: 1,
-                          py: 0.5,
-                          whiteSpace: "nowrap",
-                          maxWidth: 120,
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                        }}
-                      >
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                      </TableCell>
-                    ))}
-                  </TableRow>
+                  <React.Fragment key={row.id}>
+                    <TableRow
+                      hover
+                      onDoubleClick={() => {
+                        if (row.getCanExpand()) {
+                          row.toggleExpanded();
+                        }
+                      }}
+                      sx={{
+                        cursor: row.getCanExpand()
+                          ? "pointer"
+                          : "default",
+                      }}
+                    >
+                      {row.getVisibleCells().map((cell) => (
+                        <TableCell
+                          key={cell.id}
+                          sx={{
+                            fontSize: 10,
+                            py: 0.4,
+                            px: 0.8,
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext()
+                          )}
+                        </TableCell>
+                      ))}
+                    </TableRow>
+
+                    {row.getIsExpanded() && (
+                      <TableRow>
+                        <TableCell
+                          colSpan={row.getVisibleCells().length}
+                          sx={{ py: 0.8 }}
+                        >
+                          <Box
+                            sx={{
+                              fontSize: 10,
+                              background: "#f2f2f2",
+                              p: 1,
+                              borderRadius: 1,
+                            }}
+                          >
+                            {row.original.assignments.map((a, i) => (
+                              <Box key={i} sx={{ mb: 1 }}>
+                                <strong>
+                                  Екіпаж {i + 1}
+                                </strong>{" "}
+                                — {a.personnelId?.lastName}{" "}
+                                {a.personnelId?.firstName} |{" "}
+                                {a.vehicleId?.mark} (
+                                {a.vehicleId?.regNumber}) |{" "}
+                                {a.techniqueId?.name}
+                              </Box>
+                            ))}
+                          </Box>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </React.Fragment>
                 ))}
               </TableBody>
             </Table>
           </TableContainer>
 
-          <Box sx={{ flexShrink: 0 }}>
-            <TablePagination
-              component="div"
-              count={tasks.length}
-              page={table.getState().pagination.pageIndex}
-              onPageChange={(_, newPage) => table.setPageIndex(newPage)}
-              rowsPerPage={table.getState().pagination.pageSize}
-              onRowsPerPageChange={(e) => table.setPageSize(Number(e.target.value))}
-              rowsPerPageOptions={[10, 20, 50]}
-            />
-          </Box>
+          <TablePagination
+            component="div"
+            count={tasks.length}
+            page={table.getState().pagination.pageIndex}
+            onPageChange={(_, newPage) =>
+              table.setPageIndex(newPage)
+            }
+            rowsPerPage={table.getState().pagination.pageSize}
+            onRowsPerPageChange={(e) =>
+              table.setPageSize(Number(e.target.value))
+            }
+            rowsPerPageOptions={[10, 20, 50]}
+          />
         </Paper>
       </Box>
 

@@ -26,6 +26,7 @@ import { useGroupsData } from "../../hooks/useGroupsData";
 import { useVehiclesData, useSaveVehicle, useUpdateVehicle } from "../../hooks/useVehiclesData";
 import { usePersonnelData } from "../../hooks/usePersonnelData";
 import { BACKEND_URL } from "../../helpres";
+// import { useOperationsData } from "../../hooks/useOperationsData";
 
 export default function AddVehicleModal({ onClose }) {
   const { editGroupId, editVehicleId } = useSelector((state) => state.modals);
@@ -38,6 +39,7 @@ export default function AddVehicleModal({ onClose }) {
   const { data: vehicles = [] } = useVehiclesData();
   const { data: groups = [] } = useGroupsData();
   const { data: personnel = [] } = usePersonnelData();
+  // const { data: operations = []} = useOperationsData();
 
   const editVehicle = vehicles.find((v) => v._id === editVehicleId);
 
@@ -50,13 +52,9 @@ export default function AddVehicleModal({ onClose }) {
   const [note, setNote] = useState(editVehicle?.note || "");
   const [vehicleType, setVehicleType] = useState(editVehicle?.vehicleType || "");
   const [fuelCapacity, setFuelCapacity] = useState(editVehicle?.fuelCapacity || "");
-
-  // Локально
-  // const [vehiclePhoto, setVehiclePhoto] = useState(
-  //   editVehicle?.photoPath
-  //     ? `${BACKEND_URL}/${editVehicle.photoPath.replace(/\\/g, '/')}`
-  //     : QuestionIco
-  // );
+  const [headerWidth, setHeaderWidth] = useState(
+    editVehicle?.headerWidth || ""
+  );
 
   // Прод версія
     const [vehiclePhoto, setVehiclePhoto] = useState(
@@ -110,6 +108,10 @@ export default function AddVehicleModal({ onClose }) {
       formData.append("imei", imei);
       formData.append("sim", sim);
       formData.append("fuelCapacity", fuelCapacity);
+      formData.append(
+        "headerWidth",
+        vehicleType === "combine" ? Number(headerWidth) : ""
+      );
       formData.append("driver1", driver1Id);
       formData.append("driver2", driver2Id);
       formData.append("driver3", driver3Id);
@@ -134,6 +136,12 @@ export default function AddVehicleModal({ onClose }) {
   };
 
   const isOptionEqualToValue = (opt, val) => opt?.value === val?.value;
+
+  useEffect(() => {
+    if (vehicleType !== "combine") {
+      setHeaderWidth("");
+    }
+  }, [vehicleType]);
 
   return (
     <Dialog open onClose={onClose} maxWidth="xs" fullWidth>
@@ -208,7 +216,23 @@ export default function AddVehicleModal({ onClose }) {
         <TextField disabled={isGuest} label="IMEI трекера" fullWidth margin="dense" size="small" value={imei} onChange={(e) => setImei(e.target.value)} />
         <TextField disabled={isGuest} label="Номер Sim-карти" fullWidth margin="dense" size="small" value={sim} onChange={(e) => setSim(e.target.value)} />
         <TextField disabled={isGuest} label="Обʼєм паливного баку (л)" type="number" fullWidth margin="dense" size="small" value={fuelCapacity} onChange={(e) => setFuelCapacity(e.target.value)} />
-
+        {vehicleType === "combine" && (
+          <TextField
+            disabled={isGuest}
+            label="Ширина жатки (м)"
+            type="number"
+            fullWidth
+            margin="dense"
+            size="small"
+            value={headerWidth}
+            onChange={(e) => setHeaderWidth(parseFloat(e.target.value) || "")}
+            inputProps={{
+              step: 0.1,
+              min: 0,
+              inputMode: "decimal"
+            }}
+          />
+        )}
         {/* 👤 Водії */}
         <Typography variant="subtitle2" fontSize={12} sx={{ mt: 2 }}>
           Дефолтні водії

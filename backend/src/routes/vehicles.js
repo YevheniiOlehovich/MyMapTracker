@@ -38,6 +38,7 @@ const VehiclesSchema = new mongoose.Schema({
     sim: { type: String },
     groupId: { type: mongoose.Schema.Types.ObjectId, ref: 'Group' },
     fuelCapacity: { type: Number },
+    headerWidth: { type: Number, default: null }, // 👈 ДОДАТИ
     driver1: { type: mongoose.Schema.Types.ObjectId, ref: 'Personnel', default: null },
     driver2: { type: mongoose.Schema.Types.ObjectId, ref: 'Personnel', default: null },
     driver3: { type: mongoose.Schema.Types.ObjectId, ref: 'Personnel', default: null },
@@ -79,7 +80,8 @@ router.post('/', upload.single('photo'), async (req, res) => {
     try {
         const {
             vehicleType, regNumber, mark, note, imei, sim,
-            groupId, fuelCapacity, driver1, driver2, driver3
+            groupId, fuelCapacity, headerWidth,
+            driver1, driver2, driver3
         } = req.body;
 
         if (!vehicleType || !regNumber) {
@@ -98,6 +100,7 @@ router.post('/', upload.single('photo'), async (req, res) => {
             sim,
             groupId,
             fuelCapacity: fuelCapacity ? Number(fuelCapacity) : undefined,
+            headerWidth: headerWidth ? Number(headerWidth) : null, // 👈
             driver1: driver1 || null,
             driver2: driver2 || null,
             driver3: driver3 || null,
@@ -116,7 +119,8 @@ router.put('/:id', upload.single('photo'), async (req, res) => {
     try {
         const {
             vehicleType, regNumber, mark, note, imei, sim,
-            groupId, fuelCapacity, driver1, driver2, driver3
+            groupId, fuelCapacity, headerWidth,
+            driver1, driver2, driver3
         } = req.body;
 
         const vehicle = await Vehicle.findById(req.params.id);
@@ -137,6 +141,7 @@ router.put('/:id', upload.single('photo'), async (req, res) => {
             sim,
             groupId,
             fuelCapacity: fuelCapacity ? Number(fuelCapacity) : undefined,
+            headerWidth: headerWidth ? Number(headerWidth) : null,
             driver1: driver1 || null,
             driver2: driver2 || null,
             driver3: driver3 || null,
