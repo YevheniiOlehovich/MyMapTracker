@@ -12,6 +12,8 @@ import L from "leaflet";
 import * as turf from "@turf/turf";
 import { center as defaultCenter } from "../../helpres";
 
+const TRACK_COLOR = "#4caf50";
+
 const CenterMap = ({ fieldCoords }) => {
   const map = useMap();
 
@@ -25,27 +27,35 @@ const CenterMap = ({ fieldCoords }) => {
   return null;
 };
 
-const DEFAULT_COLOR = "#4caf50";
-
 const MapBlock = ({
   field,
   fieldsList = [],
-  gpsByDays = [],
-  dayState = {},          // 👈 НОВЕ
-  equipmentWidth = 0,
+  gpsTracks = [],
   height = "400px",
   zoom = 15,
 }) => {
-  // ===== Поле =====
+
+  /*
+  ======================================================
+  1️⃣ ЗНАХОДИМО ПОЛЕ
+  ======================================================
+  */
+
   const resolvedField = useMemo(() => {
     if (!field?.value) return null;
     return fieldsList.find((f) => f._id === field.value) || null;
   }, [field, fieldsList]);
 
+  /*
+  ======================================================
+  2️⃣ КООРДИНАТИ ПОЛЯ
+  ======================================================
+  */
+
   const fieldCoords = useMemo(() => {
     if (
       resolvedField?.geometry?.type === "Polygon" &&
-      resolvedField.geometry.coordinates?.[0]
+      resolvedField.geometry.coordinates?.length
     ) {
       return resolvedField.geometry.coordinates[0].map(
         ([lng, lat]) => [lat, lng]
@@ -54,73 +64,68 @@ const MapBlock = ({
     return null;
   }, [resolvedField]);
 
-  const turfFieldPolygon = useMemo(() => {
-    if (!fieldCoords?.length) return null;
-    return turf.polygon([fieldCoords.map(([lat, lng]) => [lng, lat])]);
-  }, [fieldCoords]);
+  /*
+  ======================================================
+  3️⃣ TURF POLYGON
+  ======================================================
+  */
 
-  // ===== GPS POLYLINES =====
-  const gpsPolylines = useMemo(() => {
-    return gpsByDays.map((day) => {
-      const coords =
-        day.points?.flatMap((p) =>
-          p.data
-            .filter(
-              (pt) =>
-                pt.latitude &&
-                pt.longitude &&
-                pt.latitude !== 0 &&
-                pt.longitude !== 0
-            )
-            .map((pt) => [pt.latitude, pt.longitude])
-        ) || [];
+  const turfPolygon = useMemo(() => {
+    if (!resolvedField?.geometry?.coordinates?.length) return null;
+    return turf.polygon(resolvedField.geometry.coordinates);
+  }, [resolvedField]);
 
-      return {
-        date: day.date,
-        coords,
-      };
-    });
-  }, [gpsByDays]);
+  /*
+  ======================================================
+  4️⃣ РОЗБИВАЄМО ТРЕК НА СЕГМЕНТИ В ПОЛІ
+  ======================================================
+  */
 
-  // ===== GPS BUFFERS =====
-  const gpsFieldBuffers = useMemo(() => {
-    if (!equipmentWidth || !turfFieldPolygon) return [];
+  const trackSegments = useMemo(() => {
+    if (!turfPolygon) return [];
 
-    return gpsByDays
-      .map((day) => {
-        const inside =
-          day.points?.flatMap((p) =>
-            p.data
-              .filter(
-                (pt) =>
-                  pt.latitude &&
-                  pt.longitude &&
-                  pt.latitude !== 0 &&
-                  pt.longitude !== 0 &&
-                  turf.booleanPointInPolygon(
-                    [pt.longitude, pt.latitude],
-                    turfFieldPolygon
-                  )
-              )
-              .map((pt) => [pt.longitude, pt.latitude])
-          ) || [];
+    const segments = [];
 
-        if (inside.length < 2) return null;
+    gpsTracks.forEach((track) => {
+      let currentSegment = [];
 
-        const line = turf.lineString(inside);
-        const buffer = turf.buffer(line, equipmentWidth / 2, {
-          units: "meters",
+      track.points.forEach((pt) => {
+        if (!pt.latitude || !pt.longitude) return;
+
+        const isInside = turf.booleanPointInPolygon(
+          [pt.longitude, pt.latitude],
+          turfPolygon
+        );
+
+        if (isInside) {
+          currentSegment.push([pt.latitude, pt.longitude]);
+        } else {
+          if (currentSegment.length >= 2) {
+            segments.push({
+              key: `${track.imei}-${track.date}-${segments.length}`,
+              coords: currentSegment,
+            });
+          }
+          currentSegment = [];
+        }
+      });
+
+      if (currentSegment.length >= 2) {
+        segments.push({
+          key: `${track.imei}-${track.date}-${segments.length}`,
+          coords: currentSegment,
         });
+      }
+    });
 
-        return {
-          date: day.date,
-          polygon: buffer.geometry.coordinates[0].map(
-            ([lng, lat]) => [lat, lng]
-          ),
-        };
-      })
-      .filter(Boolean);
-  }, [gpsByDays, equipmentWidth, turfFieldPolygon]);
+    return segments;
+  }, [gpsTracks, turfPolygon]);
+
+  /*
+  ======================================================
+  RENDER
+  ======================================================
+  */
 
   return (
     <div style={{ height }}>
@@ -133,7 +138,7 @@ const MapBlock = ({
       >
         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
 
-        {/* FIELD */}
+        {/* ПОЛЕ */}
         {fieldCoords && (
           <Polygon positions={fieldCoords} pathOptions={{ color: "blue" }}>
             <Tooltip permanent>
@@ -142,43 +147,18 @@ const MapBlock = ({
           </Polygon>
         )}
 
-        {/* POLYLINES */}
-        {gpsPolylines.map((track) => {
-          const state = dayState[track.date];
-          if (!state?.visible || track.coords.length < 2) return null;
-
-          return (
-            <Polyline
-              key={`line-${track.date}`}
-              positions={track.coords}
-              pathOptions={{
-                color: state.color || DEFAULT_COLOR,
-                opacity: 0.45,
-                weight: 4,
-              }}
-            >
-              <Tooltip>{track.date}</Tooltip>
-            </Polyline>
-          );
-        })}
-
-        {/* BUFFERS */}
-        {gpsFieldBuffers.map((buf) => {
-          const state = dayState[buf.date];
-          if (!state?.visible) return null;
-
-          return (
-            <Polygon
-              key={`buffer-${buf.date}`}
-              positions={buf.polygon}
-              pathOptions={{
-                color: state.color || DEFAULT_COLOR,
-                fillOpacity: 0.4,
-                weight: 1,
-              }}
-            />
-          );
-        })}
+        {/* СЕГМЕНТИ В ПОЛІ */}
+        {trackSegments.map((segment) => (
+          <Polyline
+            key={segment.key}
+            positions={segment.coords}
+            pathOptions={{
+              color: TRACK_COLOR,
+              weight: 4,
+              opacity: 0.8,
+            }}
+          />
+        ))}
 
         <CenterMap fieldCoords={fieldCoords} />
       </MapContainer>
@@ -186,4 +166,4 @@ const MapBlock = ({
   );
 };
 
-export default MapBlock;
+export default MapBlock; 

@@ -9,47 +9,54 @@ export default function AssignmentReport({
   fieldPolygon,
   onAreaCalculated,
 }) {
+
+  console.log(assignment)
+  console.log(task)
+
   const vehicle = assignment.vehicleId;
   const technique = assignment.techniqueId;
 
   const imei = vehicle?.imei;
-  const equipmentWidth =
-    task.width || technique?.width || 0;
 
-  const { dates, queries, isLoading } =
-    useGpsByTask({
-      imei,
-      startDate: task.startDate,
-      days: task.daysToComplete,
-    });
+  
+
+  // const equipmentWidth =
+  //   task.width || technique?.width || 0;
+
+  // const { dates, queries, isLoading } =
+  //   useGpsByTask({
+  //     imei,
+  //     startDate: task.startDate,
+  //     days: task.daysToComplete,
+  //   });
 
     
 
-  const gpsByDays = useMemo(() => {
-    if (!dates?.length || !queries?.length) return [];
+  // const gpsByDays = useMemo(() => {
+  //   if (!dates?.length || !queries?.length) return [];
 
-    return dates.map((date, idx) => ({
-      date,
-      points: Array.isArray(queries[idx]?.data)
-        ? queries[idx].data
-        : [],
-    }));
-  }, [dates, queries]);
+  //   return dates.map((date, idx) => ({
+  //     date,
+  //     points: Array.isArray(queries[idx]?.data)
+  //       ? queries[idx].data
+  //       : [],
+  //   }));
+  // }, [dates, queries]);
 
-  console.log(gpsByDays)
+  // console.log(gpsByDays)
 
-  const visitsData = useMemo(() => {
-    if (!fieldPolygon.length || !equipmentWidth)
-      return { visitsByDay: [], totalArea: 0 };
+  // const visitsData = useMemo(() => {
+  //   if (!fieldPolygon.length || !equipmentWidth)
+  //     return { visitsByDay: [], totalArea: 0 };
 
-    return calculateFieldVisitsWithUnion(
-      gpsByDays,
-      fieldPolygon,
-      equipmentWidth
-    );
-  }, [gpsByDays, fieldPolygon, equipmentWidth]);
+  //   return calculateFieldVisitsWithUnion(
+  //     gpsByDays,
+  //     fieldPolygon,
+  //     equipmentWidth
+  //   );
+  // }, [gpsByDays, fieldPolygon, equipmentWidth]);
 
-  console.log(visitsData)
+  // console.log(visitsData)
 
 //   useEffect(() => {
 //     if (!isLoading) {
@@ -65,7 +72,7 @@ export default function AssignmentReport({
 //     assignment._id,
 //   ]);
 
-  if (isLoading) return null;
+  // if (isLoading) return null;
 
   return (
     <Box

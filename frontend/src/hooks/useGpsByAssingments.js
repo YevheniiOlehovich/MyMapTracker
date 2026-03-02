@@ -4,27 +4,29 @@ import { gpsDatabyImei } from "../api/gpsDatabyImei";
 
 const getDateRange = (startDate, days) => {
   const result = [];
+  const todayStr = new Date().toISOString().split("T")[0];
 
   for (let i = 0; i < days; i++) {
     const d = new Date(startDate);
     d.setDate(d.getDate() + i);
 
     const dateStr = d.toISOString().split("T")[0];
+    if (dateStr > todayStr) continue;
+
     result.push(dateStr);
   }
 
   return result;
 };
 
-export const useGpsByTask = (task) => {
+export const useGpsByAssignments = (task) => {
   const assignments = task?.assignments || [];
 
-  const dates = useMemo(() => {
-    if (!task?.startDate || !task?.daysToComplete) return [];
-    return getDateRange(task.startDate, task.daysToComplete);
-  }, [task?.startDate, task?.daysToComplete]);
-
   const queryConfigs = useMemo(() => {
+    if (!task?.startDate || !task?.daysToComplete) return [];
+
+    const dates = getDateRange(task.startDate, task.daysToComplete);
+
     return assignments.flatMap((assignment) => {
       const imei = assignment?.vehicleId?.imei;
       if (!imei) return [];
@@ -35,7 +37,7 @@ export const useGpsByTask = (task) => {
         date,
       }));
     });
-  }, [assignments, dates]);
+  }, [task]);
 
   const queries = useQueries({
     queries: queryConfigs.map(({ imei, date }) => ({
@@ -45,41 +47,38 @@ export const useGpsByTask = (task) => {
           const res = await gpsDatabyImei(date, imei);
           return Array.isArray(res) ? res : res?.data || [];
         } catch (err) {
-          return []; // просто повертаємо пустий масив
+          if (err?.message?.includes("404")) return [];
+          throw err;
         }
       },
-      enabled: !!imei && !!date,
       retry: false,
-      staleTime: 5 * 60 * 1000,
+      refetchOnWindowFocus: false,
+      staleTime: 10 * 60 * 1000,
     })),
   });
 
-  const result = useMemo(() => {
-    const grouped = {};
+  const gpsByAssignment = useMemo(() => {
+    const result = {};
 
     queryConfigs.forEach((config, index) => {
       const query = queries[index];
-      const { assignmentId, imei, date } = config;
 
-      if (!grouped[assignmentId]) {
-        grouped[assignmentId] = {
-          assignmentId,
-          imei,
-          data: [],
+      if (!result[config.assignmentId]) {
+        result[config.assignmentId] = {
+          imei: config.imei,
+          days: {},
         };
       }
 
-      grouped[assignmentId].data.push({
-        date,
-        points: query?.data || [],
-      });
+      result[config.assignmentId].days[config.date] =
+        query?.data || [];
     });
 
-    return Object.values(grouped);
+    return result;
   }, [queries, queryConfigs]);
 
   return {
-    gpsData: result,
+    gpsByAssignment,
     isLoading: queries.some((q) => q.isLoading),
     isError: queries.some((q) => q.isError),
   };
