@@ -58,3 +58,18 @@ export const fetchTasksByRangeApi = async (from, to) => {
 
   return response.json();
 };
+
+export const updateTaskReportApi = async ({ taskId, processedArea }) => {
+  const formData = new FormData();
+  formData.append("processedArea", processedArea);
+
+  const response = await fetch(apiRoutes.updateTaskReport(taskId), {
+    method: "PATCH",
+    body: formData,
+  });
+
+  if (!response.ok)
+    throw new Error("Не вдалося оновити площу");
+
+  return await response.json();
+};

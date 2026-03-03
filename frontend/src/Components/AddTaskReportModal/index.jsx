@@ -11,6 +11,7 @@ import {
   AccordionSummary,
   AccordionDetails,
   Switch,
+  Button,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
@@ -20,6 +21,8 @@ import { useGpsByTask } from "../../hooks/useGpsByTask";
 import { useFieldsData } from "../../hooks/useFieldsData";
 import { cleanGpsTrack } from "../../helpres/cleanGpsTrack";
 import MapBlock from "../MapBlock";
+import { calculateGridCoverage } from "../../helpres/calculateGridCoverage";
+import { useUpdateTaskReport } from "../../hooks/useTasksData";
 
 export default function AddTaskReportModal({ onClose }) {
   const task = useSelector(
@@ -32,6 +35,7 @@ export default function AddTaskReportModal({ onClose }) {
     useGpsByTask(task);
 
   const [visibilityState, setVisibilityState] = useState({});
+  const { mutate: updateReport, isPending } = useUpdateTaskReport();
 
   if (!task) return null;
 
@@ -171,6 +175,21 @@ export default function AddTaskReportModal({ onClose }) {
     });
   }, [filteredTracks, visibilityState]);
 
+    /*
+  ======================================================
+  6️⃣ GRID COVERAGE CALCULATION
+  ======================================================
+  */
+
+  const gridResult = useMemo(() => {
+    if (!filteredTracks.length) return null;
+
+    return calculateGridCoverage({
+      tracks: filteredTracks,
+      cellSize: 3,       // можеш міняти
+      implementWidth: 5.6, // ширина жатки
+    });
+  }, [filteredTracks]);
   /*
   ======================================================
   LOADING
@@ -203,6 +222,22 @@ export default function AddTaskReportModal({ onClose }) {
   ======================================================
   */
 
+  const handleSave = () => {
+    if (!gridResult) return;
+
+    updateReport(
+      {
+        taskId: task._id,
+        processedArea: gridResult.totalHectares,
+      },
+      {
+        onSuccess: () => {
+          onClose();
+        },
+      }
+    );
+  };
+
   return (
     <Fade in>
       <Box
@@ -223,169 +258,221 @@ export default function AddTaskReportModal({ onClose }) {
             width: 1150,
             height: 680,
             display: "flex",
+            flexDirection: "column",
             bgcolor: "background.paper",
-            p: 3,
             borderRadius: 2,
-            position: "relative",
+            overflow: "hidden",
           }}
         >
-          <IconButton
-            onClick={onClose}
-            sx={{ position: "absolute", top: 10, right: 10 }}
-          >
-            <CloseIcon />
-          </IconButton>
-
-          {/* LEFT PANEL */}
+          {/* ================= HEADER ================= */}
           <Box
             sx={{
-              width: 480,
-              pr: 2,
-              overflowY: "auto",
+              px: 3,
+              py: 2,
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              borderBottom: "1px solid #e0e0e0",
             }}
           >
-            {/* HEADER CARD */}
+            <Typography variant="h6" fontWeight={700}>
+              Завдання №{task.order}
+            </Typography>
+
+            <IconButton onClick={onClose}>
+              <CloseIcon />
+            </IconButton>
+          </Box>
+
+          {/* ================= BODY ================= */}
+          <Box sx={{ flex: 1, display: "flex", overflow: "hidden" }}>
+            {/* LEFT PANEL */}
             <Box
               sx={{
-                mb: 3,
-                p: 2.5,
-                borderRadius: 2,
-                bgcolor: "grey.100",
-                border: "1px solid",
-                borderColor: "grey.300",
+                width: 480,
+                p: 3,
+                overflowY: "auto",
               }}
             >
-              <Typography variant="h6" fontWeight={700} mb={1}>
-                Завдання №{task.order}
-              </Typography>
-
-              <Typography variant="body2" color="text.secondary">
-                <strong>Операція:</strong> {task.operationId?.name}
-              </Typography>
-
-              <Typography variant="body2" color="text.secondary">
-                <strong>Поле:</strong> {task.fieldId?.properties?.name}
-              </Typography>
-
-              <Typography variant="body2" color="text.secondary">
-                <strong>Площа:</strong> {task.fieldId?.properties?.area} га
-              </Typography>
-            </Box>
-
-            {groupedByAssignment.map((machine) => (
-              <Accordion
-                key={machine.assignmentId}
-                defaultExpanded
-                disableGutters
-                elevation={0}
+              {/* HEADER CARD */}
+              <Box
                 sx={{
-                  mb: 2,
+                  mb: 3,
+                  p: 2.5,
                   borderRadius: 2,
+                  bgcolor: "grey.100",
                   border: "1px solid",
                   borderColor: "grey.300",
-                  "&:before": { display: "none" },
                 }}
               >
-                <AccordionSummary
-                  expandIcon={<ExpandMoreIcon />}
+                <Typography variant="body2">
+                  <strong>Операція:</strong> {task.operationId?.name}
+                </Typography>
+
+                <Typography variant="body2">
+                  <strong>Поле:</strong> {task.fieldId?.properties?.name}
+                </Typography>
+
+                <Typography variant="body2">
+                  <strong>Площа:</strong> {task.fieldId?.properties?.area} га
+                </Typography>
+
+                {gridResult && (
+                  <Typography variant="body2" sx={{ mt: 1 }}>
+                    <strong>Оброблено всього:</strong>{" "}
+                    {gridResult.totalHectares.toFixed(2)} га
+                  </Typography>
+                )}
+              </Box>
+
+              {/* ASSIGNMENTS */}
+              {groupedByAssignment.map((machine) => (
+                <Accordion
+                  key={machine.assignmentId}
+                  defaultExpanded
+                  disableGutters
+                  elevation={0}
                   sx={{
-                    px: 2,
-                    py: 1.5,
-                    bgcolor: "grey.50",
-                    borderBottom: "1px solid",
-                    borderColor: "grey.200",
-                    borderTopLeftRadius: 8,
-                    borderTopRightRadius: 8,
+                    mb: 2,
+                    borderRadius: 2,
+                    border: "1px solid",
+                    borderColor: "grey.300",
+                    "&:before": { display: "none" },
                   }}
                 >
-                  <Box>
-                    <Typography fontWeight={600}>
-                      {machine.vehicle}
-                    </Typography>
+                  <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                    <Box>
+                      <Typography fontWeight={600}>
+                        {machine.vehicle}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {machine.technique}
+                      </Typography>
+                    </Box>
+                  </AccordionSummary>
 
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                    >
-                      {machine.technique}
-                    </Typography>
-                  </Box>
-                </AccordionSummary>
+                  <AccordionDetails>
+                    {/* Виконавець */}
+                    <Box mb={2}>
+                      <Typography variant="body2" color="text.secondary">
+                        Виконавець
+                      </Typography>
+                      <Typography fontWeight={500}>
+                        {machine.personnel}
+                      </Typography>
+                    </Box>
 
-                <AccordionDetails sx={{ px: 2, py: 2 }}>
-                  <Box mb={2}>
-                    <Typography variant="body2" color="text.secondary">
-                      Виконавець
-                    </Typography>
-
-                    <Typography fontWeight={500}>
-                      {machine.personnel}
-                    </Typography>
-                  </Box>
-
-                  {machine.days.map((day, index) => {
-                    const key = `${machine.assignmentId}_${day.date}`;
-                    const visible = visibilityState[key] ?? true;
-
-                    return (
+                    {/* Assignment summary */}
+                    {gridResult?.machines?.[machine.assignmentId] && (
                       <Box
-                        key={index}
                         sx={{
-                          p: 1.5,
-                          mb: 1.5,
+                          mb: 3,
+                          p: 2,
                           borderRadius: 2,
-                          bgcolor: "grey.50",
-                          border: "1px solid",
-                          borderColor: "grey.200",
+                          bgcolor: "grey.100",
                         }}
                       >
-                        <Box
-                          display="flex"
-                          justifyContent="space-between"
-                          alignItems="center"
-                        >
-                          <Box>
-                            <Typography fontWeight={500}>
-                              {day.date}
-                            </Typography>
+                        <Typography variant="body2">
+                          Пройдено:{" "}
+                          {gridResult.machines[machine.assignmentId].fullHectares.toFixed(2)} га
+                        </Typography>
 
-                            {/* <Typography
-                              variant="caption"
-                              color="text.secondary"
-                            >
-                              Точок: {day.pointsCount}
-                            </Typography> */}
-                          </Box>
+                        <Typography variant="body2" color="error.main">
+                          Перекриття:{" "}
+                          {gridResult.machines[machine.assignmentId].overlapHectares.toFixed(2)} га
+                        </Typography>
 
-                          <Switch
-                            checked={visible}
-                            onChange={() =>
-                              toggleVisibility(
-                                machine.assignmentId,
-                                day.date
-                              )
-                            }
-                          />
-                        </Box>
+                        <Typography variant="body2" color="success.main">
+                          Реально:{" "}
+                          {gridResult.machines[machine.assignmentId].netHectares.toFixed(2)} га
+                        </Typography>
                       </Box>
-                    );
-                  })}
-                </AccordionDetails>
-              </Accordion>
-            ))}
+                    )}
+
+                    {/* Days */}
+                    {machine.days.map((day, index) => {
+                      const key = `${machine.assignmentId}_${day.date}`;
+                      const visible = visibilityState[key] ?? true;
+                      const dayStats =
+                        gridResult?.machines?.[machine.assignmentId]?.days?.[day.date];
+
+                      return (
+                        <Box
+                          key={index}
+                          sx={{
+                            p: 1.5,
+                            mb: 1.5,
+                            borderRadius: 2,
+                            bgcolor: "grey.50",
+                          }}
+                        >
+                          <Box
+                            display="flex"
+                            justifyContent="space-between"
+                            alignItems="center"
+                          >
+                            <Box>
+                              <Typography fontWeight={500}>
+                                {day.date}
+                              </Typography>
+
+                              {dayStats && (
+                                <Typography variant="caption">
+                                  Реально: {dayStats.netHectares.toFixed(2)} га
+                                </Typography>
+                              )}
+                            </Box>
+
+                            <Switch
+                              checked={visible}
+                              onChange={() =>
+                                toggleVisibility(machine.assignmentId, day.date)
+                              }
+                            />
+                          </Box>
+                        </Box>
+                      );
+                    })}
+                  </AccordionDetails>
+                </Accordion>
+              ))}
+            </Box>
+
+            <Divider orientation="vertical" flexItem />
+
+            {/* MAP */}
+            <Box sx={{ flex: 1 }}>
+              <MapBlock
+                field={{ value: task.fieldId?._id }}
+                fieldsList={fieldsData}
+                gpsTracks={visibleTracks}
+                height="100%"
+              />
+            </Box>
           </Box>
-          
 
-          <Divider orientation="vertical" flexItem />
+          {/* ================= FOOTER ================= */}
+          <Box
+            sx={{
+              px: 3,
+              py: 2,
+              display: "flex",
+              justifyContent: "flex-end",
+              gap: 2,
+              borderTop: "1px solid #e0e0e0",
+            }}
+          >
+            <Button variant="outlined" onClick={onClose}>
+              Закрити
+            </Button>
 
-          {/* MAP */}
-          <Box sx={{ flex: 1, pl: 2 }}>
-            <MapBlock
-              field={{ value: task.fieldId?._id }}
-              fieldsList={fieldsData}
-              gpsTracks={visibleTracks}
-              height="100%"
-            />
+            <Button
+              variant="contained"
+              onClick={handleSave}
+              disabled={isPending}
+            >
+              {isPending ? "Збереження..." : "Зберегти"}
+            </Button>
           </Box>
         </Box>
       </Box>

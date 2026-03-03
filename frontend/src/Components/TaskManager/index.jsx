@@ -128,15 +128,18 @@ export default function TasksTab() {
       ),
 
       columnHelper.accessor(
-        (row) => row.fieldId?.properties?.calculated_area ?? null,
+        (row) => row.fieldId?.properties?.area ?? null,
         {
           id: "area",
           header: "Площа (га)",
           cell: (info) => {
-            const value = info.getValue();
-            return typeof value === "number"
-              ? value.toFixed(2)
-              : "—";
+            const rawValue = info.getValue();
+
+            const numericValue = Number(rawValue);
+
+            if (isNaN(numericValue)) return "—";
+
+            return numericValue.toFixed(2);
           },
         }
       ),
@@ -227,16 +230,46 @@ export default function TasksTab() {
       <Header />
 
       <Box sx={{ padding: "80px 20px 20px 20px" }}>
-        <Paper sx={{ p: 1.5, mb: 2 }}>
-          <TextField
-            size="small"
-            placeholder="Пошук..."
-            value={globalFilter}
-            onChange={(e) => setGlobalFilter(e.target.value)}
-            sx={{ width: 220, mr: 2 }}
-          />
-          <Button variant="contained" size="small" onClick={handleAdd}>
-            Додати
+        
+        <Paper
+          elevation={3}
+          sx={{
+            mb: 2,
+            px: 3,
+            py: 2,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            borderRadius: 2,
+          }}
+        >
+          {/* Ліва частина */}
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <TextField
+              size="small"
+              placeholder="Пошук по задачах..."
+              value={globalFilter}
+              onChange={(e) => setGlobalFilter(e.target.value)}
+              sx={{
+                width: 260,
+                backgroundColor: "white",
+                borderRadius: 1,
+              }}
+            />
+          </Box>
+
+          {/* Права частина */}
+          <Button
+            variant="contained"
+            onClick={handleAdd}
+            sx={{
+              px: 3,
+              fontWeight: 600,
+              textTransform: "none",
+              borderRadius: 2,
+            }}
+          >
+            + Додати завдання
           </Button>
         </Paper>
 

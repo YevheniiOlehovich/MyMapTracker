@@ -15,14 +15,14 @@ export default function PersonnelList({ open = true }) {
   const { data: groups = [] } = useGroupsData();
   const deletePersonnel = useDeletePersonnel();
 
-  // ✅ слухаємо роль
   const role = useSelector((state) => state.user.role);
   const isGuest = role === "guest";
 
-  const handleEdit = (id) => dispatch(openAddPersonalModal({ personId: id }));
+  const handleEdit = (id) =>
+    dispatch(openAddPersonalModal({ personId: id }));
 
   const handleAdd = () => {
-    if (isGuest) return; // підстраховка
+    if (isGuest) return;
     dispatch(openAddPersonalModal());
   };
 
@@ -36,11 +36,13 @@ export default function PersonnelList({ open = true }) {
     return group ? group.name : "Без групи";
   };
 
-  if (isLoading) return <Typography sx={{ p: 2 }}>Завантаження персоналу...</Typography>;
-  if (isError) return <Typography sx={{ p: 2 }}>Помилка: {error?.message}</Typography>;
-  if (personnel.length === 0) return <Typography sx={{ p: 2 }}>Персонал не знайдено.</Typography>;
+  if (isLoading)
+    return <Typography sx={{ p: 2 }}>Завантаження персоналу...</Typography>;
 
-  // Групуємо персонал по groupId
+  if (isError)
+    return <Typography sx={{ p: 2 }}>Помилка: {error?.message}</Typography>;
+
+  // 🔹 групування
   const groupedByGroup = personnel.reduce((acc, person) => {
     const key = person.groupId || "noGroup";
     if (!acc[key]) acc[key] = [];
@@ -56,8 +58,8 @@ export default function PersonnelList({ open = true }) {
           position: "absolute",
           top: 0,
           left: 0,
-          height: "100vh",
           width: 350,
+          height: "100vh",
           bgcolor: "rgba(33,33,33,0.85)",
           color: "white",
           borderRadius: "0 8px 8px 0",
@@ -66,89 +68,153 @@ export default function PersonnelList({ open = true }) {
           flexDirection: "column",
         }}
       >
-        {/* Заголовок */}
+        {/* 🔹 HEADER */}
         <Box
           sx={{
             display: "flex",
-            alignItems: "center",
             justifyContent: "space-between",
+            alignItems: "center",
             px: 1,
             py: 0.5,
             borderBottom: "1px solid rgba(255,255,255,0.2)",
-            height: 56,
           }}
         >
           <Typography variant="subtitle1" fontWeight="bold">
             Персонал
           </Typography>
-          <Tooltip title={isGuest ? "У вас немає прав для додавання персоналу" : "Додати персонал"}>
+
+          <Tooltip
+            title={
+              isGuest
+                ? "Недоступно для гостей"
+                : "Додати персонал"
+            }
+          >
             <span>
-              <IconButton size="small" onClick={handleAdd} disabled={isGuest}>
-                <AddIcon fontSize="small" sx={{ color: isGuest ? "gray" : "white" }} />
+              <IconButton
+                size="small"
+                onClick={handleAdd}
+                disabled={isGuest}
+              >
+                <AddIcon
+                  fontSize="small"
+                  sx={{ color: isGuest ? "gray" : "white" }}
+                />
               </IconButton>
             </span>
           </Tooltip>
         </Box>
 
-        {/* Список персоналу */}
-        <Box sx={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: 1, p: 1 }}>
+        {/* 🔹 LIST */}
+        <Box sx={{ flex: 1, overflowY: "auto", p: 1 }}>
+          {personnel.length === 0 && (
+            <Typography sx={{ fontSize: 12, opacity: 0.7 }}>
+              Персонал не знайдено
+            </Typography>
+          )}
+
           {Object.entries(groupedByGroup).map(([groupId, people]) => (
             <Box key={groupId}>
-              <Typography sx={{ fontWeight: "bold", mt: 1, mb: 0.5 }}>
+              {/* Назва групи */}
+              <Typography
+                sx={{
+                  fontWeight: "bold",
+                  mt: 1,
+                  mb: 0.4,
+                  fontSize: 12,
+                  opacity: 0.8,
+                }}
+              >
                 {getGroupName(groupId)}
               </Typography>
+
               {people.map((person) => {
-                // Локальні зображення
-                // const imgSrc = person.photoPath
-                //   ? `${BACKEND_URL}/${person.photoPath.replace(/\\/g, '/')}`
-                //   : QuestionIco;
-                
-                // Зображення на проді
                 const imgSrc = person.photoPath
-                  ? `/uploads/${person.photoPath.replace(/\\/g, '/').split('uploads/')[1]}`
+                  ? `/uploads/${person.photoPath
+                      .replace(/\\/g, "/")
+                      .split("uploads/")[1]}`
                   : QuestionIco;
+
                 return (
                   <Paper
                     key={person._id}
                     sx={{
-                      p: 1,
+                      px: 1,
+                      py: 0.6,
                       display: "flex",
                       justifyContent: "space-between",
                       alignItems: "center",
                       bgcolor: "rgba(255,255,255,0.05)",
                       borderRadius: 1,
+                      mb: 0.4,
                       transition: "background 0.2s",
-                      "&:hover": { bgcolor: "rgba(25,118,210,0.2)" },
+                      "&:hover": {
+                        bgcolor: "rgba(25,118,210,0.2)",
+                      },
                     }}
                   >
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    {/* 🔹 Фото + ім'я */}
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 0.8,
+                      }}
+                    >
                       <Box
                         component="img"
                         src={imgSrc}
                         alt={person.firstName}
-                        sx={{ width: 32, height: 32, borderRadius: "20%", objectFit: "cover" }}
+                        sx={{
+                          width: 26,
+                          height: 26,
+                          borderRadius: 1,
+                          objectFit: "cover",
+                        }}
                       />
-                      <Typography sx={{ color: "white" }}>
+
+                      <Typography sx={{ fontSize: 12, color: "white" }}>
                         {person.lastName} {person.firstName}
                       </Typography>
                     </Box>
-                    <Box sx={{ display: "flex", gap: 0.5 }}>
+
+                    {/* 🔹 Actions */}
+                    <Box sx={{ display: "flex", gap: 0.3 }}>
                       <Tooltip title="Редагувати">
-                        <IconButton size="small" onClick={() => handleEdit(person._id)}>
-                          <EditIcon fontSize="small" sx={{ color: "white" }} />
+                        <IconButton
+                          size="small"
+                          sx={{ p: 0.4 }}
+                          onClick={() => handleEdit(person._id)}
+                        >
+                          <EditIcon
+                            sx={{ fontSize: 16, color: "white" }}
+                          />
                         </IconButton>
                       </Tooltip>
 
-                      <Tooltip title={isGuest ? "У вас немає прав для видалення" : "Видалити"}>
+                      <Tooltip
+                        title={
+                          isGuest
+                            ? "Недоступно для гостей"
+                            : "Видалити"
+                        }
+                      >
                         <span>
                           <IconButton
                             size="small"
-                            onClick={() => handleDelete(person._id)}
+                            sx={{ p: 0.4 }}
+                            onClick={() =>
+                              handleDelete(person._id)
+                            }
                             disabled={isGuest}
                           >
                             <DeleteIcon
-                              fontSize="small"
-                              sx={{ color: isGuest ? "gray" : "white" }}
+                              sx={{
+                                fontSize: 16,
+                                color: isGuest
+                                  ? "gray"
+                                  : "white",
+                              }}
                             />
                           </IconButton>
                         </span>

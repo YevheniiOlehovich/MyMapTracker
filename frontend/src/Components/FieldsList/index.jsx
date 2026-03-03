@@ -21,12 +21,11 @@ import L from "leaflet";
 export default function FieldsList({ open = true }) {
   const dispatch = useDispatch();
   const { data: fields = [], isLoading, isError, error } = useFieldsData();
-  
-  console.log(fields)
-  
   const toggleFieldVisibility = useToggleFieldVisibility();
 
-  const activeFieldId = useSelector((state) => state.activeField.activeFieldId);
+  const activeFieldId = useSelector(
+    (state) => state.activeField.activeFieldId
+  );
 
   const handleEditField = (field) => {
     dispatch(setSelectedField(field._id));
@@ -44,12 +43,14 @@ export default function FieldsList({ open = true }) {
     const bounds = L.geoJSON(field).getBounds();
     const center = bounds.getCenter();
     dispatch(setMapCenter([center.lat, center.lng]));
-    dispatch(setActiveField(field._id)); // 🆕 задаємо активне поле
+    dispatch(setActiveField(field._id));
   };
 
-  if (isLoading) return <Typography sx={{ p: 2 }}>Завантаження полів...</Typography>;
-  if (isError) return <Typography sx={{ p: 2 }}>Помилка: {error?.message}</Typography>;
-  if (fields.length === 0) return <Typography sx={{ p: 2 }}>Поля не знайдені.</Typography>;
+  if (isLoading)
+    return <Typography sx={{ p: 2 }}>Завантаження полів...</Typography>;
+
+  if (isError)
+    return <Typography sx={{ p: 2 }}>Помилка: {error?.message}</Typography>;
 
   return (
     <Slide direction="right" in={open} mountOnEnter unmountOnExit>
@@ -59,8 +60,8 @@ export default function FieldsList({ open = true }) {
           position: "absolute",
           top: 0,
           left: 0,
-          height: "100vh",
           width: 350,
+          height: "100vh",
           bgcolor: "rgba(33,33,33,0.85)",
           color: "white",
           borderRadius: "0 8px 8px 0",
@@ -69,19 +70,21 @@ export default function FieldsList({ open = true }) {
           flexDirection: "column",
         }}
       >
-        {/* Заголовок з іконкою */}
+        {/* 🔹 HEADER */}
         <Box
           sx={{
             display: "flex",
-            alignItems: "center",
             justifyContent: "space-between",
+            alignItems: "center",
             px: 1,
             py: 0.5,
             borderBottom: "1px solid rgba(255,255,255,0.2)",
-            height: 56,
           }}
         >
-          <Typography variant="subtitle1" fontWeight="bold">Шари карти</Typography>
+          <Typography variant="subtitle1" fontWeight="bold">
+            Шари карти
+          </Typography>
+
           <Tooltip title="Шари">
             <IconButton size="small">
               <MapIcon fontSize="small" sx={{ color: "white" }} />
@@ -89,65 +92,85 @@ export default function FieldsList({ open = true }) {
           </Tooltip>
         </Box>
 
-        {/* Список полів */}
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            gap: 1,
-            p: 1,
-            flex: 1,
-            overflowY: "auto",
-          }}
-        >
+        {/* 🔹 LIST */}
+        <Box sx={{ flex: 1, overflowY: "auto", p: 1 }}>
+          {fields.length === 0 && (
+            <Typography sx={{ fontSize: 12, opacity: 0.7 }}>
+              Поля не знайдені.
+            </Typography>
+          )}
+
           {fields.map((field) => {
-            const isActive = activeFieldId === field._id; // 🆕 перевірка активного поля
+            const isActive = activeFieldId === field._id;
+
             return (
               <Paper
                 key={field._id}
                 sx={{
-                  p: 1,
+                  px: 1,
+                  py: 0.6,
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
-                  bgcolor: isActive ? "rgba(25,118,210,0.4)" : "rgba(255,255,255,0.05)", // 🆕 підсвітка
+                  bgcolor: isActive
+                    ? "rgba(25,118,210,0.35)"
+                    : "rgba(255,255,255,0.05)",
                   borderRadius: 1,
+                  mb: 0.4,
                   transition: "background 0.2s",
                   "&:hover": {
-                    bgcolor: isActive ? "rgba(25,118,210,0.5)" : "rgba(25,118,210,0.2)",
+                    bgcolor: isActive
+                      ? "rgba(25,118,210,0.45)"
+                      : "rgba(255,255,255,0.12)",
                   },
                 }}
               >
-                <Typography sx={{ color: "white" }}>
+                {/* 🔹 Назва поля */}
+                <Typography sx={{ fontSize: 12, color: "white" }}>
                   {field.properties.name}
                 </Typography>
-                <Box sx={{ display: "flex", gap: 0.5 }}>
+
+                {/* 🔹 Actions */}
+                <Box sx={{ display: "flex", gap: 0.3 }}>
                   <Tooltip title={field.visible ? "Сховати" : "Показати"}>
                     <IconButton
                       size="small"
+                      sx={{ p: 0.4 }}
                       onClick={() => handleToggleFieldVisibility(field)}
                     >
                       {field.visible ? (
-                        <VisibilityIcon fontSize="small" sx={{ color: "white" }} />
+                        <VisibilityIcon
+                          sx={{ fontSize: 16, color: "white" }}
+                        />
                       ) : (
-                        <VisibilityOffIcon fontSize="small" sx={{ color: "white" }} />
+                        <VisibilityOffIcon
+                          sx={{ fontSize: 16, color: "white" }}
+                        />
                       )}
                     </IconButton>
                   </Tooltip>
+
                   <Tooltip title="Центрувати на карті">
                     <IconButton
                       size="small"
+                      sx={{ p: 0.4 }}
                       onClick={() => handleCenterMap(field)}
                     >
-                      <LocationOnIcon fontSize="small" sx={{ color: "white" }} />
+                      <LocationOnIcon
+                        sx={{ fontSize: 16, color: "white" }}
+                      />
                     </IconButton>
                   </Tooltip>
+
                   <Tooltip title="Редагувати">
                     <IconButton
                       size="small"
+                      sx={{ p: 0.4 }}
                       onClick={() => handleEditField(field)}
                     >
-                      <EditIcon fontSize="small" sx={{ color: "white" }} />
+                      <EditIcon
+                        sx={{ fontSize: 16, color: "white" }}
+                      />
                     </IconButton>
                   </Tooltip>
                 </Box>
@@ -159,3 +182,4 @@ export default function FieldsList({ open = true }) {
     </Slide>
   );
 }
+

@@ -24,23 +24,24 @@ export default function TechniqueList({ open = true }) {
   const deleteTechnique = useDeleteTechnique();
 
   const handleAdd = () => {
-    if (isGuest) return; // гості не додають
+    if (isGuest) return;
     dispatch(openAddTechniqueModal());
   };
 
   const handleEdit = (id) => {
-    // редагувати можуть всі, навіть гості
     dispatch(openAddTechniqueModal({ techniqueId: id }));
   };
 
   const handleDelete = (id) => {
-    if (isGuest) return; // гості не видаляють
+    if (isGuest) return;
     deleteTechnique.mutate(id);
   };
 
-  if (isLoading) return <Typography sx={{ p: 2 }}>Завантаження техніки...</Typography>;
-  if (isError) return <Typography sx={{ p: 2 }}>Помилка: {error?.message}</Typography>;
-  if (techniques.length === 0) return <Typography sx={{ p: 2 }}>Техніка не знайдена.</Typography>;
+  if (isLoading)
+    return <Typography sx={{ p: 2 }}>Завантаження техніки...</Typography>;
+
+  if (isError)
+    return <Typography sx={{ p: 2 }}>Помилка: {error?.message}</Typography>;
 
   return (
     <Slide direction="right" in={open} mountOnEnter unmountOnExit>
@@ -60,84 +61,111 @@ export default function TechniqueList({ open = true }) {
           flexDirection: "column",
         }}
       >
-        {/* Заголовок */}
+        {/* 🔹 HEADER */}
         <Box
           sx={{
             display: "flex",
-            alignItems: "center",
             justifyContent: "space-between",
+            alignItems: "center",
             px: 1,
             py: 0.5,
             borderBottom: "1px solid rgba(255,255,255,0.2)",
-            height: 56,
           }}
         >
-          <Typography variant="subtitle1" fontWeight="bold">Техніка</Typography>
+          <Typography variant="subtitle1" fontWeight="bold">
+            Техніка
+          </Typography>
+
           <Tooltip title={isGuest ? "Недоступно для гостей" : "Додати техніку"}>
             <span>
               <IconButton size="small" onClick={handleAdd} disabled={isGuest}>
-                <AddIcon fontSize="small" sx={{ color: isGuest ? "gray" : "white" }} />
+                <AddIcon
+                  fontSize="small"
+                  sx={{ color: isGuest ? "gray" : "white" }}
+                />
               </IconButton>
             </span>
           </Tooltip>
         </Box>
 
-        {/* Список техніки */}
-        <Box
-          sx={{
-            flex: 1,
-            overflowY: "auto",
-            display: "flex",
-            flexDirection: "column",
-            gap: 1,
-            p: 1,
-          }}
-        >
-          {techniques.map((tech) => {
-              // const imgSrc = tech.photoPath
-              //   ? `${BACKEND_URL}/${tech.photoPath.replace(/\\/g, '/')}`
-              //   : QuestionIco;
+        {/* 🔹 LIST */}
+        <Box sx={{ flex: 1, overflowY: "auto", p: 1 }}>
+          {techniques.length === 0 && (
+            <Typography sx={{ fontSize: 12, opacity: 0.7 }}>
+              Техніка не знайдена.
+            </Typography>
+          )}
 
-              // Зображення на проді
-                const imgSrc = tech.photoPath
-                  ? `/uploads/${tech.photoPath.replace(/\\/g, '/').split('uploads/')[1]}`
-                  : QuestionIco;
-                
+          {techniques.map((tech) => {
+            const imgSrc = tech.photoPath
+              ? `/uploads/${tech.photoPath.replace(/\\/g, "/").split("uploads/")[1]}`
+              : QuestionIco;
+
             return (
               <Paper
                 key={tech._id}
                 sx={{
-                  p: 1,
+                  px: 1,
+                  py: 0.6,
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
                   bgcolor: "rgba(255,255,255,0.05)",
                   borderRadius: 1,
+                  mb: 0.4,
                   transition: "background 0.2s",
                   "&:hover": {
-                    bgcolor: "rgba(25,118,210,0.2)",
+                    bgcolor: "rgba(255,255,255,0.12)",
                   },
                 }}
               >
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                {/* 🔹 Left side */}
+                <Box sx={{ display: "flex", alignItems: "center", gap: 0.8 }}>
                   <Box
                     component="img"
                     src={imgSrc}
                     alt={tech.name}
-                    sx={{ width: 32, height: 32, borderRadius: "20%", objectFit: "cover" }}
+                    sx={{
+                      width: 26,
+                      height: 26,
+                      borderRadius: 1,
+                      objectFit: "cover",
+                    }}
                   />
-                  <Typography sx={{ color: "white" }}>{tech.name}</Typography>
+
+                  <Typography sx={{ fontSize: 12, color: "white" }}>
+                    {tech.name}
+                  </Typography>
                 </Box>
-                <Box sx={{ display: "flex", gap: 0.5 }}>
+
+                {/* 🔹 Actions */}
+                <Box sx={{ display: "flex", gap: 0.3 }}>
                   <Tooltip title="Редагувати">
-                    <IconButton size="small" onClick={() => handleEdit(tech._id)}>
-                      <EditIcon fontSize="small" sx={{ color: "white" }} />
+                    <IconButton
+                      size="small"
+                      sx={{ p: 0.4 }}
+                      onClick={() => handleEdit(tech._id)}
+                    >
+                      <EditIcon sx={{ fontSize: 16, color: "white" }} />
                     </IconButton>
                   </Tooltip>
-                  <Tooltip title={isGuest ? "Недоступно для гостей" : "Видалити"}>
+
+                  <Tooltip
+                    title={isGuest ? "Недоступно для гостей" : "Видалити"}
+                  >
                     <span>
-                      <IconButton size="small" onClick={() => handleDelete(tech._id)} disabled={isGuest}>
-                        <DeleteIcon fontSize="small" sx={{ color: isGuest ? "gray" : "white" }} />
+                      <IconButton
+                        size="small"
+                        sx={{ p: 0.4 }}
+                        onClick={() => handleDelete(tech._id)}
+                        disabled={isGuest}
+                      >
+                        <DeleteIcon
+                          sx={{
+                            fontSize: 16,
+                            color: isGuest ? "gray" : "white",
+                          }}
+                        />
                       </IconButton>
                     </span>
                   </Tooltip>

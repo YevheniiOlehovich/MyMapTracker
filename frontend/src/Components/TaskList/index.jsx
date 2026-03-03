@@ -7,14 +7,10 @@ import {
   Tooltip,
   Slide,
   CircularProgress,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
   Chip,
 } from "@mui/material";
 
 import ChecklistIcon from "@mui/icons-material/Checklist";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 
 import L from "leaflet";
@@ -24,7 +20,6 @@ import { setMapCenter } from "../../store/mapCenterSlice";
 import { setActiveField } from "../../store/activeFieldSlice";
 
 export default function TaskList({ open = true }) {
-
   const dispatch = useDispatch();
 
   const selectedDate = useSelector(
@@ -42,7 +37,6 @@ export default function TaskList({ open = true }) {
     error,
   } = useTasksByDate(selectedDate);
 
-  // 🔥 Центрування по полю
   const handleCenterField = (field) => {
     if (!field) return;
 
@@ -53,6 +47,12 @@ export default function TaskList({ open = true }) {
     dispatch(setActiveField(field._id));
   };
 
+  const getStatusColor = (status) => {
+    if (status === "done") return "#4caf50";
+    if (status === "in_progress") return "#2196f3";
+    return "#9e9e9e";
+  };
+
   return (
     <Slide direction="right" in={open} mountOnEnter unmountOnExit>
       <Paper
@@ -61,10 +61,10 @@ export default function TaskList({ open = true }) {
           position: "absolute",
           top: 0,
           left: 0,
-          height: "100vh",
           width: 350,
-          bgcolor: "rgba(33,33,33,0.85)",
-          color: "white",
+          height: "100vh",
+          bgcolor: "rgba(33,33,33,0.9)",
+          color: "#fff",
           borderRadius: "0 8px 8px 0",
           overflow: "hidden",
           display: "flex",
@@ -75,159 +75,165 @@ export default function TaskList({ open = true }) {
         <Box
           sx={{
             display: "flex",
-            alignItems: "center",
             justifyContent: "space-between",
+            alignItems: "center",
             px: 1,
-            py: 0.5,
-            borderBottom: "1px solid rgba(255,255,255,0.2)",
-            height: 56,
+            py: 0.6,
+            borderBottom: "1px solid rgba(255,255,255,0.15)",
           }}
         >
-          <Typography variant="subtitle1" fontWeight="bold">
+          <Typography
+            sx={{
+              fontSize: 14,
+              fontWeight: 600,
+              letterSpacing: 0.3,
+              color: "white",
+            }}
+          >
             Завдання на {formattedDate}
           </Typography>
 
-          <Tooltip title="Задачі">
-            <IconButton size="small">
-              <ChecklistIcon fontSize="small" sx={{ color: "white" }} />
-            </IconButton>
-          </Tooltip>
+          <ChecklistIcon sx={{ fontSize: 18 }} />
         </Box>
 
         {/* CONTENT */}
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            gap: 1,
-            p: 1,
-            flex: 1,
-            overflowY: "auto",
-          }}
-        >
+        <Box sx={{ flex: 1, overflowY: "auto", p: 1 }}>
+
           {isLoading && (
             <Box sx={{ textAlign: "center", mt: 2 }}>
-              <CircularProgress size={24} />
+              <CircularProgress size={22} sx={{ color: "white" }} />
             </Box>
           )}
 
           {isError && (
-            <Typography sx={{ color: "error.main" }}>
+            <Typography sx={{ color: "#ff6b6b", fontSize: 12 }}>
               Помилка: {error.message}
             </Typography>
           )}
 
           {!isLoading && tasks.length === 0 && (
-            <Typography sx={{ opacity: 0.7 }}>
+            <Typography sx={{ fontSize: 12, color: "rgba(255,255,255,0.7)" }}>
               Немає задач на цю дату
             </Typography>
           )}
 
-          {/* TASKS */}
           {tasks.map((task) => (
-            <Accordion
+            <Paper
               key={task._id}
               sx={{
+                px: 1,
+                py: 0.8,
+                mb: 0.6,
                 bgcolor: "rgba(255,255,255,0.05)",
-                color: "white",
-                "&:before": { display: "none" },
+                borderRadius: 1,
+                transition: "background 0.2s",
+                "&:hover": {
+                  bgcolor: "rgba(25,118,210,0.2)",
+                },
               }}
             >
-              {/* HEADER */}
-              <AccordionSummary
-                expandIcon={<ExpandMoreIcon sx={{ color: "white" }} />}
+              {/* TITLE + STATUS */}
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  mb: 0.5,
+                }}
               >
-                <Typography sx={{ fontWeight: 500 }}>
-                  {task.operationId?.name || "Без назви операції"}
-                </Typography>
-              </AccordionSummary>
-
-              {/* DETAILS */}
-              <AccordionDetails sx={{ pt: 0 }}>
-
-                {/* Статус */}
-                <Box sx={{ mb: 1 }}>
-                  <Chip
-                    label={task.status}
-                    size="small"
-                    sx={{
-                      bgcolor:
-                        task.status === "done"
-                          ? "#4caf50"
-                          : task.status === "in_progress"
-                          ? "#2196f3"
-                          : "#9e9e9e",
-                      color: "white",
-                    }}
-                  />
-                </Box>
-
-                {/* Поле + кнопка центрування */}
-                <Box
+                <Typography
                   sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    mb: 1,
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: "white",
                   }}
                 >
-                  <Typography variant="body2">
-                    Поле: {task.fieldId?.properties?.name || "—"}
-                  </Typography>
-
-                  {task.fieldId && (
-                    <Tooltip title="Центрувати на полі">
-                      <IconButton
-                        size="small"
-                        onClick={() => handleCenterField(task.fieldId)}
-                      >
-                        <LocationOnIcon
-                          fontSize="small"
-                          sx={{ color: "white" }}
-                        />
-                      </IconButton>
-                    </Tooltip>
-                  )}
-                </Box>
-
-                {/* Дата створення */}
-                <Typography variant="body2">
-                  Створено:{" "}
-                  {new Date(task.createdAt).toLocaleDateString("uk-UA")}
+                  #{task.order} {task.operationId?.name || "—"}
                 </Typography>
 
-                {/* Виконавець */}
-                <Typography variant="body2">
-                  Виконавець:{" "}
-                  {task.personnelId
-                    ? `${task.personnelId.lastName} ${task.personnelId.firstName}`
-                    : "—"}
+                <Chip
+                  label={task.status}
+                  size="small"
+                  sx={{
+                    height: 20,
+                    fontSize: 10,
+                    bgcolor: getStatusColor(task.status),
+                    color: "#fff",
+                  }}
+                />
+              </Box>
+
+              {/* FIELD */}
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  mb: 0.5,
+                }}
+              >
+                <Typography sx={{ fontSize: 12, color: "white" }}>
+                  Поле: {task.fieldId?.properties?.name || "—"}
                 </Typography>
 
-                {/* Транспорт */}
-                <Typography variant="body2">
-                  Транспорт: {task.vehicleId?.regNumber || "—"}
-                </Typography>
-
-                {/* Техніка */}
-                <Typography variant="body2">
-                  Техніка: {task.techniqueId?.name || "—"}
-                </Typography>
-
-                {/* Тривалість */}
-                <Typography variant="body2">
-                  Тривалість: {task.daysToComplete || 1} дн.
-                </Typography>
-
-                {/* Примітка */}
-                {task.note && (
-                  <Typography variant="body2" sx={{ mt: 1 }}>
-                    Примітка: {task.note}
-                  </Typography>
+                {task.fieldId && (
+                  <Tooltip title="Центрувати">
+                    <IconButton
+                      size="small"
+                      sx={{ p: 0.4 }}
+                      onClick={() => handleCenterField(task.fieldId)}
+                    >
+                      <LocationOnIcon
+                        sx={{ fontSize: 16, color: "white" }}
+                      />
+                    </IconButton>
+                  </Tooltip>
                 )}
+              </Box>
 
-              </AccordionDetails>
-            </Accordion>
+              {/* AREA */}
+              <Typography sx={{ fontSize: 12, color: "white", }}>
+                Оброблено: {Number(task.processedArea || 0).toFixed(2)} га
+              </Typography>
+
+              <Typography sx={{ fontSize: 12, color: "white", }}>
+                Тривалість: {task.daysToComplete || 1} дн.
+              </Typography>
+
+              {/* ASSIGNMENTS */}
+              {task.assignments?.length > 0 && (
+                <Box sx={{ mt: 0.5 }}>
+                  {task.assignments.map((a, i) => (
+                    <Typography
+                      key={a._id}
+                      sx={{
+                        fontSize: 11,
+                        pl: 1,
+                        color: "rgba(255,255,255,0.8)",
+                      }}
+                    >
+                      {i + 1}. {a.personnelId?.lastName}{" "}
+                      {a.personnelId?.firstName} —{" "}
+                      {a.vehicleId?.mark} —{" "}
+                      {a.techniqueId?.name}
+                    </Typography>
+                  ))}
+                </Box>
+              )}
+
+              {/* NOTE */}
+              {task.note && (
+                <Typography
+                  sx={{
+                    fontSize: 11,
+                    mt: 0.5,
+                    color: "rgba(255,255,255,0.7)",
+                  }}
+                >
+                  {task.note}
+                </Typography>
+              )}
+            </Paper>
           ))}
         </Box>
       </Paper>
