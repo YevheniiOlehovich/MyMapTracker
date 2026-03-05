@@ -106,7 +106,6 @@
 
 
 
-
 import "dotenv/config";
 import net from "net";
 import fs from "fs";
@@ -119,11 +118,11 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // ================= ENV =================
-const HOST = process.env.HOST;
-const PORT = Number(process.env.PORT);
+const HOST = process.env.HOST || "0.0.0.0";
+const PORT = Number(process.env.PORT || 20220);
 const MONGODB_URI = process.env.MONGODB_URI;
 const DATABASE_NAME = process.env.DATABASE_NAME;
-const SOCKET_TIMEOUT_MS = Number(process.env.SOCKET_TIMEOUT_MS);
+const SOCKET_TIMEOUT_MS = Number(process.env.SOCKET_TIMEOUT_MS || 30000);
 
 // ================= LOGS =================
 const LOG_DIR = path.join(__dirname, "../logs");
@@ -145,26 +144,34 @@ function log(message) {
 const client = new MongoClient(MONGODB_URI);
 
 // ================= SAVE =================
-async function saveRaw(db, imei, data) {
+async function savePacket(db, socket, data) {
   try {
+
     const now = new Date();
     const collection = `weather_${now.getFullYear()}`;
 
     await db.collection(collection).insertOne({
-      imei,
       timestamp: now,
+      ip: socket.remoteAddress,
+      port: socket.remotePort,
       raw: data.toString("hex"),
+      size: data.length
     });
 
-    log(`✅ saved ${imei}`);
+    log(`💾 saved packet ${data.length} bytes`);
+
   } catch (err) {
+
     log(`❌ save error ${err.message}`);
+
   }
 }
 
 // ================= START =================
 async function start() {
+
   try {
+
     await client.connect();
     const db = client.db(DATABASE_NAME);
 
@@ -172,80 +179,48 @@ async function start() {
 
     const server = net.createServer((socket) => {
 
-      log(`🔌 ${socket.remoteAddress}:${socket.remotePort}`);
-
-      let imei = null;
+      log(`🔌 connect ${socket.remoteAddress}:${socket.remotePort}`);
 
       socket.setTimeout(SOCKET_TIMEOUT_MS);
 
       socket.on("timeout", () => {
-        log(`⏱ timeout ${imei || socket.remoteAddress}`);
+
+        log(`⏱ timeout ${socket.remoteAddress}`);
         socket.destroy();
+
       });
 
       socket.on("data", async (data) => {
 
-        log(`📥 RAW ${data.toString("hex")}`);
+        const hex = data.toString("hex");
 
-        // ================= IMEI =================
-        if (!imei) {
+        log(`📥 ${hex}`);
 
-          try {
+        await savePacket(db, socket, data);
 
-            const len = data.readUInt16BE(0);
-            imei = data.slice(2, 2 + len).toString();
-
-            log(`📡 IMEI ${imei}`);
-
-            // ACK IMEI
-            socket.write(Buffer.from([0x01]));
-
-          } catch (err) {
-
-            log(`❌ IMEI parse error ${err.message}`);
-
-          }
-
-          return;
-        }
-
-        // ================= AVL DATA =================
-
-        await saveRaw(db, imei, data);
-
-        try {
-
-          const records = data[9]; // number of AVL records
-
-          const response = Buffer.alloc(4);
-          response.writeUInt32BE(records);
-
-          socket.write(response);
-
-          log(`📤 ACK ${records}`);
-
-        } catch {
-
-          const response = Buffer.alloc(4);
-          response.writeUInt32BE(1);
-          socket.write(response);
-
-        }
+        // universal ACK
+        socket.write(Buffer.from([0x01]));
 
       });
 
       socket.on("close", () => {
-        log(`🔴 disconnect ${imei || "unknown"}`);
+
+        log(`🔴 disconnect ${socket.remoteAddress}`);
+
       });
 
       socket.on("error", (err) => {
+
         log(`⚠️ ${err.message}`);
+
       });
 
     });
 
     server.listen(PORT, HOST, () => {
-      log(`🚀 Weather TCP ${HOST}:${PORT}`);
+
+      log(`🚀 TCP server ${HOST}:${PORT}`);
+
     });
 
   } catch (err) {
@@ -254,6 +229,7 @@ async function start() {
     process.exit(1);
 
   }
+
 }
 
 start();
