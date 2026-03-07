@@ -566,71 +566,333 @@
 //   log(`🚀 TCP LOGGER listening ${HOST}:${PORT}`);
 // });
 
+
+
+
+
+
+
 //gps 2 дубль 2 
 
+// import net from "net";
+
+// const HOST = "0.0.0.0";
+// const PORT = 20220;
+
+// function log(message) {
+//   console.log(`[${new Date().toISOString()}] ${message}`);
+// }
+
+// const server = net.createServer(socket => {
+
+//   const client = `${socket.remoteAddress}:${socket.remotePort}`;
+//   let imeiReceived = false;
+
+//   log(`🔌 CONNECT ${client}`);
+
+//   socket.on("data", data => {
+
+//     const hex = data.toString("hex");
+//     const text = data.toString();
+
+//     log(`📥 ${client}`);
+//     log(`HEX : ${hex}`);
+//     log(`TEXT: ${text}`);
+
+//     // ================= IMEI =================
+//     if (!imeiReceived) {
+
+//       imeiReceived = true;
+
+//       log("📡 IMEI packet");
+
+//       // Teltonika login ACK
+//       socket.write(Buffer.from([0x01]));
+
+//       log("📤 ACK IMEI -> 01");
+
+//       return;
+//     }
+
+//     // ================= AVL DATA =================
+
+//     log("📦 AVL packet");
+
+//     const ack = Buffer.alloc(4);
+//     ack.writeUInt32BE(1); // 1 record accepted
+
+//     socket.write(ack);
+
+//     log("📤 ACK AVL -> 00000001");
+
+//   });
+
+//   socket.on("close", () => {
+//     log(`🔴 DISCONNECT ${client}`);
+//   });
+
+//   socket.on("error", err => {
+//     log(`⚠️ ERROR ${client} ${err.message}`);
+//   });
+
+// });
+
+// server.listen(PORT, HOST, () => {
+//   log(`🚀 TCP LOGGER listening ${HOST}:${PORT}`);
+// });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 import net from "net";
+import { MongoClient } from "mongodb";
+
+// ================= SETTINGS =================
 
 const HOST = "0.0.0.0";
 const PORT = 20220;
 
-function log(message) {
-  console.log(`[${new Date().toISOString()}] ${message}`);
+const MONGODB_URI = "mongodb://mongo:27017/test";
+const DATABASE_NAME = "test";
+
+const SOCKET_TIMEOUT_MS = 60000;
+
+// ================= DB =================
+
+const client = new MongoClient(MONGODB_URI);
+
+function log(msg) {
+  console.log(`[${new Date().toISOString()}] ${msg}`);
 }
 
-const server = net.createServer(socket => {
+// ================= HELPERS =================
 
-  const client = `${socket.remoteAddress}:${socket.remotePort}`;
-  let imeiReceived = false;
+const cleanImei = imei => imei.replace(/\D/g, "");
 
-  log(`🔌 CONNECT ${client}`);
+function sendImeiAck(socket) {
+  socket.write(Buffer.from([0x01]));
+}
 
-  socket.on("data", data => {
+function sendAvlAck(socket, records = 1) {
+  const ack = Buffer.alloc(4);
+  ack.writeUInt32BE(records);
+  socket.write(ack);
+}
 
-    const hex = data.toString("hex");
-    const text = data.toString();
+// ================= CRC =================
 
-    log(`📥 ${client}`);
-    log(`HEX : ${hex}`);
-    log(`TEXT: ${text}`);
+function crc16Teltonika(buf) {
 
-    // ================= IMEI =================
-    if (!imeiReceived) {
+  let crc = 0x0000;
 
-      imeiReceived = true;
+  for (let i = 0; i < buf.length; i++) {
 
-      log("📡 IMEI packet");
+    crc ^= buf[i];
 
-      // Teltonika login ACK
-      socket.write(Buffer.from([0x01]));
+    for (let j = 0; j < 8; j++) {
 
-      log("📤 ACK IMEI -> 01");
+      crc = crc & 1 ? (crc >>> 1) ^ 0xA001 : crc >>> 1;
 
-      return;
     }
 
-    // ================= AVL DATA =================
+  }
 
-    log("📦 AVL packet");
+  return crc;
 
-    const ack = Buffer.alloc(4);
-    ack.writeUInt32BE(1); // 1 record accepted
+}
 
-    socket.write(ack);
+// ================= IO PARSER =================
 
-    log("📤 ACK AVL -> 00000001");
+function parseCodec8IO(buf, offset) {
+
+  const io = {};
+
+  try {
+
+    const eventId = buf.readUInt8(offset++);
+    offset++;
+
+    const read = (count, size) => {
+
+      for (let i = 0; i < count; i++) {
+
+        const id = buf.readUInt8(offset++);
+        const value = buf.slice(offset, offset + size).toString("hex");
+
+        offset += size;
+
+        io[id] = value;
+
+      }
+
+    };
+
+    read(buf.readUInt8(offset++), 1);
+    read(buf.readUInt8(offset++), 2);
+    read(buf.readUInt8(offset++), 4);
+    read(buf.readUInt8(offset++), 8);
+
+    return { io, eventId };
+
+  } catch {
+
+    return { io: {}, eventId: null };
+
+  }
+
+}
+
+// ================= AVL PARSER =================
+
+async function decodeAVL(buffer, imei, db) {
+
+  try {
+
+    const rawHex = buffer.toString("hex");
+
+    const dataLen = buffer.readUInt32BE(4);
+
+    const avlBuf = buffer.slice(8, 8 + dataLen);
+
+    const crcCalc = crc16Teltonika(avlBuf);
+    const crcPacket = buffer.readUInt16BE(buffer.length - 2);
+
+    const timestamp = Number(avlBuf.readBigUInt64BE(2)) / 1000;
+
+    const dateObj = new Date(timestamp * 1000);
+
+    const gpsOffset = 11;
+
+    const longitude = avlBuf.readInt32BE(gpsOffset) / 1e7;
+    const latitude = avlBuf.readInt32BE(gpsOffset + 4) / 1e7;
+
+    const altitude = avlBuf.readInt16BE(gpsOffset + 8);
+    const angle = avlBuf.readInt16BE(gpsOffset + 10);
+
+    const satellites = avlBuf[gpsOffset + 12];
+
+    const speed = avlBuf.readInt16BE(gpsOffset + 13);
+
+    const { io, eventId } = parseCodec8IO(avlBuf, gpsOffset + 15);
+
+    const doc = {
+
+      imei,
+
+      timestamp: dateObj,
+
+      latitude,
+      longitude,
+
+      altitude,
+      angle,
+
+      satellites,
+      speed,
+
+      eventId,
+
+      io,
+
+      raw: rawHex,
+
+      crc: {
+        calculated: crcCalc.toString(16),
+        packet: crcPacket.toString(16)
+      }
+
+    };
+
+    await db.collection("930").insertOne(doc);
+
+    log(`💾 saved packet ${imei}`);
+
+  } catch (err) {
+
+    log(`❌ decode error ${err.message}`);
+
+  }
+
+}
+
+// ================= SERVER =================
+
+async function start() {
+
+  await client.connect();
+
+  const db = client.db(DATABASE_NAME);
+
+  log("✅ Mongo connected");
+
+  const server = net.createServer(socket => {
+
+    const clientAddr = `${socket.remoteAddress}:${socket.remotePort}`;
+
+    log(`🔌 CONNECT ${clientAddr}`);
+
+    let imei = null;
+
+    socket.setTimeout(SOCKET_TIMEOUT_MS);
+
+    socket.on("timeout", () => {
+
+      log(`⏱ TIMEOUT ${clientAddr}`);
+      socket.destroy();
+
+    });
+
+    socket.on("data", async data => {
+
+      if (!imei) {
+
+        imei = cleanImei(data.toString());
+
+        log(`📡 IMEI ${imei}`);
+
+        sendImeiAck(socket);
+
+        return;
+
+      }
+
+      await decodeAVL(data, imei, db);
+
+      sendAvlAck(socket, 1);
+
+    });
+
+    socket.on("close", () => {
+
+      log(`🔴 DISCONNECT ${imei || clientAddr}`);
+
+    });
+
+    socket.on("error", err => {
+
+      log(`⚠️ ${err.message}`);
+
+    });
 
   });
 
-  socket.on("close", () => {
-    log(`🔴 DISCONNECT ${client}`);
+  server.listen(PORT, HOST, () => {
+
+    log(`🚀 GPS TCP listening ${HOST}:${PORT}`);
+
   });
 
-  socket.on("error", err => {
-    log(`⚠️ ERROR ${client} ${err.message}`);
-  });
+}
 
-});
-
-server.listen(PORT, HOST, () => {
-  log(`🚀 TCP LOGGER listening ${HOST}:${PORT}`);
-});
+start();
