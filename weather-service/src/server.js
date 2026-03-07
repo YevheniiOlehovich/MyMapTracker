@@ -522,7 +522,52 @@
 
 
 
-// gps2 
+// gps2 шось робить і прийма
+
+// import net from "net";
+
+// const HOST = "0.0.0.0";
+// const PORT = 20220;
+
+// function log(message) {
+//   console.log(`[${new Date().toISOString()}] ${message}`);
+// }
+
+// const server = net.createServer(socket => {
+
+//   const client = `${socket.remoteAddress}:${socket.remotePort}`;
+//   log(`🔌 CONNECT ${client}`);
+
+//   socket.on("data", data => {
+
+//     const hex = data.toString("hex");
+//     const text = data.toString();
+
+//     log(`📥 ${client}`);
+//     log(`HEX : ${hex}`);
+//     log(`TEXT: ${text}`);
+
+//     // якщо трекер чекає відповідь
+//     socket.write(Buffer.from([0x01]));
+
+//   });
+
+//   socket.on("close", () => {
+//     log(`🔴 DISCONNECT ${client}`);
+//   });
+
+//   socket.on("error", err => {
+//     log(`⚠️ ERROR ${client} ${err.message}`);
+//   });
+
+// });
+
+// server.listen(PORT, HOST, () => {
+//   log(`🚀 TCP LOGGER listening ${HOST}:${PORT}`);
+// });
+
+//gps 2 дубль 2 
+
 import net from "net";
 
 const HOST = "0.0.0.0";
@@ -535,6 +580,8 @@ function log(message) {
 const server = net.createServer(socket => {
 
   const client = `${socket.remoteAddress}:${socket.remotePort}`;
+  let imeiReceived = false;
+
   log(`🔌 CONNECT ${client}`);
 
   socket.on("data", data => {
@@ -546,8 +593,31 @@ const server = net.createServer(socket => {
     log(`HEX : ${hex}`);
     log(`TEXT: ${text}`);
 
-    // якщо трекер чекає відповідь
-    socket.write(Buffer.from([0x01]));
+    // ================= IMEI =================
+    if (!imeiReceived) {
+
+      imeiReceived = true;
+
+      log("📡 IMEI packet");
+
+      // Teltonika login ACK
+      socket.write(Buffer.from([0x01]));
+
+      log("📤 ACK IMEI -> 01");
+
+      return;
+    }
+
+    // ================= AVL DATA =================
+
+    log("📦 AVL packet");
+
+    const ack = Buffer.alloc(4);
+    ack.writeUInt32BE(1); // 1 record accepted
+
+    socket.write(ack);
+
+    log("📤 ACK AVL -> 00000001");
 
   });
 
