@@ -268,7 +268,7 @@ const HOST = "0.0.0.0";
 const PORT = 20120;
 const MONGODB_URI = "mongodb://mongo:27017/test";
 const DATABASE_NAME = "test";
-const SOCKET_TIMEOUT_MS = 60_000;
+const SOCKET_TIMEOUT_MS = 300_000;
 
 // допустимий діапазон років
 const MIN_YEAR = 2015;
