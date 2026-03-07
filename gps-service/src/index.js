@@ -1,25 +1,29 @@
-// import net from 'net';
-// import fs from 'fs';
-// import path from 'path';
-// import { MongoClient } from 'mongodb';
-// import { fileURLToPath } from 'url';
+// Робочий
+
+// import net from "net";
+// import fs from "fs";
+// import path from "path";
+// import { MongoClient } from "mongodb";
+// import { fileURLToPath } from "url";
 
 // // ================= __dirname (ESM) =================
 // const __filename = fileURLToPath(import.meta.url);
 // const __dirname = path.dirname(__filename);
 
 // // ================= SETTINGS =================
-// const HOST = '0.0.0.0';
+// const HOST = "0.0.0.0";
 // const PORT = 20120;
-// const MONGODB_URI = 'mongodb://mongo:27017/test';
-// const DATABASE_NAME = 'test';
-// const SOCKET_TIMEOUT_MS = 60_000; // 60 секунд
+// const MONGODB_URI = "mongodb://mongo:27017/test";
+// const DATABASE_NAME = "test";
+// const SOCKET_TIMEOUT_MS = 60_000;
 
-// // ================= LOGGING (ASYNC QUEUE) =================
-// const LOG_DIR = path.join(__dirname, 'logs');
-// if (!fs.existsSync(LOG_DIR)) {
-//   fs.mkdirSync(LOG_DIR, { recursive: true });
-// }
+// // допустимий діапазон років
+// const MIN_YEAR = 2015;
+// const MAX_YEAR = new Date().getFullYear() + 1;
+
+// // ================= LOGGING =================
+// const LOG_DIR = path.join(__dirname, "logs");
+// if (!fs.existsSync(LOG_DIR)) fs.mkdirSync(LOG_DIR, { recursive: true });
 
 // const logQueue = [];
 // let flushing = false;
@@ -31,17 +35,16 @@
 // }
 
 // setInterval(() => {
-//   if (logQueue.length === 0 || flushing) return;
-
+//   if (!logQueue.length || flushing) return;
 //   flushing = true;
 
-//   const date = new Date().toISOString().split('T')[0];
+//   const date = new Date().toISOString().split("T")[0];
 //   const file = path.join(LOG_DIR, `${date}.log`);
-//   const batch = logQueue.splice(0, logQueue.length).join('');
+//   const batch = logQueue.splice(0).join("");
 
 //   fs.appendFile(file, batch, err => {
 //     flushing = false;
-//     if (err) console.error('Log flush error:', err);
+//     if (err) console.error("Log flush error:", err);
 //   });
 // }, 1000);
 
@@ -49,7 +52,7 @@
 // const client = new MongoClient(MONGODB_URI);
 
 // // ================= HELPERS =================
-// const cleanImei = imei => imei.replace(/\D/g, '');
+// const cleanImei = imei => imei.replace(/\D/g, "");
 // const sendConfirmation = socket => socket.write(Buffer.from([0x01]));
 
 // // ================= CRC16 =================
@@ -86,7 +89,7 @@
 //     const read = (count, size) => {
 //       for (let i = 0; i < count; i++) {
 //         const id = buf.readUInt8(offset++);
-//         const valueHex = buf.slice(offset, offset + size).toString('hex');
+//         const valueHex = buf.slice(offset, offset + size).toString("hex");
 //         offset += size;
 
 //         if (BLE_IDS_IO.includes(id)) {
@@ -109,10 +112,22 @@
 //   }
 // }
 
+// // ================= SAVE TRASH =================
+// async function saveTrash(db, imei, buffer, extra = {}) {
+//   await db.collection("trash_packets").insertOne({
+//     imei,
+//     receivedAt: new Date(),
+//     raw: buffer.toString("hex"),
+//     ...extra,
+//   });
+
+//   log(`🗑 Trash packet from ${imei}`);
+// }
+
 // // ================= DECODE =================
 // async function decodeAVL(buffer, imei, db) {
 //   try {
-//     const rawHex = buffer.toString('hex');
+//     const rawHex = buffer.toString("hex");
 
 //     const dataLen = buffer.readUInt32BE(4);
 //     const avlBuf = buffer.slice(8, 8 + dataLen);
@@ -124,6 +139,19 @@
 //     const timestamp = Number(avlBuf.readBigUInt64BE(2)) / 1000;
 //     const dateObj = new Date(timestamp * 1000);
 
+//     const year = dateObj.getFullYear();
+//     const validDate =
+//       !isNaN(dateObj.getTime()) && year >= MIN_YEAR && year <= MAX_YEAR;
+
+//     if (!crcValid || !validDate) {
+//       await saveTrash(db, imei, buffer, {
+//         crcValid,
+//         year,
+//       });
+//       return;
+//     }
+
+//     // ================= VALID =================
 //     const gpsOffset = 11;
 //     const longitude = avlBuf.readInt32BE(gpsOffset) / 1e7;
 //     const latitude = avlBuf.readInt32BE(gpsOffset + 4) / 1e7;
@@ -135,12 +163,12 @@
 //     const { io, eventId } = parseCodec8IO(avlBuf, gpsOffset + 15);
 //     const card_id = io[157] && !/^0+$/.test(io[157]) ? io[157] : null;
 
-//     const collection = `trek_${dateObj.getFullYear()}`;
+//     const collection = `trek_${year}`;
 //     const col = db.collection(collection);
 
 //     const key = {
-//       date: dateObj.toISOString().split('T')[0],
-//       imei
+//       date: dateObj.toISOString().split("T")[0],
+//       imei,
 //     };
 
 //     const record = {
@@ -158,19 +186,16 @@
 //       crc: {
 //         calculated: crcCalc.toString(16),
 //         packet: crcPacket.toString(16),
-//         valid: crcValid ? 1 : 0
-//       }
+//         valid: 1,
+//       },
 //     };
 
-//     await col.updateOne(
-//       key,
-//       { $push: { data: record } },
-//       { upsert: true }
-//     );
+//     await col.updateOne(key, { $push: { data: record } }, { upsert: true });
 
 //     log(`✅ ${imei} saved ${key.date}`);
 //   } catch (err) {
-//     log(`❌ Decode error: ${err.message}`);
+//     log(`❌ Decode crash: ${err.message}`);
+//     await saveTrash(db, imei, buffer, { fatal: err.message });
 //   }
 // }
 
@@ -180,21 +205,21 @@
 //     await client.connect();
 //     const db = client.db(DATABASE_NAME);
 
-//     log('✅ MongoDB connected');
+//     log("✅ MongoDB connected");
 
 //     const server = net.createServer(socket => {
 //       log(`🔌 Client ${socket.remoteAddress}:${socket.remotePort}`);
 
-//       let imei = '';
+//       let imei = "";
 
 //       socket.setTimeout(SOCKET_TIMEOUT_MS);
 
-//       socket.on('timeout', () => {
+//       socket.on("timeout", () => {
 //         log(`⏱ Timeout ${imei || socket.remoteAddress}`);
 //         socket.destroy();
 //       });
 
-//       socket.on('data', async data => {
+//       socket.on("data", async data => {
 //         if (!imei) {
 //           imei = cleanImei(data.toString());
 //           log(`📡 IMEI ${imei}`);
@@ -206,8 +231,10 @@
 //         sendConfirmation(socket);
 //       });
 
-//       socket.on('close', () => log(`🔴 Disconnect ${imei || 'unknown'}`));
-//       socket.on('error', err => log(`⚠️ Socket error ${err.message}`));
+//       socket.on("close", () =>
+//         log(`🔴 Disconnect ${imei || socket.remoteAddress}`)
+//       );
+//       socket.on("error", err => log(`⚠️ Socket error ${err.message}`));
 //     });
 
 //     server.listen(PORT, HOST, () => {
@@ -220,7 +247,6 @@
 // }
 
 // start();
-
 
 
 
