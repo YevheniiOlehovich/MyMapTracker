@@ -902,7 +902,17 @@
 
 // gps fix #4
 import net from "net";
+import fs from "fs";
+import path from "path";
 import { MongoClient } from "mongodb";
+import { fileURLToPath } from "url";
+
+// ================= PATH =================
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// ================= SETTINGS =================
 
 const HOST = "0.0.0.0";
 const PORT = 20220;
@@ -912,23 +922,71 @@ const DATABASE_NAME = "test";
 
 const SOCKET_TIMEOUT_MS = 60000;
 
+const MIN_YEAR = 2015;
+const MAX_YEAR = new Date().getFullYear() + 1;
+
+// ================= LOGGING =================
+
+const LOG_DIR = path.join(__dirname, "logs");
+if (!fs.existsSync(LOG_DIR)) fs.mkdirSync(LOG_DIR, { recursive: true });
+
+const logQueue = [];
+let flushing = false;
+
+function log(message) {
+
+  const line = `[${new Date().toISOString()}] ${message}\n`;
+
+  logQueue.push(line);
+
+  console.log(message);
+
+}
+
+setInterval(() => {
+
+  if (!logQueue.length || flushing) return;
+
+  flushing = true;
+
+  const date = new Date().toISOString().split("T")[0];
+  const file = path.join(LOG_DIR, `${date}.log`);
+
+  const batch = logQueue.splice(0).join("");
+
+  fs.appendFile(file, batch, () => {
+
+    flushing = false;
+
+  });
+
+}, 1000);
+
+// ================= DB =================
+
 const client = new MongoClient(MONGODB_URI);
 
-function log(msg) {
-  console.log(`[${new Date().toISOString()}] ${msg}`);
-}
+// ================= HELPERS =================
 
 const cleanImei = imei => imei.replace(/\D/g, "");
 
 function sendImeiAck(socket) {
+
   socket.write(Buffer.from([0x01]));
+
 }
 
 function sendAvlAck(socket, records = 1) {
+
   const buf = Buffer.alloc(4);
+
   buf.writeUInt32BE(records);
+
   socket.write(buf);
+
 }
+
+// ================= CRC =================
 
 function crc16Teltonika(buf) {
 
@@ -950,6 +1008,26 @@ function crc16Teltonika(buf) {
 
 }
 
+// ================= HEX → DEC =================
+
+function hexToDec(value) {
+
+  if (!value) return null;
+
+  try {
+
+    return parseInt(value, 16);
+
+  } catch {
+
+    return null;
+
+  }
+
+}
+
+// ================= IO PARSER =================
+
 function parseCodec8IO(buf, offset) {
 
   const io = {};
@@ -957,18 +1035,32 @@ function parseCodec8IO(buf, offset) {
   try {
 
     const eventId = buf.readUInt8(offset++);
+
     offset++;
+
+    const BLE_IDS_IO = [131];
 
     const read = (count, size) => {
 
       for (let i = 0; i < count; i++) {
 
         const id = buf.readUInt8(offset++);
-        const value = buf.slice(offset, offset + size).toString("hex");
+
+        const valueHex = buf.slice(offset, offset + size).toString("hex");
 
         offset += size;
 
-        io[id] = value;
+        if (BLE_IDS_IO.includes(id)) {
+
+          const dec = hexToDec(valueHex);
+
+          io[id] = dec !== null ? dec : valueHex;
+
+        } else {
+
+          io[id] = valueHex;
+
+        }
 
       }
 
@@ -989,6 +1081,28 @@ function parseCodec8IO(buf, offset) {
 
 }
 
+// ================= SAVE TRASH =================
+
+async function saveTrash(db, imei, buffer, extra = {}) {
+
+  await db.collection("trash_packets").insertOne({
+
+    imei,
+
+    receivedAt: new Date(),
+
+    raw: buffer.toString("hex"),
+
+    ...extra
+
+  });
+
+  log(`🗑 Trash packet from ${imei}`);
+
+}
+
+// ================= DECODE =================
+
 async function decodeAVL(buffer, imei, db) {
 
   try {
@@ -1000,18 +1114,42 @@ async function decodeAVL(buffer, imei, db) {
     const avlBuf = buffer.slice(8, 8 + dataLen);
 
     const crcCalc = crc16Teltonika(avlBuf);
+
     const crcPacket = buffer.readUInt16BE(buffer.length - 2);
+
+    const crcValid = crcCalc === crcPacket;
 
     const timestamp = Number(avlBuf.readBigUInt64BE(2)) / 1000;
 
     const dateObj = new Date(timestamp * 1000);
 
+    const year = dateObj.getFullYear();
+
+    const validDate =
+      !isNaN(dateObj.getTime()) && year >= MIN_YEAR && year <= MAX_YEAR;
+
+    if (!crcValid || !validDate) {
+
+      await saveTrash(db, imei, buffer, {
+
+        crcValid,
+
+        year
+
+      });
+
+      return;
+
+    }
+
     const gpsOffset = 11;
 
     const longitude = avlBuf.readInt32BE(gpsOffset) / 1e7;
+
     const latitude = avlBuf.readInt32BE(gpsOffset + 4) / 1e7;
 
     const altitude = avlBuf.readInt16BE(gpsOffset + 8);
+
     const angle = avlBuf.readInt16BE(gpsOffset + 10);
 
     const satellites = avlBuf[gpsOffset + 12];
@@ -1022,49 +1160,77 @@ async function decodeAVL(buffer, imei, db) {
 
     const card_id = io[157] && !/^0+$/.test(io[157]) ? io[157] : null;
 
-    const date = dateObj.toISOString().split("T")[0];
+    const collection = `trek_${year}`;
+
+    const col = db.collection(collection);
+
+    const key = {
+
+      date: dateObj.toISOString().split("T")[0],
+
+      imei
+
+    };
 
     const record = {
 
       timestamp: dateObj,
 
       latitude,
+
       longitude,
 
       altitude,
+
       angle,
 
       satellites,
+
       speed,
 
       io,
+
       eventId,
+
       card_id,
 
       raw: rawHex,
 
       crc: {
+
         calculated: crcCalc.toString(16),
-        packet: crcPacket.toString(16)
+
+        packet: crcPacket.toString(16),
+
+        valid: 1
+
       }
 
     };
 
-    await db.collection("930").updateOne(
-      { imei, date },
+    await col.updateOne(
+
+      key,
+
       { $push: { data: record } },
+
       { upsert: true }
+
     );
 
-    log(`💾 saved ${imei} ${date}`);
+    log(`✅ ${imei} saved ${key.date}`);
 
   } catch (err) {
 
-    log(`❌ decode error ${err.message}`);
+    log(`❌ Decode crash: ${err.message}`);
+
+    await saveTrash(db, imei, buffer, { fatal: err.message });
 
   }
 
 }
+
+// ================= SERVER =================
 
 async function start() {
 
@@ -1072,21 +1238,22 @@ async function start() {
 
   const db = client.db(DATABASE_NAME);
 
-  log("✅ Mongo connected");
+  log("✅ MongoDB connected");
 
   const server = net.createServer(socket => {
 
     const clientAddr = `${socket.remoteAddress}:${socket.remotePort}`;
 
-    log(`🔌 CONNECT ${clientAddr}`);
+    log(`🔌 Client ${clientAddr}`);
 
-    let imei = null;
+    let imei = "";
 
     socket.setTimeout(SOCKET_TIMEOUT_MS);
 
     socket.on("timeout", () => {
 
-      log(`⏱ timeout ${clientAddr}`);
+      log(`⏱ Timeout ${imei || clientAddr}`);
+
       socket.destroy();
 
     });
@@ -1111,23 +1278,19 @@ async function start() {
 
     });
 
-    socket.on("close", () => {
+    socket.on("close", () =>
+      log(`🔴 Disconnect ${imei || clientAddr}`)
+    );
 
-      log(`🔴 disconnect ${imei || clientAddr}`);
-
-    });
-
-    socket.on("error", err => {
-
-      log(`⚠️ ${err.message}`);
-
-    });
+    socket.on("error", err =>
+      log(`⚠️ Socket error ${err.message}`)
+    );
 
   });
 
   server.listen(PORT, HOST, () => {
 
-    log(`🚀 TCP listening ${HOST}:${PORT}`);
+    log(`🚀 TCP listening on ${HOST}:${PORT}`);
 
   });
 
