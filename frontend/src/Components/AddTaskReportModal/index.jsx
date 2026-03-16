@@ -21,8 +21,9 @@ import { useGpsByTask } from "../../hooks/useGpsByTask";
 import { useFieldsData } from "../../hooks/useFieldsData";
 import { cleanGpsTrack } from "../../helpres/cleanGpsTrack";
 import MapBlock from "../MapBlock";
-import { calculateGridCoverage } from "../../helpres/calculateGridCoverage";
+import { calculateGridCoverageGrid } from "../../helpres/calculateGridCoverage";
 import { useUpdateTaskReport } from "../../hooks/useTasksData";
+import * as XLSX from "xlsx"; 
 
 export default function AddTaskReportModal({ onClose }) {
   const task = useSelector(
@@ -181,20 +182,78 @@ export default function AddTaskReportModal({ onClose }) {
   ======================================================
   */
 
-  const gridResult = useMemo(() => {
-    if (!filteredTracks.length) return null;
+  const implementWidthByAssignment = useMemo(() => {
+    const map = {};
 
-    return calculateGridCoverage({
-      tracks: filteredTracks,
-      cellSize: 3,       // можеш міняти
-      implementWidth: 5.6, // ширина жатки
+    (task?.assignments || []).forEach((a) => {
+      map[a._id] = a.techniqueId?.width || 5.6;
     });
-  }, [filteredTracks]);
+
+    return map;
+  }, [task?.assignments]);
+
+
+  const gridResult = useMemo(() => {
+
+    if (!filteredTracks.length || !turfFieldPolygon) {
+      return null;
+    }
+
+    return calculateGridCoverageGrid({
+      tracks: filteredTracks,
+      fieldPolygon: turfFieldPolygon,
+      cellSize: 2,
+      implementWidthByAssignment,
+    });
+
+  }, [
+    filteredTracks,
+    turfFieldPolygon,
+    implementWidthByAssignment
+  ]);
+
   /*
   ======================================================
   LOADING
   ======================================================
   */
+
+  const handleExportExcel = () => {
+    if (!gridResult) return;
+
+    const rows = [];
+
+    groupedByAssignment.forEach((machine) => {
+      machine.days.forEach((day) => {
+        const dayStats =
+          gridResult?.machines?.[machine.assignmentId]?.days?.[day.date];
+
+        rows.push({
+          "Task №": task.order,
+          Operation: task.operationId?.name,
+          Field: task.fieldId?.properties?.name,
+          "Field Area (ha)": task.fieldId?.properties?.area,
+          "Processed Total (ha)": gridResult.totalHectares,
+
+          Vehicle: machine.vehicle,
+          Technique: machine.technique,
+          Operator: machine.personnel,
+
+          Date: day.date,
+          "Net ha": dayStats?.netHectares ?? 0,
+          "Overlap ha": dayStats?.overlapHectares ?? 0,
+          "Full ha": dayStats?.fullHectares ?? 0,
+        });
+      });
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Task Report");
+
+    XLSX.writeFile(workbook, `task_${task.order}_report.xlsx`);
+  };
 
   if (isLoading) {
     return (
@@ -374,7 +433,8 @@ export default function AddTaskReportModal({ onClose }) {
                       >
                         <Typography variant="body2">
                           Пройдено:{" "}
-                          {gridResult.machines[machine.assignmentId].fullHectares.toFixed(2)} га
+                          {/* {gridResult.machines[machine.assignmentId].fullHectares.toFixed(2)} га */}
+                          {gridResult?.machines?.[machine.assignmentId]?.fullHectares?.toFixed(2)}
                         </Typography>
 
                         <Typography variant="body2" color="error.main">
@@ -462,6 +522,13 @@ export default function AddTaskReportModal({ onClose }) {
               borderTop: "1px solid #e0e0e0",
             }}
           >
+            <Button
+              variant="outlined"
+              onClick={handleExportExcel}
+            >
+              Експорт Excel
+            </Button>
+
             <Button variant="outlined" onClick={onClose}>
               Закрити
             </Button>
