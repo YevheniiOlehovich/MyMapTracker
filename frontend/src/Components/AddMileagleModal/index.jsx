@@ -370,8 +370,15 @@ export default function AddMileageModal({ onClose }) {
                             <b>Вартість:</b> {day.cost.toFixed(2)} грн
                           </Typography>
 
-                          <Typography>
+                          {/* <Typography>
                             <b>Водій:</b> {day.driver || '—'}
+                          </Typography> */}
+
+                          <Typography>
+                            <b>Водій:</b>{' '}
+                            {day.driver
+                              ? `${day.driver.firstName} ${day.driver.lastName}`
+                              : '—'}
                           </Typography>
                         </Box>
                       ))}
