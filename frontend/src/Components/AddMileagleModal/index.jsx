@@ -56,6 +56,13 @@ export default function AddMileageModal({ onClose }) {
     label: `${currentYear - i}`,
   }));
 
+  const formatDuration = (seconds = 0) => {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+
+    return `${h}г ${m}хв`;
+  };
+
   const vehicleTypeOptions = vehicleTypes.map(t => ({
     value: t._id,
     label: t.name,
@@ -171,6 +178,7 @@ export default function AddMileageModal({ onClose }) {
         'Дата': '',
         'Пробіг (км)': '',
         'Вартість (грн)': '',
+        'Час роботи': '',
         'Водій': '',
       });
 
@@ -181,6 +189,7 @@ export default function AddMileageModal({ onClose }) {
           'Дата': day.date.toLocaleDateString('uk-UA'),
           'Пробіг (км)': day.distance.toFixed(2),
           'Вартість (грн)': (day.cost ?? 0).toFixed(2),
+          'Час роботи': formatDuration(day.duration),
           'Водій': day.driver || '—',
         });
       });
@@ -191,6 +200,7 @@ export default function AddMileageModal({ onClose }) {
         'Дата': '',
         'Пробіг (км)': vehicleResult.totalDistance.toFixed(2),
         'Вартість (грн)': (vehicleResult.totalCost ?? 0).toFixed(2),
+        'Час роботи': formatDuration(vehicleResult.totalDuration),
         'Водій': '',
       });
 
@@ -347,7 +357,8 @@ export default function AddMileageModal({ onClose }) {
 
                         <Typography variant="body2" color="text.secondary">
                           {vehicleResult.totalDistance.toFixed(2)} км •{' '}
-                          {vehicleResult.totalCost.toFixed(2)} грн
+                          {vehicleResult.totalCost.toFixed(2)} грн •
+                          {formatDuration(vehicleResult.totalDuration)}
                         </Typography>
                       </Box>
                     </AccordionSummary>
@@ -368,6 +379,10 @@ export default function AddMileageModal({ onClose }) {
 
                           <Typography>
                             <b>Вартість:</b> {day.cost.toFixed(2)} грн
+                          </Typography>
+
+                          <Typography>
+                            <b>Час роботи:</b> {formatDuration(day.duration)}
                           </Typography>
 
                           {/* <Typography>

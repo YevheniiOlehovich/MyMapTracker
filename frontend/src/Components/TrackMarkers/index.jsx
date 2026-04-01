@@ -256,6 +256,7 @@ const TrackMarkers = ({ gpsData, selectedDate }) => {
         ))} */}
 
       {/* ROUTE */}
+      
       {showAllMarkers &&
         movingSegments.map((seg, idx) => (
           <Polyline
@@ -362,3 +363,111 @@ const TrackMarkers = ({ gpsData, selectedDate }) => {
 };
 
 export default TrackMarkers;
+
+
+
+
+
+// import React, { useMemo, useState, useEffect, useRef } from "react";
+// import { Marker, Polyline, Popup, useMap } from "react-leaflet";
+// import { useDispatch } from "react-redux";
+// import { setImei } from "../../store/vehicleSlice";
+// import { useVehiclesData } from "../../hooks/useVehiclesData";
+// import { useGpsByImei } from "../../hooks/useGpsByImei";
+// import L from "leaflet";
+
+// import carIco from "../../assets/ico/car-ico.png";
+
+// const TrackMarkersRaw = ({ gpsData = [] }) => {
+//   const dispatch = useDispatch();
+//   const map = useMap();
+
+//   const [activeImei, setActiveImei] = useState(null);
+
+//   const { data: vehicles = [] } = useVehiclesData();
+
+//   // 🔥 тягнемо ПОВНИЙ трек
+//   const { data: imeiData = [] } = useGpsByImei(activeImei);
+
+//   const markersRef = useRef({});
+
+//   // ---------------- LAST POINTS ----------------
+//   const lastGpsPoints = useMemo(() => {
+//     return gpsData.filter((p) => p.latitude && p.longitude);
+//   }, [gpsData]);
+
+//   // ---------------- FULL TRACK ----------------
+//   const activeTrack = useMemo(() => {
+//     if (!activeImei) return [];
+
+//     const device = imeiData.find((d) => d.imei === activeImei);
+//     if (!device?.data) return [];
+
+//     return device.data
+//       .filter((p) => p.latitude && p.longitude)
+//       .map((p) => [p.latitude, p.longitude]);
+//   }, [imeiData, activeImei]);
+
+//   // ---------------- CLICK ----------------
+//   const handleMarkerClick = (imei) => {
+//     setActiveImei(imei);
+//     dispatch(setImei(imei));
+//   };
+
+//   // ---------------- AUTO CENTER ----------------
+//   useEffect(() => {
+//     if (!activeImei || !activeTrack.length) return;
+
+//     map.fitBounds(activeTrack);
+//   }, [activeTrack, activeImei, map]);
+
+//   return (
+//     <>
+//       {/* 🔹 MARKERS */}
+//       {lastGpsPoints.map((p, i) => {
+//         const vehicle = vehicles.find((v) => v.imei === p.imei);
+//         const vehicleName = vehicle?.mark || "Невідома техніка";
+
+//         return (
+//           <Marker
+//             key={i}
+//             position={[p.latitude, p.longitude]}
+//             icon={new L.Icon({
+//               iconUrl: carIco,
+//               iconSize: [30, 30],
+//             })}
+//             eventHandlers={{
+//               click: () => handleMarkerClick(p.imei),
+//             }}
+//             ref={(ref) => {
+//               if (ref) markersRef.current[p.imei] = ref;
+//             }}
+//           >
+//             <Popup>
+//               <div>
+//                 <b>🚜 {vehicleName}</b>
+//                 <br />
+//                 IMEI: {p.imei}
+//                 <br />
+//                 🕒 {new Date(p.timestamp).toLocaleString()}
+//               </div>
+//             </Popup>
+//           </Marker>
+//         );
+//       })}
+
+//       {/* 🔥 RAW TRACK */}
+//       {activeTrack.length > 1 && (
+//         <Polyline
+//           positions={activeTrack}
+//           pathOptions={{
+//             color: "red",
+//             weight: 4,
+//           }}
+//         />
+//       )}
+//     </>
+//   );
+// };
+
+// export default TrackMarkersRaw;
