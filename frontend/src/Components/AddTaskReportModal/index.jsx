@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 import {
   Box,
@@ -38,222 +38,244 @@ export default function AddTaskReportModal({ onClose }) {
   const [visibilityState, setVisibilityState] = useState({});
   const { mutate: updateReport, isPending } = useUpdateTaskReport();
 
-  if (!task) return null;
+  // if (!task) return null;
 
   const isLoading = fieldsLoading || gpsLoading;
 
-  /*
-  ======================================================
-  1️⃣ FIELD POLYGON
-  ======================================================
-  */
+/*
+======================================================
+2️⃣ Field poligon
+======================================================
+*/
 
-  const turfFieldPolygon = useMemo(() => {
-    const geometry = task?.fieldId?.geometry;
-    if (!geometry?.coordinates?.length) return null;
+const turfFieldPolygon = useMemo(() => {
+  const geometry = task?.fieldId?.geometry;
+  if (!geometry?.coordinates?.length) return null;
 
-    return turf.polygon(geometry.coordinates);
-  }, [task?.fieldId?.geometry]);
+  return turf.polygon(geometry.coordinates);
+}, [task?.fieldId?.geometry]);
 
-  /*
-  ======================================================
-  2️⃣ NORMALIZE GPS
-  ======================================================
-  */
+/*
+======================================================
+2️⃣ NORMALIZE GPS
+======================================================
+*/
 
-  const normalizedGps = useMemo(() => {
-    if (!gpsData?.length) return [];
+const normalizedGps = useMemo(() => {
+  if (!gpsData?.length) return [];
 
-    const result = [];
+  const result = [];
 
-    gpsData.forEach((assignment) => {
-      assignment.data.forEach((day) => {
-        const wrapper = day.points?.[0];
-        if (!wrapper?.data?.length) return;
+  gpsData.forEach((assignment) => {
+    assignment.data.forEach((day) => {
+      const wrapper = day.points?.[0];
+      if (!wrapper?.data?.length) return;
 
-        const cleaned = cleanGpsTrack(wrapper.data);
-        if (!cleaned.length) return;
+      const cleaned = cleanGpsTrack(wrapper.data);
+      if (!cleaned.length) return;
 
-        result.push({
-          assignmentId: assignment.assignmentId,
-          imei: assignment.imei,
-          date: day.date,
-          points: cleaned,
-        });
+      result.push({
+        assignmentId: assignment.assignmentId,
+        imei: assignment.imei,
+        date: day.date,
+        points: cleaned,
       });
     });
+  });
 
-    return result;
-  }, [gpsData]);
+  return result;
+}, [gpsData]);
 
-  /*
-  ======================================================
-  3️⃣ FILTER BY FIELD
-  ======================================================
-  */
+/*
+======================================================
+3️⃣ FILTER BY FIELD
+======================================================
+*/
 
-  const filteredTracks = useMemo(() => {
-    if (!normalizedGps.length || !turfFieldPolygon)
-      return [];
+const filteredTracks = useMemo(() => {
+  if (!normalizedGps.length || !turfFieldPolygon)
+    return [];
 
-    return normalizedGps
-      .map((track) => {
-        const insidePoints = track.points.filter((pt) =>
-          turf.booleanPointInPolygon(
-            [pt.longitude, pt.latitude],
-            turfFieldPolygon
-          )
-        );
-
-        if (insidePoints.length < 2) return null;
-
-        return {
-          ...track,
-          points: insidePoints,
-        };
-      })
-      .filter(Boolean);
-  }, [normalizedGps, turfFieldPolygon]);
-
-  /*
-  ======================================================
-  4️⃣ GROUP BY ASSIGNMENT
-  ======================================================
-  */
-
-  const groupedByAssignment = useMemo(() => {
-    if (!filteredTracks.length) return [];
-
-    const grouped = {};
-
-    filteredTracks.forEach((track) => {
-      const assignment = task.assignments.find(
-        (a) => a._id === track.assignmentId
+  return normalizedGps
+    .map((track) => {
+      const insidePoints = track.points.filter((pt) =>
+        turf.booleanPointInPolygon(
+          [pt.longitude, pt.latitude],
+          turfFieldPolygon
+        )
       );
 
-      if (!grouped[track.assignmentId]) {
-        grouped[track.assignmentId] = {
-          assignmentId: track.assignmentId,
-          vehicle:
-            assignment?.vehicleId?.mark || "—",
-          technique:
-            assignment?.techniqueId?.name || "—",
-          personnel: assignment?.personnelId
-            ? `${assignment.personnelId.lastName} ${assignment.personnelId.firstName}`
-            : "—",
-          days: [],
-        };
-      }
+      if (insidePoints.length < 2) return null;
 
-      grouped[track.assignmentId].days.push({
-        date: track.date,
-        pointsCount: track.points.length,
-      });
-    });
+      return {
+        ...track,
+        points: insidePoints,
+      };
+    })
+    .filter(Boolean);
+}, [normalizedGps, turfFieldPolygon]);
 
-    return Object.values(grouped);
-  }, [filteredTracks, task.assignments]);
+/*
+======================================================
+4️⃣ GROUP BY ASSIGNMENT
+======================================================
+*/
 
-  /*
-  ======================================================
-  5️⃣ TOGGLE VISIBILITY
-  ======================================================
-  */
+const groupedByAssignment = useMemo(() => {
+  if (!filteredTracks.length) return [];
 
-  const toggleVisibility = (assignmentId, date) => {
-    const key = `${assignmentId}_${date}`;
+  const grouped = {};
 
-    setVisibilityState((prev) => ({
-      ...prev,
-      [key]: !prev[key],
-    }));
-  };
+  filteredTracks.forEach((track) => {
+    const assignment = task?.assignments?.find(
+      (a) => a._id === track.assignmentId
+    );
 
-  const visibleTracks = useMemo(() => {
-    return filteredTracks.filter((track) => {
-      const key = `${track.assignmentId}_${track.date}`;
-      return visibilityState[key] ?? true;
-    });
-  }, [filteredTracks, visibilityState]);
-
-    /*
-  ======================================================
-  6️⃣ GRID COVERAGE CALCULATION
-  ======================================================
-  */
-
-  const implementWidthByAssignment = useMemo(() => {
-    const map = {};
-
-    (task?.assignments || []).forEach((a) => {
-      map[a._id] = a.techniqueId?.width || 5.6;
-    });
-
-    return map;
-  }, [task?.assignments]);
-
-
-  const gridResult = useMemo(() => {
-
-    if (!filteredTracks.length || !turfFieldPolygon) {
-      return null;
+    if (!grouped[track.assignmentId]) {
+      grouped[track.assignmentId] = {
+        assignmentId: track.assignmentId,
+        vehicle: assignment?.vehicleId?.mark || "—",
+        technique: assignment?.techniqueId?.name || "—",
+        personnel: assignment?.personnelId
+          ? `${assignment.personnelId.lastName} ${assignment.personnelId.firstName}`
+          : "—",
+        days: [],
+      };
     }
 
-    return calculateGridCoverageGrid({
-      tracks: filteredTracks,
-      fieldPolygon: turfFieldPolygon,
-      cellSize: 2,
-      implementWidthByAssignment,
+    grouped[track.assignmentId].days.push({
+      date: track.date,
+      pointsCount: track.points.length,
     });
+  });
 
-  }, [
-    filteredTracks,
-    turfFieldPolygon,
-    implementWidthByAssignment
-  ]);
+  return Object.values(grouped);
+}, [filteredTracks, task]);
 
-  /*
-  ======================================================
-  LOADING
-  ======================================================
-  */
+/*
+======================================================
+5️⃣ TOGGLE VISIBILITY
+======================================================
+*/
 
-  const handleExportExcel = () => {
-    if (!gridResult) return;
+const toggleVisibility = (assignmentId, date) => {
+  const key = `${assignmentId}_${date}`;
 
-    const rows = [];
+  setVisibilityState((prev) => ({
+    ...prev,
+    [key]: !prev[key],
+  }));
+};
 
-    groupedByAssignment.forEach((machine) => {
-      machine.days.forEach((day) => {
-        const dayStats =
-          gridResult?.machines?.[machine.assignmentId]?.days?.[day.date];
+const visibleTracks = useMemo(() => {
+  return filteredTracks.filter((track) => {
+    const key = `${track.assignmentId}_${track.date}`;
+    return visibilityState[key] ?? true;
+  });
+}, [filteredTracks, visibilityState]);
 
-        rows.push({
-          "Task №": task.order,
-          Operation: task.operationId?.name,
-          Field: task.fieldId?.properties?.name,
-          "Field Area (ha)": task.fieldId?.properties?.area,
-          "Processed Total (ha)": gridResult.totalHectares,
+/*
+======================================================
+6️⃣ GRID COVERAGE
+======================================================
+*/
 
-          Vehicle: machine.vehicle,
-          Technique: machine.technique,
-          Operator: machine.personnel,
+const implementWidthByAssignment = useMemo(() => {
+  const map = {};
 
-          Date: day.date,
-          "Net ha": dayStats?.netHectares ?? 0,
-          "Overlap ha": dayStats?.overlapHectares ?? 0,
-          "Full ha": dayStats?.fullHectares ?? 0,
-        });
+  (task?.assignments || []).forEach((a) => {
+    map[a._id] = a.techniqueId?.width || 5.6;
+  });
+
+  return map;
+}, [task]);
+
+const gridResult = useMemo(() => {
+  if (!filteredTracks.length || !turfFieldPolygon) {
+    return null;
+  }
+
+  return calculateGridCoverageGrid({
+    tracks: filteredTracks,
+    fieldPolygon: turfFieldPolygon,
+    cellSize: 2,
+    implementWidthByAssignment,
+  });
+}, [
+  filteredTracks,
+  turfFieldPolygon,
+  implementWidthByAssignment,
+]);
+
+/*
+======================================================
+TOTAL HECTARES (ВАЖЛИВО ВИЩЕ!)
+======================================================
+*/
+
+const totalHectares = useMemo(() => {
+  return gridResult?.total?.fullHectares || 0;
+}, [gridResult]);
+
+/*
+======================================================
+ACTIONS
+======================================================
+*/
+
+const handleSave = () => {
+  if (!task) return;
+
+  updateReport(
+    {
+      taskId: task._id,
+      processedArea: totalHectares
+    },
+    {
+      onSuccess: () => {
+        onClose();
+      },
+    }
+  );
+};
+
+const handleExportExcel = () => {
+  if (!gridResult?.days) return;
+
+  const rows = [];
+
+  groupedByAssignment.forEach((machine) => {
+    machine.days.forEach((day) => {
+      const dayStats =
+          gridResult?.days?.[day.date]?.machines?.[machine.assignmentId];
+      rows.push({
+        "Task №": task.order,
+        Operation: task.operationId?.name,
+        Field: task.fieldId?.properties?.name,
+        "Field Area (ha)": task.fieldId?.properties?.area,
+        "Processed Total (ha)": totalHectares,
+        Vehicle: machine.vehicle,
+        Technique: machine.technique,
+        Operator: machine.personnel,
+        Date: day.date,
+        "Net ha": dayStats?.netHectares ?? 0,
+        "Overlap ha": dayStats?.overlapHectares ?? 0,
+        "Full ha": dayStats?.fullHectares ?? 0,
       });
     });
+  });
 
-    const worksheet = XLSX.utils.json_to_sheet(rows);
+  const worksheet = XLSX.utils.json_to_sheet(rows);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Task Report");
+  XLSX.writeFile(workbook, `task_${task?.order}_report.xlsx`);
+};
 
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Task Report");
-
-    XLSX.writeFile(workbook, `task_${task.order}_report.xlsx`);
-  };
+/*
+======================================================
+RETURN (ТІЛЬКИ ТУТ!)
+======================================================
+*/
 
   if (isLoading) {
     return (
@@ -281,21 +303,9 @@ export default function AddTaskReportModal({ onClose }) {
   ======================================================
   */
 
-  const handleSave = () => {
-    if (!gridResult) return;
 
-    updateReport(
-      {
-        taskId: task._id,
-        processedArea: gridResult.totalHectares,
-      },
-      {
-        onSuccess: () => {
-          onClose();
-        },
-      }
-    );
-  };
+
+  if (!task) return null;
 
   return (
     <Fade in>
@@ -379,123 +389,119 @@ export default function AddTaskReportModal({ onClose }) {
                 {gridResult && (
                   <Typography variant="body2" sx={{ mt: 1 }}>
                     <strong>Оброблено всього:</strong>{" "}
-                    {gridResult.totalHectares.toFixed(2)} га
+                    {Number(totalHectares || 0).toFixed(2)} га
                   </Typography>
                 )}
               </Box>
 
               {/* ASSIGNMENTS */}
-              {groupedByAssignment.map((machine) => (
-                <Accordion
-                  key={machine.assignmentId}
-                  defaultExpanded
-                  disableGutters
-                  elevation={0}
-                  sx={{
-                    mb: 2,
-                    borderRadius: 2,
-                    border: "1px solid",
-                    borderColor: "grey.300",
-                    "&:before": { display: "none" },
-                  }}
-                >
-                  <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                    <Box>
-                      <Typography fontWeight={600}>
-                        {machine.vehicle}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {machine.technique}
-                      </Typography>
-                    </Box>
-                  </AccordionSummary>
+              
+              {groupedByAssignment.map((machine) => {
+                const machineTotal = Object.values(gridResult?.days || {})
+                  .reduce((sum, day) => {
+                    return sum + (day.machines?.[machine.assignmentId]?.fullHectares || 0);
+                  }, 0);
 
-                  <AccordionDetails>
-                    {/* Виконавець */}
-                    <Box mb={2}>
-                      <Typography variant="body2" color="text.secondary">
-                        Виконавець
-                      </Typography>
-                      <Typography fontWeight={500}>
-                        {machine.personnel}
-                      </Typography>
-                    </Box>
-
-                    {/* Assignment summary */}
-                    {gridResult?.machines?.[machine.assignmentId] && (
-                      <Box
-                        sx={{
-                          mb: 3,
-                          p: 2,
-                          borderRadius: 2,
-                          bgcolor: "grey.100",
-                        }}
-                      >
-                        <Typography variant="body2">
-                          Пройдено:{" "}
-                          {/* {gridResult.machines[machine.assignmentId].fullHectares.toFixed(2)} га */}
-                          {gridResult?.machines?.[machine.assignmentId]?.fullHectares?.toFixed(2)}
+                return (
+                  <Accordion
+                    key={machine.assignmentId}
+                    defaultExpanded
+                    disableGutters
+                    elevation={0}
+                    sx={{
+                      mb: 2,
+                      borderRadius: 2,
+                      border: "1px solid",
+                      borderColor: "grey.300",
+                      "&:before": { display: "none" },
+                    }}
+                  >
+                    <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                      <Box>
+                        <Typography fontWeight={600}>
+                          {machine.vehicle}
                         </Typography>
-
-                        <Typography variant="body2" color="error.main">
-                          Перекриття:{" "}
-                          {gridResult.machines[machine.assignmentId].overlapHectares.toFixed(2)} га
-                        </Typography>
-
-                        <Typography variant="body2" color="success.main">
-                          Реально:{" "}
-                          {gridResult.machines[machine.assignmentId].netHectares.toFixed(2)} га
+                        <Typography variant="caption" color="text.secondary">
+                          {machine.technique}
                         </Typography>
                       </Box>
-                    )}
+                    </AccordionSummary>
 
-                    {/* Days */}
-                    {machine.days.map((day, index) => {
-                      const key = `${machine.assignmentId}_${day.date}`;
-                      const visible = visibilityState[key] ?? true;
-                      const dayStats =
-                        gridResult?.machines?.[machine.assignmentId]?.days?.[day.date];
+                    <AccordionDetails>
+                      {/* Виконавець */}
+                      <Box mb={2}>
+                        <Typography variant="body2" color="text.secondary">
+                          Виконавець
+                        </Typography>
+                        <Typography fontWeight={500}>
+                          {machine.personnel}
+                        </Typography>
+                      </Box>
 
-                      return (
+                      {/* ✅ Assignment summary (НОВИЙ) */}
+                      {machineTotal > 0 && (
                         <Box
-                          key={index}
                           sx={{
-                            p: 1.5,
-                            mb: 1.5,
+                            mb: 3,
+                            p: 2,
                             borderRadius: 2,
-                            bgcolor: "grey.50",
+                            bgcolor: "grey.100",
                           }}
                         >
-                          <Box
-                            display="flex"
-                            justifyContent="space-between"
-                            alignItems="center"
-                          >
-                            <Box>
-                              <Typography fontWeight={500}>
-                                {day.date}
-                              </Typography>
-
-                              {dayStats && (
-                                <Typography variant="caption">
-                                  Реально: {dayStats.netHectares.toFixed(2)} га
-                                </Typography>
-                              )}
-                            </Box>
-
-                            <Switch
-                              checked={visible}
-                              onChange={() =>
-                                toggleVisibility(machine.assignmentId, day.date)
-                              }
-                            />
-                          </Box>
+                          <Typography variant="body2">
+                            Пройдено: {machineTotal.toFixed(2)}
+                          </Typography>
                         </Box>
-                      );
-                    })}
-                  </AccordionDetails>
-                </Accordion>
-              ))}
+                      )}
+
+                      {/* Days */}
+                      {machine.days.map((day, index) => {
+                        const key = `${machine.assignmentId}_${day.date}`;
+                        const visible = visibilityState[key] ?? true;
+
+                        const dayStats =
+                          gridResult?.days?.[day.date]?.machines?.[machine.assignmentId];
+
+                        return (
+                          <Box
+                            key={index}
+                            sx={{
+                              p: 1.5,
+                              mb: 1.5,
+                              borderRadius: 2,
+                              bgcolor: "grey.50",
+                            }}
+                          >
+                            <Box
+                              display="flex"
+                              justifyContent="space-between"
+                              alignItems="center"
+                            >
+                              <Box>
+                                <Typography fontWeight={500}>
+                                  {day.date}
+                                </Typography>
+
+                                {/* ✅ завжди показує значення */}
+                                <Typography variant="caption">
+                                  {(dayStats?.netHectares ?? 0).toFixed(2)}
+                                </Typography>
+                              </Box>
+
+                              <Switch
+                                checked={visible}
+                                onChange={() =>
+                                  toggleVisibility(machine.assignmentId, day.date)
+                                }
+                              />
+                            </Box>
+                          </Box>
+                        );
+                      })}
+                    </AccordionDetails>
+                  </Accordion>
+                );
+              })}
             </Box>
 
             <Divider orientation="vertical" flexItem />

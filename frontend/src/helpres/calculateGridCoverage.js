@@ -1,317 +1,182 @@
 import * as turf from "@turf/turf";
 
+const CELL_SIZE = 3; // 🔥 можна 3 якщо треба точніше
+
+/*
+=====================================
+SAFE
+=====================================
+*/
+
+function safeBuffer(line, width) {
+  try {
+    return turf.buffer(line, width, { units: "meters" });
+  } catch {
+    return null;
+  }
+}
+
+function safeIntersect(a, b) {
+  try {
+    return turf.intersect(a, b);
+  } catch {
+    return null;
+  }
+}
+
+/*
+=====================================
+CELL POLYGON
+=====================================
+*/
+
+function createCellPolygon(x, y, size) {
+  return turf.polygon([[
+    [x, y],
+    [x + size, y],
+    [x + size, y + size],
+    [x, y + size],
+    [x, y],
+  ]]);
+}
+
+function getCellKey(x, y) {
+  return `${x}_${y}`;
+}
+
+/*
+=====================================
+MAIN
+=====================================
+*/
+
 export function calculateGridCoverageGrid({
   tracks,
   fieldPolygon,
-  cellSize = 3,
   implementWidthByAssignment = {},
-  coverageCorrection = 0.95
 }) {
-
-  if (!fieldPolygon || !tracks?.length) return null;
-
-  /*
-  =====================================
-  FIELD → MERCATOR
-  =====================================
-  */
-
-  const fieldMerc = turf.toMercator(fieldPolygon);
-  const polygonCoords = fieldMerc.geometry.coordinates;
-
-  const bbox = turf.bbox(fieldMerc);
-
-  const minX = bbox[0];
-  const minY = bbox[1];
-  const maxX = bbox[2];
-  const maxY = bbox[3];
-
-  const gridWidth = Math.ceil((maxX - minX) / cellSize);
-  const gridHeight = Math.ceil((maxY - minY) / cellSize);
-
-  const totalCells = gridWidth * gridHeight;
-  const cellArea = cellSize * cellSize;
-
-  /*
-  =====================================
-  GRID ARRAYS
-  =====================================
-  */
-
-  const processed = new Uint8Array(totalCells);
-  const mask = new Uint8Array(totalCells);
-
-  /*
-  =====================================
-  FIELD MASK
-  =====================================
-  */
-
-  for (let y = 0; y < gridHeight; y++) {
-    for (let x = 0; x < gridWidth; x++) {
-
-      const cx = minX + x * cellSize + cellSize / 2;
-      const cy = minY + y * cellSize + cellSize / 2;
-
-      if (pointInPolygon(cx, cy, polygonCoords)) {
-        mask[y * gridWidth + x] = 1;
-      }
-    }
+  if (!tracks?.length || !fieldPolygon) {
+    return {
+      days: {},
+      total: { fullHectares: 0, netHectares: 0 },
+    };
   }
 
+  const coveredCells = new Set();
+  let totalFull = 0;
+
+  const daysMap = {};
+
+  tracks.forEach((track) => {
+    if (!daysMap[track.date]) {
+      daysMap[track.date] = [];
+    }
+    daysMap[track.date].push(track);
+  });
+
+  const resultDays = {};
+
   /*
   =====================================
-  RESULT STRUCTURE
+  LOOP DAYS
   =====================================
   */
 
-  const resultByMachine = {};
+  for (const date of Object.keys(daysMap)) {
+    const dayTracks = daysMap[date];
 
-  const sortedTracks = [...tracks].sort((a, b) =>
-    a.date.localeCompare(b.date)
-  );
+    let dayFull = 0;
+    const newCells = new Set();
+    const machines = {};
 
-  /*
-  =====================================
-  PROCESS TRACKS
-  =====================================
-  */
+    for (const track of dayTracks) {
+      const { assignmentId, points } = track;
 
-  for (const track of sortedTracks) {
+      if (!points || points.length < 2) continue;
 
-    const { assignmentId, date, points } = track;
-    if (!points || points.length < 2) continue;
+      const width =
+        implementWidthByAssignment[assignmentId] || 5.6;
 
-    const implementWidth =
-      implementWidthByAssignment[assignmentId] || 5.6;
+      const line = turf.lineString(
+        points.map((p) => [p.longitude, p.latitude])
+      );
 
-    const halfWidth = implementWidth / 2;
-    const range = Math.ceil(halfWidth / cellSize);
+      let buffered = safeBuffer(line, width / 2);
+      if (!buffered) continue;
 
-    if (!resultByMachine[assignmentId]) {
-      resultByMachine[assignmentId] = {
-        fullCells: 0,
-        overlapCells: 0,
-        netCells: 0,
-        days: {}
-      };
-    }
+      const clipped = safeIntersect(buffered, fieldPolygon);
+      if (clipped) buffered = clipped;
 
-    if (!resultByMachine[assignmentId].days[date]) {
-      resultByMachine[assignmentId].days[date] = {
-        fullCells: 0,
-        overlapCells: 0,
-        netCells: 0
-      };
-    }
+      const area = turf.area(buffered) / 10000;
+      dayFull += area;
+      totalFull += area;
 
-    const machine = resultByMachine[assignmentId];
-    const day = machine.days[date];
+      if (!machines[assignmentId]) {
+        machines[assignmentId] = {
+          fullHectares: 0,
+          netHectares: 0,
+        };
+      }
 
-    const dayVisited = new Uint8Array(totalCells);
+      machines[assignmentId].fullHectares += area;
 
-    /*
-    GPS → MERCATOR
-    */
+      /*
+      ========= GRID =========
+      */
 
-    const mercPoints = points.map(p =>
-      turf.toMercator([p.longitude, p.latitude])
-    );
+      const bbox = turf.bbox(buffered);
 
-    for (let i = 0; i < mercPoints.length - 1; i++) {
+      const minX = Math.floor(bbox[0] / CELL_SIZE) * CELL_SIZE;
+      const minY = Math.floor(bbox[1] / CELL_SIZE) * CELL_SIZE;
+      const maxX = Math.ceil(bbox[2] / CELL_SIZE) * CELL_SIZE;
+      const maxY = Math.ceil(bbox[3] / CELL_SIZE) * CELL_SIZE;
 
-      const p1 = mercPoints[i];
-      const p2 = mercPoints[i + 1];
+      for (let x = minX; x <= maxX; x += CELL_SIZE) {
+        for (let y = minY; y <= maxY; y += CELL_SIZE) {
+          const key = getCellKey(x, y);
 
-      const dx = p2[0] - p1[0];
-      const dy = p2[1] - p1[1];
+          if (coveredCells.has(key)) continue;
 
-      const length = Math.sqrt(dx * dx + dy * dy);
-      if (length < 0.001) continue;
+          const cell = createCellPolygon(x, y, CELL_SIZE);
 
-      const steps = Math.ceil(length / cellSize);
+          try {
+            if (turf.booleanIntersects(cell, buffered)) {
+              newCells.add(key);
 
-      for (let s = 0; s <= steps; s++) {
-
-        const t = s / steps;
-
-        const x = p1[0] + dx * t;
-        const y = p1[1] + dy * t;
-
-        const gridX = Math.floor((x - minX) / cellSize);
-        const gridY = Math.floor((y - minY) / cellSize);
-
-        for (let ox = -range; ox <= range; ox++) {
-          for (let oy = -range; oy <= range; oy++) {
-
-            const cx = gridX + ox;
-            const cy = gridY + oy;
-
-            if (
-              cx < 0 ||
-              cy < 0 ||
-              cx >= gridWidth ||
-              cy >= gridHeight
-            ) continue;
-
-            const index = cy * gridWidth + cx;
-
-            if (!mask[index]) continue;
-
-            const centerX =
-              minX + cx * cellSize + cellSize / 2;
-
-            const centerY =
-              minY + cy * cellSize + cellSize / 2;
-
-            const dist = distancePointToSegment(
-              centerX,
-              centerY,
-              p1[0],
-              p1[1],
-              p2[0],
-              p2[1]
-            );
-
-            if (dist > halfWidth) continue;
-            if (dayVisited[index]) continue;
-
-            dayVisited[index] = 1;
-
-            machine.fullCells++;
-            day.fullCells++;
-
-            if (processed[index] === 0) {
-
-              processed[index] = 1;
-
-              machine.netCells++;
-              day.netCells++;
-
-            } else {
-
-              machine.overlapCells++;
-              day.overlapCells++;
-
+              machines[assignmentId].netHectares +=
+                (CELL_SIZE * CELL_SIZE) / 10000;
             }
-          }
+          } catch {}
         }
       }
     }
+
+    newCells.forEach((c) => coveredCells.add(c));
+
+    const cellArea = (CELL_SIZE * CELL_SIZE) / 10000;
+
+    resultDays[date] = {
+      fullHectares: dayFull,
+      netHectares: newCells.size * cellArea,
+      machines,
+    };
   }
 
   /*
   =====================================
-  TOTAL PROCESSED
+  TOTAL
   =====================================
   */
 
-  let processedCount = 0;
+  const cellArea = (CELL_SIZE * CELL_SIZE) / 10000;
 
-  for (let i = 0; i < processed.length; i++) {
-    if (processed[i]) processedCount++;
-  }
-
-  /*
-  =====================================
-  HECTARES
-  =====================================
-  */
-
-  for (const machine of Object.values(resultByMachine)) {
-
-    machine.fullHectares =
-      ((machine.fullCells * cellArea) / 10000) * coverageCorrection;
-
-    machine.overlapHectares =
-      ((machine.overlapCells * cellArea) / 10000) * coverageCorrection;
-
-    machine.netHectares =
-      ((machine.netCells * cellArea) / 10000) * coverageCorrection;
-
-    for (const day of Object.values(machine.days)) {
-
-      day.fullHectares =
-        ((day.fullCells * cellArea) / 10000) * coverageCorrection;
-
-      day.overlapHectares =
-        ((day.overlapCells * cellArea) / 10000) * coverageCorrection;
-
-      day.netHectares =
-        ((day.netCells * cellArea) / 10000) * coverageCorrection;
-    }
-  }
-
-  const totalHectares =
-    ((processedCount * cellArea) / 10000) * coverageCorrection;
+  const totalNet = coveredCells.size * cellArea;
 
   return {
-    totalHectares,
-    machines: resultByMachine
+    days: resultDays,
+    total: {
+      fullHectares: totalFull,
+      netHectares: totalNet,
+    },
   };
-}
-
-/*
-=====================================
-POINT IN POLYGON
-=====================================
-*/
-
-function pointInPolygon(x, y, polygon) {
-
-  let inside = false;
-  const ring = polygon[0];
-
-  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
-
-    const xi = ring[i][0], yi = ring[i][1];
-    const xj = ring[j][0], yj = ring[j][1];
-
-    const intersect =
-      ((yi > y) !== (yj > y)) &&
-      (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
-
-    if (intersect) inside = !inside;
-  }
-
-  return inside;
-}
-
-/*
-=====================================
-DISTANCE
-=====================================
-*/
-
-function distancePointToSegment(px, py, x1, y1, x2, y2) {
-
-  const A = px - x1;
-  const B = py - y1;
-  const C = x2 - x1;
-  const D = y2 - y1;
-
-  const dot = A * C + B * D;
-  const lenSq = C * C + D * D;
-
-  let param = -1;
-
-  if (lenSq !== 0) param = dot / lenSq;
-
-  let xx, yy;
-
-  if (param < 0) {
-    xx = x1;
-    yy = y1;
-  } else if (param > 1) {
-    xx = x2;
-    yy = y2;
-  } else {
-    xx = x1 + param * C;
-    yy = y1 + param * D;
-  }
-
-  const dx = px - xx;
-  const dy = py - yy;
-
-  return Math.sqrt(dx * dx + dy * dy);
 }
