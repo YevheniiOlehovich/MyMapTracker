@@ -195,12 +195,15 @@ const gridResult = useMemo(() => {
     return null;
   }
 
-  return calculateGridCoverageGrid({
+  const result = calculateGridCoverageGrid({
     tracks: filteredTracks,
     fieldPolygon: turfFieldPolygon,
-    cellSize: 2,
     implementWidthByAssignment,
   });
+
+  console.log("📊 GRID RESULT FROM HELPER:", result);
+
+  return result;
 }, [
   filteredTracks,
   turfFieldPolygon,
@@ -247,27 +250,37 @@ const handleExportExcel = () => {
   groupedByAssignment.forEach((machine) => {
     machine.days.forEach((day) => {
       const dayStats =
-          gridResult?.days?.[day.date]?.machines?.[machine.assignmentId];
+        gridResult?.days?.[day.date]?.machines?.[machine.assignmentId];
+
       rows.push({
         "Task №": task.order,
         Operation: task.operationId?.name,
         Field: task.fieldId?.properties?.name,
         "Field Area (ha)": task.fieldId?.properties?.area,
         "Processed Total (ha)": totalHectares,
+
         Vehicle: machine.vehicle,
         Technique: machine.technique,
         Operator: machine.personnel,
         Date: day.date,
-        "Net ha": dayStats?.netHectares ?? 0,
-        "Overlap ha": dayStats?.overlapHectares ?? 0,
+
+        // 🔥 ПЛОЩА
         "Full ha": dayStats?.fullHectares ?? 0,
+
+        // 🔥 ЧАС (НОВЕ)
+        "Start Time": dayStats?.arrivalTime ?? "",
+        "End Time": dayStats?.departureTime ?? "",
+        "Work Duration (h)": Number(dayStats?.workedHours ?? 0).toFixed(2),
       });
     });
   });
 
+  console.log("📤 EXPORT ROWS:", rows); // 🔥 лог перед експортом
+
   const worksheet = XLSX.utils.json_to_sheet(rows);
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, "Task Report");
+
   XLSX.writeFile(workbook, `task_${task?.order}_report.xlsx`);
 };
 
@@ -482,11 +495,24 @@ RETURN (ТІЛЬКИ ТУТ!)
                                   {day.date}
                                 </Typography>
 
-                                {/* ✅ завжди показує значення */}
                                 <Typography variant="caption">
-                                  {(dayStats?.netHectares ?? 0).toFixed(2)}
+                                  {Number(dayStats?.fullHectares ?? 0).toFixed(2)} га
                                 </Typography>
+
+                                {/* 🔥 НОВЕ */}
+                                {dayStats && (
+                                  <>
+                                    <Typography variant="caption" display="block">
+                                      ⏱ {dayStats.workedHours?.toFixed(2)} год
+                                    </Typography>
+
+                                    <Typography variant="caption" display="block">
+                                      🕒 {dayStats.arrivalTime} — {dayStats.departureTime}
+                                    </Typography>
+                                  </>
+                                )}
                               </Box>
+
 
                               <Switch
                                 checked={visible}

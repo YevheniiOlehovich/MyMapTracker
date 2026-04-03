@@ -1,10 +1,41 @@
 import * as turf from "@turf/turf";
 
-const CELL_SIZE = 3; // 🔥 можна 3 якщо треба точніше
+/*
+=====================================
+TIME UTILS
+=====================================
+*/
+
+function getTrackTimeInfo(points) {
+  if (!points || points.length < 2) {
+    return {
+      arrival: null,
+      departure: null,
+    };
+  }
+
+  const sorted = [...points].sort(
+    (a, b) => new Date(a.timestamp) - new Date(b.timestamp)
+  );
+
+  return {
+    arrival: new Date(sorted[0].timestamp),
+    departure: new Date(sorted[sorted.length - 1].timestamp),
+  };
+}
+
+function formatTime(date) {
+  if (!date) return null;
+
+  return date.toLocaleTimeString("uk-UA", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
 
 /*
 =====================================
-SAFE
+SAFE GEO
 =====================================
 */
 
@@ -26,26 +57,6 @@ function safeIntersect(a, b) {
 
 /*
 =====================================
-CELL POLYGON
-=====================================
-*/
-
-function createCellPolygon(x, y, size) {
-  return turf.polygon([[
-    [x, y],
-    [x + size, y],
-    [x + size, y + size],
-    [x, y + size],
-    [x, y],
-  ]]);
-}
-
-function getCellKey(x, y) {
-  return `${x}_${y}`;
-}
-
-/*
-=====================================
 MAIN
 =====================================
 */
@@ -55,24 +66,30 @@ export function calculateGridCoverageGrid({
   fieldPolygon,
   implementWidthByAssignment = {},
 }) {
+
+
   if (!tracks?.length || !fieldPolygon) {
-    return {
+    const empty = {
       days: {},
-      total: { fullHectares: 0, netHectares: 0 },
+      total: { fullHectares: 0, workedHours: 0 },
     };
+
+    return empty;
   }
 
-  const coveredCells = new Set();
   let totalFull = 0;
 
-  const daysMap = {};
+  /*
+  =====================================
+  GROUP BY DAY
+  =====================================
+  */
 
-  tracks.forEach((track) => {
-    if (!daysMap[track.date]) {
-      daysMap[track.date] = [];
-    }
-    daysMap[track.date].push(track);
-  });
+  const daysMap = tracks.reduce((acc, track) => {
+    if (!acc[track.date]) acc[track.date] = [];
+    acc[track.date].push(track);
+    return acc;
+  }, {});
 
   const resultDays = {};
 
@@ -82,17 +99,28 @@ export function calculateGridCoverageGrid({
   =====================================
   */
 
-  for (const date of Object.keys(daysMap)) {
+  for (const date in daysMap) {
     const dayTracks = daysMap[date];
 
     let dayFull = 0;
-    const newCells = new Set();
     const machines = {};
+
+
+    /*
+    ========= TRACK LOOP =========
+    */
 
     for (const track of dayTracks) {
       const { assignmentId, points } = track;
 
       if (!points || points.length < 2) continue;
+
+      const timeInfo = getTrackTimeInfo(points);
+
+
+      /*
+      ========= AREA =========
+      */
 
       const width =
         implementWidthByAssignment[assignmentId] || 5.6;
@@ -107,76 +135,93 @@ export function calculateGridCoverageGrid({
       const clipped = safeIntersect(buffered, fieldPolygon);
       if (clipped) buffered = clipped;
 
-      const area = turf.area(buffered) / 10000;
-      dayFull += area;
-      totalFull += area;
+      const areaHa = turf.area(buffered) / 10000;
+
+      dayFull += areaHa;
+      totalFull += areaHa;
+
+      /*
+      ========= MACHINE =========
+      */
 
       if (!machines[assignmentId]) {
         machines[assignmentId] = {
           fullHectares: 0,
-          netHectares: 0,
+          arrivalTime: null,
+          departureTime: null,
+          workedHours: 0,
         };
       }
 
-      machines[assignmentId].fullHectares += area;
+      const machine = machines[assignmentId];
 
-      /*
-      ========= GRID =========
-      */
+      machine.fullHectares += areaHa;
 
-      const bbox = turf.bbox(buffered);
+      // earliest arrival
+      if (!machine.arrivalTime || timeInfo.arrival < machine.arrivalTime) {
+        machine.arrivalTime = timeInfo.arrival;
+      }
 
-      const minX = Math.floor(bbox[0] / CELL_SIZE) * CELL_SIZE;
-      const minY = Math.floor(bbox[1] / CELL_SIZE) * CELL_SIZE;
-      const maxX = Math.ceil(bbox[2] / CELL_SIZE) * CELL_SIZE;
-      const maxY = Math.ceil(bbox[3] / CELL_SIZE) * CELL_SIZE;
-
-      for (let x = minX; x <= maxX; x += CELL_SIZE) {
-        for (let y = minY; y <= maxY; y += CELL_SIZE) {
-          const key = getCellKey(x, y);
-
-          if (coveredCells.has(key)) continue;
-
-          const cell = createCellPolygon(x, y, CELL_SIZE);
-
-          try {
-            if (turf.booleanIntersects(cell, buffered)) {
-              newCells.add(key);
-
-              machines[assignmentId].netHectares +=
-                (CELL_SIZE * CELL_SIZE) / 10000;
-            }
-          } catch {}
-        }
+      // latest departure
+      if (!machine.departureTime || timeInfo.departure > machine.departureTime) {
+        machine.departureTime = timeInfo.departure;
       }
     }
 
-    newCells.forEach((c) => coveredCells.add(c));
+    /*
+    ========= FINALIZE MACHINE TIME =========
+    */
 
-    const cellArea = (CELL_SIZE * CELL_SIZE) / 10000;
+    Object.values(machines).forEach((m) => {
+      if (m.arrivalTime && m.departureTime) {
+        const hours =
+          (m.departureTime - m.arrivalTime) / (1000 * 60 * 60);
+
+        m.workedHours = hours > 0 ? hours : 0;
+      } else {
+        m.workedHours = 0;
+      }
+
+      // format
+      m.arrivalTime = formatTime(m.arrivalTime);
+      m.departureTime = formatTime(m.departureTime);
+    });
+
+    /*
+    ========= DAY HOURS =========
+    */
+
+    const dayHours = Object.values(machines).reduce(
+      (sum, m) => sum + m.workedHours,
+      0
+    );
 
     resultDays[date] = {
       fullHectares: dayFull,
-      netHectares: newCells.size * cellArea,
+      workedHours: dayHours,
       machines,
     };
+
   }
 
   /*
   =====================================
-  TOTAL
+  FINAL
   =====================================
   */
 
-  const cellArea = (CELL_SIZE * CELL_SIZE) / 10000;
+  const totalHours = Object.values(resultDays).reduce(
+    (sum, d) => sum + d.workedHours,
+    0
+  );
 
-  const totalNet = coveredCells.size * cellArea;
-
-  return {
+  const finalResult = {
     days: resultDays,
     total: {
       fullHectares: totalFull,
-      netHectares: totalNet,
+      workedHours: totalHours,
     },
   };
+
+  return finalResult;
 }
