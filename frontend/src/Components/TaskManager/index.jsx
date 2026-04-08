@@ -53,7 +53,7 @@ export default function TasksTab() {
   // const handleEdit = (taskId) => dispatch(openAddTaskModal(taskId));
 
   const handleEdit = (taskId) => {
-    console.log("EDIT ID:", taskId);
+    // console.log("EDIT ID:", taskId);
     dispatch(openAddTaskModal(taskId));
   };
 
@@ -85,6 +85,11 @@ export default function TasksTab() {
         id: "order",
         header: "#",
       }),
+
+      columnHelper.accessor(
+        (row) => dayjs(row.startDate).format("DD.MM.YYYY"),
+        { id: "startDate", header: "Дата початку робіт" }
+      ),
 
       columnHelper.accessor((row) => row.groupId?.name || "—", {
         id: "group",
@@ -158,11 +163,6 @@ export default function TasksTab() {
       ),
 
 
-      columnHelper.accessor(
-        (row) => dayjs(row.createdAt).format("DD.MM.YYYY HH:mm"),
-        { id: "createdAt", header: "Дата створення" }
-      ),
-
       {
         id: "actions",
         header: "Дії",
@@ -204,6 +204,11 @@ export default function TasksTab() {
     data: tasks,
     columns,
     state: { globalFilter, sorting, expanded },
+    initialState: {
+      pagination: {
+        pageSize: 20,
+      },
+    },
     onGlobalFilterChange: setGlobalFilter,
     onSortingChange: setSorting,
     onExpandedChange: setExpanded,

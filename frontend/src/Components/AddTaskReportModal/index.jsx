@@ -24,11 +24,14 @@ import MapBlock from "../MapBlock";
 import { calculateGridCoverageGrid } from "../../helpres/calculateGridCoverage";
 import { useUpdateTaskReport } from "../../hooks/useTasksData";
 import * as XLSX from "xlsx"; 
+import dayjs from "dayjs";
 
 export default function AddTaskReportModal({ onClose }) {
   const task = useSelector(
     (state) => state.modals.editTaskReportData
   );
+
+  console.log(task)
 
   const { data: fieldsData = [], isLoading: fieldsLoading } =
     useFieldsData();
@@ -201,7 +204,7 @@ const gridResult = useMemo(() => {
     implementWidthByAssignment,
   });
 
-  console.log("📊 GRID RESULT FROM HELPER:", result);
+  // console.log("📊 GRID RESULT FROM HELPER:", result);
 
   return result;
 }, [
@@ -275,7 +278,7 @@ const handleExportExcel = () => {
     });
   });
 
-  console.log("📤 EXPORT ROWS:", rows); // 🔥 лог перед експортом
+  // console.log("📤 EXPORT ROWS:", rows); // 🔥 лог перед експортом
 
   const worksheet = XLSX.utils.json_to_sheet(rows);
   const workbook = XLSX.utils.book_new();
@@ -397,6 +400,11 @@ RETURN (ТІЛЬКИ ТУТ!)
 
                 <Typography variant="body2">
                   <strong>Площа:</strong> {task.fieldId?.properties?.area} га
+                </Typography>
+
+                <Typography variant="body2">
+                  <strong>Дата початку робіт:</strong>{" "}
+                  {dayjs(task.startDate).format("DD.MM.YYYY HH:mm")}
                 </Typography>
 
                 {gridResult && (
