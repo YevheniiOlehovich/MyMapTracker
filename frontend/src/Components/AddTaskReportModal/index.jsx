@@ -250,39 +250,41 @@ const handleExportExcel = () => {
 
   const rows = [];
 
-  groupedByAssignment.forEach((machine) => {
-    machine.days.forEach((day) => {
-      const dayStats =
-        gridResult?.days?.[day.date]?.machines?.[machine.assignmentId];
+  Object.entries(gridResult.days).forEach(([date, day]) => {
+    Object.entries(day.machines || {}).forEach(([assignmentId, machine]) => {
+
+      const assignment = task.assignments.find(a => a._id === assignmentId);
+
+      const operator = assignment?.personnelId
+        ? `${assignment.personnelId.lastName} ${assignment.personnelId.firstName}`
+        : "—";
 
       rows.push({
         "Task №": task.order,
-        Operation: task.operationId?.name,
-        Field: task.fieldId?.properties?.name,
+        "Operation": task.operationId?.name,
+        "Field": task.fieldId?.properties?.name,
         "Field Area (ha)": task.fieldId?.properties?.area,
         "Processed Total (ha)": totalHectares,
 
-        Vehicle: machine.vehicle,
-        Technique: machine.technique,
-        Operator: machine.personnel,
-        Date: day.date,
+        "Operator": operator,
+        "Vehicle": assignment?.vehicleId?.mark || "—",
+        "Technique": assignment?.techniqueId?.name || "—",
 
-        // 🔥 ПЛОЩА
-        "Full ha": dayStats?.fullHectares ?? 0,
+        "Date": date,
 
-        // 🔥 ЧАС (НОВЕ)
-        "Start Time": dayStats?.arrivalTime ?? "",
-        "End Time": dayStats?.departureTime ?? "",
-        "Work Duration (h)": Number(dayStats?.workedHours ?? 0).toFixed(2),
+        "Processed (ha)": machine.fullHectares ?? 0,
+        "Worked Hours": Number(machine.workedHours ?? 0).toFixed(2),
+
+        "Start Time": machine.arrivalTime || "",
+        "End Time": machine.departureTime || "",
       });
     });
   });
 
-  // console.log("📤 EXPORT ROWS:", rows); // 🔥 лог перед експортом
-
   const worksheet = XLSX.utils.json_to_sheet(rows);
   const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Task Report");
+
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Report");
 
   XLSX.writeFile(workbook, `task_${task?.order}_report.xlsx`);
 };
