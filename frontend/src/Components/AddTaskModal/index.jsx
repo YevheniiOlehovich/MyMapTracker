@@ -385,9 +385,12 @@ export default function AddTaskModal() {
                       label: v.mark || v.vehicleType,
                       value: v._id,
                       vehicleType: v.vehicleType,
+                      regNumber: v.regNumber || "",
                     }))}
                     value={item.vehicle}
-                    onChange={(_, v) => handleAssignmentChange(index, "vehicle", v)}
+                    onChange={(_, v) =>
+                      handleAssignmentChange(index, "vehicle", v)
+                    }
                     isOptionEqualToValue={isOptionEqualToValue}
                     getOptionDisabled={(option) =>
                       item.vehicle?.value === option.value
@@ -395,8 +398,17 @@ export default function AddTaskModal() {
                         : usedVehicleIds.includes(option.value) ||
                           !isVehicleAllowedByOperation(option.vehicleType)
                     }
+                    getOptionLabel={(option) =>
+                      `${option.label}${
+                        option.regNumber ? ` — ${option.regNumber}` : ""
+                      }`
+                    }
                     renderInput={(params) => (
-                      <TextField {...params} label="Транспорт" size="small" />
+                      <TextField
+                        {...params}
+                        label="Транспорт"
+                        size="small"
+                      />
                     )}
                   />
 

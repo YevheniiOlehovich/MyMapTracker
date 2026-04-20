@@ -71,12 +71,20 @@ export default function VehicleList({ open = true }) {
     });
   }, [vehicles, lastGpsPoints]);
 
-  const groupedByGroup = sortedVehicles.reduce((acc, vehicle) => {
-    const groupId = vehicle.groupId || "noGroup";
-    if (!acc[groupId]) acc[groupId] = [];
-    acc[groupId].push(vehicle);
-    return acc;
-  }, {});
+  // const groupedByGroup = sortedVehicles.reduce((acc, vehicle) => {
+  //   const groupId = vehicle.groupId || "noGroup";
+  //   if (!acc[groupId]) acc[groupId] = [];
+  //   acc[groupId].push(vehicle);
+  //   return acc;
+  // }, {});
+
+  const groupedByType = vehicleTypes.map(({ _id, name }) => ({
+    typeId: _id,
+    typeName: name,
+    vehicles: sortedVehicles.filter(
+      (vehicle) => vehicle.vehicleType === _id
+    ),
+  })).filter(group => group.vehicles.length > 0);
 
   const getGroupName = (groupId) => {
     const group = groups.find(g => g._id === groupId);
@@ -134,7 +142,7 @@ export default function VehicleList({ open = true }) {
         </Box>
 
         {/* Список */}
-        <Box sx={{ flex: 1, overflowY: "auto", p: 1 }}>
+        {/* <Box sx={{ flex: 1, overflowY: "auto", p: 1 }}>
           {Object.entries(groupedByGroup).map(([groupId, vehiclesInGroup]) => (
             <Box key={groupId}>
               <Typography sx={{ fontWeight: "bold", mt: 1, mb: 0.5 }}>
@@ -240,6 +248,144 @@ export default function VehicleList({ open = true }) {
                       );
                     })}
                   </Box>
+                );
+              })}
+            </Box>
+          ))}
+        </Box> */}
+        <Box sx={{ flex: 1, overflowY: "auto", p: 1 }}>
+          {groupedByType.map(({ typeId, typeName, vehicles }) => (
+            <Box key={typeId} sx={{ mb: 2 }}>
+              <Typography
+                sx={{
+                  fontWeight: "bold",
+                  mb: 1,
+                  fontSize: 13,
+                  opacity: 0.8,
+                }}
+              >
+                {typeName}
+              </Typography>
+
+              {vehicles.map((vehicle) => {
+                const status = getVehicleStatus(vehicle);
+
+                const imgSrc = vehicle.photoPath
+                  ? `/uploads/${vehicle.photoPath
+                      .replace(/\\/g, "/")
+                      .split("uploads/")[1]}`
+                  : QuestionIco;
+
+                return (
+                  <Paper
+                    key={vehicle._id}
+                    sx={{
+                      px: 1,
+                      py: 0.8,
+                      mb: 0.6,
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      bgcolor: "rgba(255,255,255,0.05)",
+                      borderRadius: 1,
+                      transition: "background 0.2s",
+                      "&:hover": {
+                        bgcolor: "rgba(25,118,210,0.2)",
+                      },
+                    }}
+                  >
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.8 }}>
+                      <Box
+                        sx={{
+                          width: 6,
+                          height: 6,
+                          borderRadius: "50%",
+                          bgcolor: getStatusColor(status),
+                        }}
+                      />
+
+                      <Box
+                        component="img"
+                        src={imgSrc}
+                        alt={vehicle.mark}
+                        sx={{
+                          width: 26,
+                          height: 26,
+                          borderRadius: 1,
+                          objectFit: "cover",
+                        }}
+                      />
+
+                      <Typography
+                        sx={{
+                          fontSize: 12,
+                          color: "white",
+                          display: "flex",
+                          flexDirection: "column",
+                          lineHeight: 1.2,
+                        }}
+                      >
+                        <span>{vehicle.mark}</span>
+
+                        {vehicle.regNumber && (
+                          <span
+                            style={{
+                              fontSize: 11,
+                              opacity: 0.7,
+                            }}
+                          >
+                            {vehicle.regNumber}
+                          </span>
+                        )}
+                      </Typography>
+                    </Box>
+
+                    <Box sx={{ display: "flex", gap: 0.3 }}>
+                      <Tooltip title="Показати локацію">
+                        <IconButton
+                          size="small"
+                          sx={{ p: 0.4 }}
+                          onClick={() => showVehicleLocation(vehicle)}
+                        >
+                          <LocationOnIcon
+                            sx={{ fontSize: 16, color: "white" }}
+                          />
+                        </IconButton>
+                      </Tooltip>
+
+                      <Tooltip title="Редагувати">
+                        <IconButton
+                          size="small"
+                          sx={{ p: 0.4 }}
+                          onClick={() => handleEdit(vehicle._id)}
+                        >
+                          <EditIcon
+                            sx={{ fontSize: 16, color: "white" }}
+                          />
+                        </IconButton>
+                      </Tooltip>
+
+                      <Tooltip
+                        title={isGuest ? "Недоступно для гостей" : "Видалити"}
+                      >
+                        <span>
+                          <IconButton
+                            size="small"
+                            sx={{ p: 0.4 }}
+                            onClick={() => handleDelete(vehicle._id)}
+                            disabled={isGuest}
+                          >
+                            <DeleteIcon
+                              sx={{
+                                fontSize: 16,
+                                color: isGuest ? "gray" : "white",
+                              }}
+                            />
+                          </IconButton>
+                        </span>
+                      </Tooltip>
+                    </Box>
+                  </Paper>
                 );
               })}
             </Box>
