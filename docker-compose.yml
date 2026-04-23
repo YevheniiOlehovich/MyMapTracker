@@ -49,6 +49,20 @@ services:
     networks:
       - app-network
 
+  weather-service2:
+    build: ./weather-service2
+    container_name: weather-service2
+    restart: always
+    env_file:
+      - ./weather-service2/src/.env
+    ports:
+      - "20320:20320"
+    depends_on:
+      - mongo
+    networks:
+      - app-network
+  
+
 
   # 🔹 Фронт тільки збирається  # 🔹 Фронт тільки збирається
   frontend:
