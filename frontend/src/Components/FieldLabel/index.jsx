@@ -15,33 +15,43 @@ function FieldLabel({ feature, zoomLevel, type, onOpenModal }) {
     if (!position) return null;
 
     const style = {
-        color: type === 'field' ? 'blue' : 'red', // Змінюємо колір для полів та геозон
+        color: type === 'field' ? 'blue' : 'red',
         weight: 2,
         opacity: 1,
         fillOpacity: 0.1
     };
 
     const handleMarkerClick = () => {
-        if (type === 'field') {
+        if (type === 'field' && onOpenModal) {
             onOpenModal(feature);
         }
     };
 
-    const labelContent = type === 'field'
-        ? `${feature.properties.name} (${feature.properties.calculated_area} га)`
-        : `${feature.properties.name} (${feature.properties.area} га)`; // Відображаємо назву та площу для геозон
+    const labelContent =
+        type === 'field'
+            ? `${feature?.properties?.name || 'Без назви'} (${feature?.properties?.calculated_area || 0} га)`
+            : `${feature?.properties?.name || 'Без номера'}`;
 
     return (
         <>
             <GeoJSON data={feature} style={style} />
-            <Marker position={position} icon={L.divIcon({
-                className: 'field-label',
-                html: zoomLevel >= 15
-                    ? `<div style="${Styles.fieldLabelContainer}">${labelContent}</div>`
-                    : `<div style="${Styles.fieldLabelDot}"></div>`,
-                iconSize: [0, 0]
-            })} eventHandlers={type === 'field' ? { click: handleMarkerClick } : {}}>
-            </Marker>
+
+            <Marker
+                position={position}
+                icon={L.divIcon({
+                    className: 'field-label',
+                    html:
+                        zoomLevel >= 15
+                            ? `<div style="${Styles.fieldLabelContainer}">${labelContent}</div>`
+                            : `<div style="${Styles.fieldLabelDot}"></div>`,
+                    iconSize: [0, 0]
+                })}
+                eventHandlers={
+                    type === 'field'
+                        ? { click: handleMarkerClick }
+                        : {}
+                }
+            />
         </>
     );
 }

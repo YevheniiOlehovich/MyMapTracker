@@ -9,6 +9,8 @@ import currentLocationReducer from './currentLocationSlice';
 import activeFieldReducer from './activeFieldSlice'; // Імпортуємо новий редюсер
 import userReducer from './userSlice'; // Імпортуємо userSlice
 
+import selectedCadastreReducer from "./selectedCadastreSlice";
+
 const store = configureStore({
     reducer: {
         // gps: gpsReducer, 
@@ -22,7 +24,8 @@ const store = configureStore({
         mapCenter: mapCenterSliceReducer,
         currentLocation: currentLocationReducer,
         activeField: activeFieldReducer, // Додаємо новий редюсер
-        user: userReducer
+        user: userReducer,
+        selectedCadastre: selectedCadastreReducer,
     },
 });
 

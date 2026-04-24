@@ -11,7 +11,7 @@ const Styles = {
     `,
     fieldLabelContainer: `
         background: white;
-        padding: 5px 10px;
+        padding: 5px;
         display: flex;
         justify-content: center;
         align-items: center;
@@ -19,7 +19,7 @@ const Styles = {
         font-size: 12px;
         font-weight: bold;
         text-align: center;
-        width: 100px;
+        width: 140px;
     `,
     fieldLabelDot: `
         background: blue;
@@ -36,3 +36,4 @@ const Styles = {
 };
 
 export default Styles;
+
