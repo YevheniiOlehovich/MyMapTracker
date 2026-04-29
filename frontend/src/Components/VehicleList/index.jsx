@@ -1,22 +1,29 @@
 import { useState, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { openAddVehicleModal } from "../../store/modalSlice";
-import { useVehiclesData, useDeleteVehicle } from "../../hooks/useVehiclesData";
+import {
+  useVehiclesData,
+  useDeleteVehicle,
+} from "../../hooks/useVehiclesData";
 import { useLastGpsByDate } from "../../hooks/useLastGpsByDate";
 import { useGroupsData } from "../../hooks/useGroupsData";
 import { setMapCenter } from "../../store/mapCenterSlice";
+
 import {
   Box,
   Paper,
   Typography,
   IconButton,
   Tooltip,
-  Slide
+  Slide,
+  TextField,
 } from "@mui/material";
+
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
+import SearchIcon from "@mui/icons-material/Search";
 
 import QuestionIco from "../../assets/ico/10965421.webp";
 import { vehicleTypes } from "../../helpres";
@@ -24,31 +31,59 @@ import { vehicleTypes } from "../../helpres";
 export default function VehicleList({ open = true }) {
   const dispatch = useDispatch();
 
-  const { data: vehicles = [], isLoading } = useVehiclesData();
-  const { data: lastGpsPoints = [] } = useLastGpsByDate();
-  const { data: groups = [] } = useGroupsData();
+  const [search, setSearch] = useState("");
+
+  const { data: vehicles = [], isLoading } =
+    useVehiclesData();
+
+  const { data: lastGpsPoints = [] } =
+    useLastGpsByDate();
+
+  const { data: groups = [] } =
+    useGroupsData();
 
   const deleteVehicle = useDeleteVehicle();
 
-  const role = useSelector((state) => state.user.role);
+  const role = useSelector(
+    (state) => state.user.role
+  );
+
   const isGuest = role === "guest";
 
-  const handleAdd = () => dispatch(openAddVehicleModal());
-  const handleEdit = (id) => dispatch(openAddVehicleModal({ vehicleId: id }));
-  const handleDelete = (id) => deleteVehicle.mutate(id);
+  const handleAdd = () =>
+    dispatch(openAddVehicleModal());
 
-  // ---------------------------------------------------
-  // 🧠 Статус техніки
-  // ---------------------------------------------------
+  const handleEdit = (id) =>
+    dispatch(
+      openAddVehicleModal({
+        vehicleId: id,
+      })
+    );
+
+  const handleDelete = (id) =>
+    deleteVehicle.mutate(id);
+
+  /*
+  ======================================================
+  🧠 СТАТУС ТЕХНІКИ
+  ======================================================
+  */
+
   const getVehicleStatus = (vehicle) => {
-    const point = lastGpsPoints.find(p => p.imei === vehicle.imei);
-    if (!point) return 3; // 🔴 Offline
+    const point = lastGpsPoints.find(
+      (p) => p.imei === vehicle.imei
+    );
+
+    if (!point) return 3; // offline
 
     const diffMinutes =
-      (Date.now() - new Date(point.timestamp).getTime()) / 60000;
+      (Date.now() -
+        new Date(point.timestamp).getTime()) /
+      60000;
 
-    if (diffMinutes <= 5) return 1; // 🟢 Online
-    return 2; // 🟡 Idle
+    if (diffMinutes <= 5) return 1; // online
+
+    return 2; // idle
   };
 
   const getStatusColor = (status) => {
@@ -57,51 +92,119 @@ export default function VehicleList({ open = true }) {
     return "#f44336";
   };
 
-  // ---------------------------------------------------
-  // 🔥 Сортування
-  // ---------------------------------------------------
-  const sortedVehicles = useMemo(() => {
-    return [...vehicles].sort((a, b) => {
-      const statusA = getVehicleStatus(a);
-      const statusB = getVehicleStatus(b);
+  /*
+  ======================================================
+  🔍 ПОШУК ПО НАЗВІ / РЕЄСТРАЦІЇ
+  ======================================================
+  */
 
-      if (statusA !== statusB) return statusA - statusB;
+  const filteredVehicles = useMemo(() => {
+    if (!search.trim()) return vehicles;
 
-      return a.mark.localeCompare(b.mark);
+    const searchValue = search.toLowerCase();
+
+    return vehicles.filter((vehicle) => {
+      const mark =
+        vehicle?.mark?.toLowerCase() || "";
+
+      const regNumber =
+        vehicle?.regNumber?.toLowerCase() || "";
+
+      return (
+        mark.includes(searchValue) ||
+        regNumber.includes(searchValue)
+      );
     });
-  }, [vehicles, lastGpsPoints]);
+  }, [vehicles, search]);
 
-  // const groupedByGroup = sortedVehicles.reduce((acc, vehicle) => {
-  //   const groupId = vehicle.groupId || "noGroup";
-  //   if (!acc[groupId]) acc[groupId] = [];
-  //   acc[groupId].push(vehicle);
-  //   return acc;
-  // }, {});
+  /*
+  ======================================================
+  🔥 СОРТУВАННЯ
+  ======================================================
+  */
 
-  const groupedByType = vehicleTypes.map(({ _id, name }) => ({
-    typeId: _id,
-    typeName: name,
-    vehicles: sortedVehicles.filter(
-      (vehicle) => vehicle.vehicleType === _id
-    ),
-  })).filter(group => group.vehicles.length > 0);
+  const sortedVehicles = useMemo(() => {
+    return [...filteredVehicles].sort(
+      (a, b) => {
+        const statusA = getVehicleStatus(a);
+        const statusB = getVehicleStatus(b);
 
-  const getGroupName = (groupId) => {
-    const group = groups.find(g => g._id === groupId);
-    return group ? group.name : "Без групи";
-  };
+        if (statusA !== statusB) {
+          return statusA - statusB;
+        }
+
+        return a.mark.localeCompare(b.mark);
+      }
+    );
+  }, [filteredVehicles, lastGpsPoints]);
+
+  /*
+  ======================================================
+  📦 ГРУПУВАННЯ ПО ТИПУ
+  ======================================================
+  */
+
+  const groupedByType = vehicleTypes
+    .map(({ _id, name }) => ({
+      typeId: _id,
+      typeName: name,
+      vehicles: sortedVehicles.filter(
+        (vehicle) =>
+          vehicle.vehicleType === _id
+      ),
+    }))
+    .filter(
+      (group) => group.vehicles.length > 0
+    );
+
+  /*
+  ======================================================
+  📍 ПОКАЗАТИ ЛОКАЦІЮ
+  ======================================================
+  */
 
   const showVehicleLocation = (vehicle) => {
-    const point = lastGpsPoints.find(p => p.imei === vehicle.imei);
+    const point = lastGpsPoints.find(
+      (p) => p.imei === vehicle.imei
+    );
+
     if (point) {
-      dispatch(setMapCenter({ lat: point.latitude, lng: point.longitude }));
+      dispatch(
+        setMapCenter({
+          lat: point.latitude,
+          lng: point.longitude,
+        })
+      );
     }
   };
 
-  if (isLoading) return <Typography sx={{ p: 2 }}>Завантаження техніки...</Typography>;
+  /*
+  ======================================================
+  LOADING
+  ======================================================
+  */
+
+  if (isLoading) {
+    return (
+      <Typography sx={{ p: 2 }}>
+        Завантаження техніки...
+      </Typography>
+    );
+  }
+
+  /*
+  ======================================================
+  RENDER
+  ======================================================
+  */
 
   return (
-    <Slide direction="right" in={open} mountOnEnter unmountOnExit>
+    <Slide
+      direction="right"
+      in={open}
+      mountOnEnter
+      unmountOnExit
+    >
       <Paper
         elevation={3}
         sx={{
@@ -118,278 +221,315 @@ export default function VehicleList({ open = true }) {
           flexDirection: "column",
         }}
       >
-        {/* Заголовок */}
+        {/* HEADER */}
         <Box
           sx={{
             display: "flex",
-            justifyContent: "space-between",
+            justifyContent:
+              "space-between",
             alignItems: "center",
             px: 1,
             py: 0.5,
-            borderBottom: "1px solid rgba(255,255,255,0.2)",
+            borderBottom:
+              "1px solid rgba(255,255,255,0.2)",
           }}
         >
-          <Typography variant="subtitle1" fontWeight="bold">
+          <Typography
+            variant="subtitle1"
+            fontWeight="bold"
+          >
             Транспорт
           </Typography>
-          <Tooltip title={isGuest ? "Недоступно для гостей" : "Додати техніку"}>
+
+          <Tooltip
+            title={
+              isGuest
+                ? "Недоступно для гостей"
+                : "Додати техніку"
+            }
+          >
             <span>
-              <IconButton size="small" onClick={handleAdd} disabled={isGuest}>
-                <AddIcon fontSize="small" sx={{ color: isGuest ? "gray" : "white" }} />
+              <IconButton
+                size="small"
+                onClick={handleAdd}
+                disabled={isGuest}
+              >
+                <AddIcon
+                  fontSize="small"
+                  sx={{
+                    color: isGuest
+                      ? "gray"
+                      : "white",
+                  }}
+                />
               </IconButton>
             </span>
           </Tooltip>
         </Box>
 
-        {/* Список */}
-        {/* <Box sx={{ flex: 1, overflowY: "auto", p: 1 }}>
-          {Object.entries(groupedByGroup).map(([groupId, vehiclesInGroup]) => (
-            <Box key={groupId}>
-              <Typography sx={{ fontWeight: "bold", mt: 1, mb: 0.5 }}>
-                {getGroupName(groupId)}
-              </Typography>
+        {/* SEARCH */}
+        <Box sx={{ p: 1 }}>
+          <TextField
+            fullWidth
+            size="small"
+            placeholder="Пошук по назві або номеру..."
+            value={search}
+            onChange={(e) =>
+              setSearch(e.target.value)
+            }
+            InputProps={{
+              startAdornment: (
+                <SearchIcon
+                  sx={{
+                    mr: 1,
+                    color: "gray",
+                  }}
+                />
+              ),
+            }}
+            sx={{
+              bgcolor: "white",
+              borderRadius: 1,
+            }}
+          />
+        </Box>
 
-              {vehicleTypes.map(({ _id: typeId, name: typeName }) => {
-                const vehiclesOfType = vehiclesInGroup.filter(v => v.vehicleType === typeId);
-                if (!vehiclesOfType.length) return null;
+        {/* LIST */}
+        <Box
+          sx={{
+            flex: 1,
+            overflowY: "auto",
+            p: 1,
+          }}
+        >
+          {groupedByType.length === 0 && (
+            <Typography
+              sx={{
+                fontSize: 12,
+                opacity: 0.7,
+              }}
+            >
+              Техніку не знайдено
+            </Typography>
+          )}
 
-                return (
-                  <Box key={typeId} sx={{ mb: 1 }}>
-                    <Typography
+          {groupedByType.map(
+            ({
+              typeId,
+              typeName,
+              vehicles,
+            }) => (
+              <Box
+                key={typeId}
+                sx={{ mb: 2 }}
+              >
+                <Typography
+                  sx={{
+                    fontWeight: "bold",
+                    mb: 1,
+                    fontSize: 13,
+                    opacity: 0.8,
+                  }}
+                >
+                  {typeName}
+                </Typography>
+
+                {vehicles.map((vehicle) => {
+                  const status =
+                    getVehicleStatus(
+                      vehicle
+                    );
+
+                  const imgSrc =
+                    vehicle.photoPath
+                      ? `/uploads/${vehicle.photoPath
+                          .replace(
+                            /\\/g,
+                            "/"
+                          )
+                          .split(
+                            "uploads/"
+                          )[1]}`
+                      : QuestionIco;
+
+                  return (
+                    <Paper
+                      key={vehicle._id}
                       sx={{
-                        fontStyle: "italic",
-                        mb: 0.3,
-                        fontSize: 12,
-                        opacity: 0.7,
+                        px: 1,
+                        py: 0.8,
+                        mb: 0.6,
+                        display: "flex",
+                        justifyContent:
+                          "space-between",
+                        alignItems:
+                          "center",
+                        bgcolor:
+                          "rgba(255,255,255,0.05)",
+                        borderRadius: 1,
+                        transition:
+                          "background 0.2s",
+                        "&:hover": {
+                          bgcolor:
+                            "rgba(25,118,210,0.2)",
+                        },
                       }}
                     >
-                      {typeName}
-                    </Typography>
-
-                    {vehiclesOfType.map(vehicle => {
-                      const status = getVehicleStatus(vehicle);
-                      const imgSrc = vehicle.photoPath
-                        ? `/uploads/${vehicle.photoPath.replace(/\\/g, '/').split('uploads/')[1]}`
-                        : QuestionIco;
-
-                      return (
-                        <Paper
-                          key={vehicle._id}
-                          sx={{
-                            px: 1,
-                            py: 0.8,
-                            mb: 0.6,
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                            bgcolor: "rgba(255,255,255,0.05)",
-                            borderRadius: 1,
-                            transition: "background 0.2s",
-                            "&:hover": {
-                              bgcolor: "rgba(25,118,210,0.2)",
-                            },
-                          }}
-                        >                        
-                          <Box sx={{ display: "flex", alignItems: "center", gap: 0.8 }}>
-                            <Box
-                              sx={{
-                                width: 6,
-                                height: 6,
-                                borderRadius: "50%",
-                                bgcolor: getStatusColor(status),
-                              }}
-                            />
-
-                            <Box
-                              component="img"
-                              src={imgSrc}
-                              alt={vehicle.mark}
-                              sx={{
-                                width: 26,
-                                height: 26,
-                                borderRadius: 1,
-                                objectFit: "cover",
-                              }}
-                            />
-
-                            <Typography sx={{ fontSize: 12, color: "white" }}>
-                              {vehicle.mark}
-                            </Typography>
-                          </Box>
-
-
-                          <Box sx={{ display: "flex", gap: 0.3 }}>
-                            <Tooltip title="Показати локацію">
-                              <IconButton size="small" sx={{ p: 0.4 }} onClick={() => showVehicleLocation(vehicle)}>
-                                <LocationOnIcon sx={{ fontSize: 16, color: "white" }} />
-                              </IconButton>
-                            </Tooltip>
-
-                            <Tooltip title="Редагувати">
-                              <IconButton size="small" sx={{ p: 0.4 }} onClick={() => handleEdit(vehicle._id)}>
-                                <EditIcon sx={{ fontSize: 16, color: "white" }} />
-                              </IconButton>
-                            </Tooltip>
-
-                            <Tooltip title={isGuest ? "Недоступно для гостей" : "Видалити"}>
-                              <span>
-                                <IconButton
-                                  size="small"
-                                  sx={{ p: 0.4 }}
-                                  onClick={() => handleDelete(vehicle._id)}
-                                  disabled={isGuest}
-                                >
-                                  <DeleteIcon sx={{ fontSize: 16, color: isGuest ? "gray" : "white" }} />
-                                </IconButton>
-                              </span>
-                            </Tooltip>
-                          </Box>
-                        </Paper>
-                      );
-                    })}
-                  </Box>
-                );
-              })}
-            </Box>
-          ))}
-        </Box> */}
-        <Box sx={{ flex: 1, overflowY: "auto", p: 1 }}>
-          {groupedByType.map(({ typeId, typeName, vehicles }) => (
-            <Box key={typeId} sx={{ mb: 2 }}>
-              <Typography
-                sx={{
-                  fontWeight: "bold",
-                  mb: 1,
-                  fontSize: 13,
-                  opacity: 0.8,
-                }}
-              >
-                {typeName}
-              </Typography>
-
-              {vehicles.map((vehicle) => {
-                const status = getVehicleStatus(vehicle);
-
-                const imgSrc = vehicle.photoPath
-                  ? `/uploads/${vehicle.photoPath
-                      .replace(/\\/g, "/")
-                      .split("uploads/")[1]}`
-                  : QuestionIco;
-
-                return (
-                  <Paper
-                    key={vehicle._id}
-                    sx={{
-                      px: 1,
-                      py: 0.8,
-                      mb: 0.6,
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      bgcolor: "rgba(255,255,255,0.05)",
-                      borderRadius: 1,
-                      transition: "background 0.2s",
-                      "&:hover": {
-                        bgcolor: "rgba(25,118,210,0.2)",
-                      },
-                    }}
-                  >
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.8 }}>
                       <Box
                         sx={{
-                          width: 6,
-                          height: 6,
-                          borderRadius: "50%",
-                          bgcolor: getStatusColor(status),
-                        }}
-                      />
-
-                      <Box
-                        component="img"
-                        src={imgSrc}
-                        alt={vehicle.mark}
-                        sx={{
-                          width: 26,
-                          height: 26,
-                          borderRadius: 1,
-                          objectFit: "cover",
-                        }}
-                      />
-
-                      <Typography
-                        sx={{
-                          fontSize: 12,
-                          color: "white",
                           display: "flex",
-                          flexDirection: "column",
-                          lineHeight: 1.2,
+                          alignItems:
+                            "center",
+                          gap: 0.8,
                         }}
                       >
-                        <span>{vehicle.mark}</span>
+                        <Box
+                          sx={{
+                            width: 6,
+                            height: 6,
+                            borderRadius:
+                              "50%",
+                            bgcolor:
+                              getStatusColor(
+                                status
+                              ),
+                          }}
+                        />
 
-                        {vehicle.regNumber && (
-                          <span
-                            style={{
-                              fontSize: 11,
-                              opacity: 0.7,
-                            }}
-                          >
-                            {vehicle.regNumber}
+                        <Box
+                          component="img"
+                          src={imgSrc}
+                          alt={vehicle.mark}
+                          sx={{
+                            width: 26,
+                            height: 26,
+                            borderRadius: 1,
+                            objectFit:
+                              "cover",
+                          }}
+                        />
+
+                        <Typography
+                          sx={{
+                            fontSize: 12,
+                            color: "white",
+                            display:
+                              "flex",
+                            flexDirection:
+                              "column",
+                            lineHeight: 1.2,
+                          }}
+                        >
+                          <span>
+                            {vehicle.mark}
                           </span>
-                        )}
-                      </Typography>
-                    </Box>
 
-                    <Box sx={{ display: "flex", gap: 0.3 }}>
-                      <Tooltip title="Показати локацію">
-                        <IconButton
-                          size="small"
-                          sx={{ p: 0.4 }}
-                          onClick={() => showVehicleLocation(vehicle)}
-                        >
-                          <LocationOnIcon
-                            sx={{ fontSize: 16, color: "white" }}
-                          />
-                        </IconButton>
-                      </Tooltip>
+                          {vehicle.regNumber && (
+                            <span
+                              style={{
+                                fontSize: 11,
+                                opacity: 0.7,
+                              }}
+                            >
+                              {
+                                vehicle.regNumber
+                              }
+                            </span>
+                          )}
+                        </Typography>
+                      </Box>
 
-                      <Tooltip title="Редагувати">
-                        <IconButton
-                          size="small"
-                          sx={{ p: 0.4 }}
-                          onClick={() => handleEdit(vehicle._id)}
-                        >
-                          <EditIcon
-                            sx={{ fontSize: 16, color: "white" }}
-                          />
-                        </IconButton>
-                      </Tooltip>
-
-                      <Tooltip
-                        title={isGuest ? "Недоступно для гостей" : "Видалити"}
+                      <Box
+                        sx={{
+                          display: "flex",
+                          gap: 0.3,
+                        }}
                       >
-                        <span>
+                        <Tooltip title="Показати локацію">
                           <IconButton
                             size="small"
-                            sx={{ p: 0.4 }}
-                            onClick={() => handleDelete(vehicle._id)}
-                            disabled={isGuest}
+                            sx={{
+                              p: 0.4,
+                            }}
+                            onClick={() =>
+                              showVehicleLocation(
+                                vehicle
+                              )
+                            }
                           >
-                            <DeleteIcon
+                            <LocationOnIcon
                               sx={{
                                 fontSize: 16,
-                                color: isGuest ? "gray" : "white",
+                                color:
+                                  "white",
                               }}
                             />
                           </IconButton>
-                        </span>
-                      </Tooltip>
-                    </Box>
-                  </Paper>
-                );
-              })}
-            </Box>
-          ))}
+                        </Tooltip>
+
+                        <Tooltip title="Редагувати">
+                          <IconButton
+                            size="small"
+                            sx={{
+                              p: 0.4,
+                            }}
+                            onClick={() =>
+                              handleEdit(
+                                vehicle._id
+                              )
+                            }
+                          >
+                            <EditIcon
+                              sx={{
+                                fontSize: 16,
+                                color:
+                                  "white",
+                              }}
+                            />
+                          </IconButton>
+                        </Tooltip>
+
+                        <Tooltip
+                          title={
+                            isGuest
+                              ? "Недоступно для гостей"
+                              : "Видалити"
+                          }
+                        >
+                          <span>
+                            <IconButton
+                              size="small"
+                              sx={{
+                                p: 0.4,
+                              }}
+                              onClick={() =>
+                                handleDelete(
+                                  vehicle._id
+                                )
+                              }
+                              disabled={
+                                isGuest
+                              }
+                            >
+                              <DeleteIcon
+                                sx={{
+                                  fontSize: 16,
+                                  color:
+                                    isGuest
+                                      ? "gray"
+                                      : "white",
+                                }}
+                              />
+                            </IconButton>
+                          </span>
+                        </Tooltip>
+                      </Box>
+                    </Paper>
+                  );
+                })}
+              </Box>
+            )
+          )}
         </Box>
       </Paper>
     </Slide>

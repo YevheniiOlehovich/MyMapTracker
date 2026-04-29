@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect } from "react";
+import React, { useMemo, useEffect, useRef } from "react";
 import {
   MapContainer,
   TileLayer,
@@ -10,22 +10,47 @@ import {
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import * as turf from "@turf/turf";
+
+import MeasureLayer from "../MeasureLayer";
 import { center as defaultCenter } from "../../helpres";
 
 const TRACK_COLOR = "#4caf50";
 
+/*
+======================================================
+CENTER MAP ONLY ONCE
+======================================================
+*/
+
 const CenterMap = ({ fieldCoords }) => {
   const map = useMap();
+  const hasCenteredRef = useRef(false);
 
   useEffect(() => {
-    if (fieldCoords?.length) {
-      const bounds = L.latLngBounds(fieldCoords);
-      map.fitBounds(bounds, { padding: [30, 30] });
+    if (
+      !map ||
+      !fieldCoords?.length ||
+      hasCenteredRef.current
+    ) {
+      return;
     }
+
+    const bounds = L.latLngBounds(fieldCoords);
+    map.fitBounds(bounds, {
+      padding: [30, 30],
+    });
+
+    hasCenteredRef.current = true;
   }, [fieldCoords, map]);
 
   return null;
 };
+
+/*
+======================================================
+MAP BLOCK
+======================================================
+*/
 
 const MapBlock = ({
   field,
@@ -34,7 +59,6 @@ const MapBlock = ({
   height = "400px",
   zoom = 15,
 }) => {
-
   /*
   ======================================================
   1️⃣ ЗНАХОДИМО ПОЛЕ
@@ -43,7 +67,10 @@ const MapBlock = ({
 
   const resolvedField = useMemo(() => {
     if (!field?.value) return null;
-    return fieldsList.find((f) => f._id === field.value) || null;
+
+    return (
+      fieldsList.find((f) => f._id === field.value) || null
+    );
   }, [field, fieldsList]);
 
   /*
@@ -61,6 +88,7 @@ const MapBlock = ({
         ([lng, lat]) => [lat, lng]
       );
     }
+
     return null;
   }, [resolvedField]);
 
@@ -71,13 +99,20 @@ const MapBlock = ({
   */
 
   const turfPolygon = useMemo(() => {
-    if (!resolvedField?.geometry?.coordinates?.length) return null;
-    return turf.polygon(resolvedField.geometry.coordinates);
+    if (
+      !resolvedField?.geometry?.coordinates?.length
+    ) {
+      return null;
+    }
+
+    return turf.polygon(
+      resolvedField.geometry.coordinates
+    );
   }, [resolvedField]);
 
   /*
   ======================================================
-  4️⃣ РОЗБИВАЄМО ТРЕК НА СЕГМЕНТИ В ПОЛІ
+  4️⃣ РОЗБИВАЄМО GPS ТРЕКИ НА СЕГМЕНТИ В ПОЛІ
   ======================================================
   */
 
@@ -89,16 +124,30 @@ const MapBlock = ({
     gpsTracks.forEach((track) => {
       let currentSegment = [];
 
-      track.points.forEach((pt) => {
-        if (!pt.latitude || !pt.longitude) return;
+      track.points?.forEach((pt) => {
+        if (
+          pt.latitude == null ||
+          pt.longitude == null
+        ) {
+          return;
+        }
 
-        const isInside = turf.booleanPointInPolygon(
-          [pt.longitude, pt.latitude],
-          turfPolygon
-        );
+        const point = turf.point([
+          pt.longitude,
+          pt.latitude,
+        ]);
+
+        const isInside =
+          turf.booleanPointInPolygon(
+            point,
+            turfPolygon
+          );
 
         if (isInside) {
-          currentSegment.push([pt.latitude, pt.longitude]);
+          currentSegment.push([
+            pt.latitude,
+            pt.longitude,
+          ]);
         } else {
           if (currentSegment.length >= 2) {
             segments.push({
@@ -106,6 +155,7 @@ const MapBlock = ({
               coords: currentSegment,
             });
           }
+
           currentSegment = [];
         }
       });
@@ -132,22 +182,36 @@ const MapBlock = ({
       <MapContainer
         center={defaultCenter}
         zoom={zoom}
-        style={{ height: "100%", width: "100%", borderRadius: 8 }}
+        style={{
+          height: "100%",
+          width: "100%",
+          borderRadius: 8,
+        }}
         scrollWheelZoom
         attributionControl={false}
       >
+        {/* BASE MAP */}
         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
 
-        {/* ПОЛЕ */}
+        {/* MEASURE TOOL */}
+        <MeasureLayer />
+
+        {/* FIELD POLYGON */}
         {fieldCoords && (
-          <Polygon positions={fieldCoords} pathOptions={{ color: "blue" }}>
+          <Polygon
+            positions={fieldCoords}
+            pathOptions={{
+              color: "blue",
+              weight: 2,
+            }}
+          >
             <Tooltip permanent>
               {resolvedField?.properties?.name}
             </Tooltip>
           </Polygon>
         )}
 
-        {/* СЕГМЕНТИ В ПОЛІ */}
+        {/* GPS TRACK SEGMENTS INSIDE FIELD */}
         {trackSegments.map((segment) => (
           <Polyline
             key={segment.key}
@@ -160,10 +224,11 @@ const MapBlock = ({
           />
         ))}
 
+        {/* AUTO CENTER */}
         <CenterMap fieldCoords={fieldCoords} />
       </MapContainer>
     </div>
   );
 };
 
-export default MapBlock; 
+export default MapBlock;
