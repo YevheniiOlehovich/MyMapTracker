@@ -122,8 +122,12 @@ export function calculateGridCoverageGrid({
       ========= AREA =========
       */
 
-      const width =
-        implementWidthByAssignment[assignmentId] || 5.6;
+      // const width =
+      //   implementWidthByAssignment[assignmentId] || 5.6;
+
+      const rawWidth = implementWidthByAssignment[assignmentId];
+
+      const width = rawWidth ?? 5.6;
 
       const line = turf.lineString(
         points.map((p) => [p.longitude, p.latitude])

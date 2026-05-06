@@ -183,12 +183,48 @@ const visibleTracks = useMemo(() => {
 ======================================================
 */
 
+// const implementWidthByAssignment = useMemo(() => {
+//   const map = {};
+
+//   (task?.assignments || []).forEach((a) => {
+//     map[a._id] = a.techniqueId?.width || 5.6;
+//   });
+
+//   return map;
+// }, [task]);
+
 const implementWidthByAssignment = useMemo(() => {
   const map = {};
 
+  const operationName = task?.operationId?.name?.toLowerCase().trim();
+
+  const isSpraying = operationName?.includes("обприск");
+
   (task?.assignments || []).forEach((a) => {
-    map[a._id] = a.techniqueId?.width || 5.6;
+    if (isSpraying) {
+      // 👉 ТІЛЬКИ vehicle головний
+      map[a._id] =
+        a.vehicleId?.headerWidth ??
+        a.techniqueId?.width ??
+        5.6;
+    } else {
+      // 👉 стандартна логіка
+      map[a._id] =
+        a.techniqueId?.width ??
+        a.vehicleId?.headerWidth ??
+        5.6;
+    }
   });
+
+  console.log("MAP BUILD DEBUG");
+  (task?.assignments || []).forEach((a) => {
+    console.log({
+      assignmentId: a._id,
+      vehicleWidth: a.vehicleId?.headerWidth,
+      techniqueWidth: a.techniqueId?.width,
+    });
+  });
+
 
   return map;
 }, [task]);
@@ -588,3 +624,9 @@ RETURN (ТІЛЬКИ ТУТ!)
     </Fade>
   );
 }
+
+
+
+
+
+

@@ -187,6 +187,9 @@ export default function AddTaskModal() {
   const isSeedingOperation =
     selectedOperationObj?.name === "Висівання зернових культур";
 
+  const isSprayingOperation =
+    selectedOperationObj?.name === "Обприскування";
+
   const isVehicleAllowedByOperation = (vehicleType) => {
     if (!selectedOperationObj) return true;
     const allowedTypes =
@@ -381,12 +384,25 @@ export default function AddTaskModal() {
 
                   {/* Транспорт */}
                   <Autocomplete
-                    options={vehicles.map((v) => ({
-                      label: v.mark || v.vehicleType,
-                      value: v._id,
-                      vehicleType: v.vehicleType,
-                      regNumber: v.regNumber || "",
-                    }))}
+                    options={vehicles
+                      .filter((v) => {
+                        if (!selectedOperationObj) return true;
+
+                        const allowedTypes =
+                          OPERATION_VEHICLE_RULES[selectedOperationObj.name];
+
+                        if (!allowedTypes) return true;
+
+                        return allowedTypes.includes(
+                          v.vehicleType?.toLowerCase()
+                        );
+                      })
+                      .map((v) => ({
+                        label: v.mark || v.vehicleType,
+                        value: v._id,
+                        vehicleType: v.vehicleType,
+                        regNumber: v.regNumber || "",
+                      }))}
                     value={item.vehicle}
                     onChange={(_, v) =>
                       handleAssignmentChange(index, "vehicle", v)
@@ -413,29 +429,33 @@ export default function AddTaskModal() {
                   />
 
                   {/* Техніка */}
-                  <Autocomplete
-                    options={techniques
-                      .filter((t) =>
-                        selectedOperationObj
-                          ? t.fieldOperation === selectedOperationObj._id
-                          : true
-                      )
-                      .map((t) => ({
-                        label: t.name,
-                        value: t._id,
-                      }))}
-                    value={item.technique}
-                    onChange={(_, v) => handleAssignmentChange(index, "technique", v)}
-                    isOptionEqualToValue={isOptionEqualToValue}
-                    getOptionDisabled={(option) =>
-                      item.technique?.value === option.value
-                        ? false
-                        : usedTechniqueIds.includes(option.value)
-                    }
-                    renderInput={(params) => (
-                      <TextField {...params} label="Техніка" size="small" />
+                    {!isSprayingOperation && (
+                      <Autocomplete
+                        options={techniques
+                          .filter((t) =>
+                            selectedOperationObj
+                              ? t.fieldOperation === selectedOperationObj._id
+                              : true
+                          )
+                          .map((t) => ({
+                            label: t.name,
+                            value: t._id,
+                          }))}
+                        value={item.technique}
+                        onChange={(_, v) =>
+                          handleAssignmentChange(index, "technique", v)
+                        }
+                        isOptionEqualToValue={isOptionEqualToValue}
+                        getOptionDisabled={(option) =>
+                          item.technique?.value === option.value
+                            ? false
+                            : usedTechniqueIds.includes(option.value)
+                        }
+                        renderInput={(params) => (
+                          <TextField {...params} label="Техніка" size="small" />
+                        )}
+                      />
                     )}
-                  />
 
                   {assignments.length > 1 && (
                     <Button size="small" color="error" onClick={() => handleRemoveAssignment(index)}>

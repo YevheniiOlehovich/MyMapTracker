@@ -12,7 +12,8 @@ export const vehicleTypes = [
     { _id: 'car', name: 'Легковий автомобіль' },
     { _id: 'tractor', name: 'Трактор' },
     { _id: 'combine', name: 'Комбайн' },
-    { _id: 'truck', name: 'Вантажівка' }
+    { _id: 'truck', name: 'Вантажівка' },
+    { _id: 'sprayer', name: 'Обприскувач' }
 ];
 
 export const personalFunctions = [
