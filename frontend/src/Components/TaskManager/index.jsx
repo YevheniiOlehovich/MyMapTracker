@@ -269,10 +269,35 @@ export default function TasksTab() {
   if (isError) return <div>Помилка: {error.message}</div>;
 
   return (
-    <Box sx={{ minHeight: "100vh", backgroundImage: `url(${bgPic})`, backgroundSize: "cover" }}>
+    // <Box sx={{ minHeight: "100vh", backgroundImage: `url(${bgPic})`, backgroundSize: "cover" }}>
+    <Box
+      sx={{
+        height: "100vh",
+        overflow: "hidden", // 🔥 ключ
+        backgroundImage: `url(${bgPic})`,
+        backgroundSize: "cover",
+      }}
+    >
       <Header />
 
-      <Box sx={{ p: "80px 20px 20px" }}>
+      {/* <Box sx={{ p: "80px 20px 20px" }}> */}
+      {/* <Box
+        sx={{
+          p: "80px 20px 20px",
+          height: "100vh",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      > */}
+      <Box
+        sx={{
+          p: "80px 20px 20px",
+          height: "100%", // 🔥 важливо
+          display: "flex",
+          flexDirection: "column",
+          overflow: "hidden",
+        }}
+      >
         <Paper sx={{ p: 2, mb: 2 }}>
           <Box
             sx={{
@@ -379,9 +404,38 @@ export default function TasksTab() {
         </Paper>
 
         {/* TABLE (залишив без змін) */}
-        <Paper sx={{ height: 650, display: "flex", flexDirection: "column" }}>
-          <TableContainer sx={{ flexGrow: 1 }}>
-            <Table stickyHeader size="small">
+        {/* <Paper sx={{ height: 650, display: "flex", flexDirection: "column" }}> */}
+        <Paper
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            flex: 1, // 🔥 замість height
+            minHeight: 0, // 🔥 дуже важливо
+          }}
+        >
+          {/* <TableContainer sx={{ flexGrow: 1 }}> */}
+          {/* <TableContainer
+            sx={{
+              flex: 1,
+              overflowY: "auto",
+              minHeight: 0, // 🔥 без цього flex ламається
+            }}
+          > */}
+          <TableContainer
+            sx={{
+              flex: 1,
+              overflowY: "auto",
+              minHeight: 0,
+              "&::-webkit-scrollbar": {
+                width: 8,
+              },
+              "&::-webkit-scrollbar-thumb": {
+                backgroundColor: "#bbb",
+                borderRadius: 4,
+              },
+            }}
+          >
+            <Table stickyHeader size="small" sx={{ tableLayout: "fixed" }}>
               <TableHead>
                 {table.getHeaderGroups().map((hg) => (
                   <TableRow key={hg.id}>
@@ -439,6 +493,10 @@ export default function TasksTab() {
             onRowsPerPageChange={(e) =>
               table.setPageSize(Number(e.target.value))
             }
+            sx={{
+              flexShrink: 0,
+              borderTop: "1px solid #ddd",
+            }}
           />
         </Paper>
       </Box>
