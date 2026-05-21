@@ -88,6 +88,9 @@ const apiRoutes = {
     updateTask: (id) => `${API_BASE_URL}/tasks/${id}`,
     deleteTask: (id) => `${API_BASE_URL}/tasks/${id}`,
     updateTaskReport: (id) => `${API_BASE_URL}/tasks/${id}/report`,
+
+    getTaskIdsByRange: (startDate, endDate) =>
+        `${API_BASE_URL}/tasks/range?startDate=${startDate}&endDate=${endDate}`,  
 };
 
 export default apiRoutes;

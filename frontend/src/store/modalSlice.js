@@ -16,6 +16,7 @@ const modalSlice = createSlice({
         isAddVarietyModalVisible: false,
         isAddTaskModalVisible: false,
         isAddTaskReportModalVisible: false,
+        isExportTasksModalVisible: false,
 
         editTechniqueId: null,
         editGroupId: null,
@@ -149,6 +150,13 @@ const modalSlice = createSlice({
             state.isAddTaskReportModalVisible = false;
             state.editTaskReportData = null;
         },
+        openExportTasksModal: (state) => {
+            state.isExportTasksModalVisible = true;
+        },
+
+        closeExportTasksModal: (state) => {
+            state.isExportTasksModalVisible = false;
+        },
     },
 });
 
@@ -180,6 +188,8 @@ export const {
     closeAddTaskModal,
     openTaskReportModal,
     closeTaskReportModal,
+    openExportTasksModal,
+    closeExportTasksModal,
 
 } = modalSlice.actions;
 

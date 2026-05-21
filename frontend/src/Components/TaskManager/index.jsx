@@ -33,7 +33,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import DescriptionIcon from "@mui/icons-material/Description";
 
 import { useTasksData, useDeleteTask } from "../../hooks/useTasksData";
-import { openAddTaskModal, openTaskReportModal } from "../../store/modalSlice";
+import { openAddTaskModal, openTaskReportModal, openExportTasksModal } from "../../store/modalSlice";
 
 import Header from "../Header";
 import Modals from "../Modals";
@@ -78,6 +78,10 @@ export default function TasksTab() {
     (task) => dispatch(openTaskReportModal(task)),
     [dispatch]
   );
+
+  const handleExport = useCallback(() => {
+    dispatch(openExportTasksModal());
+  }, [dispatch]);
 
   /* ---------- HELPERS ---------- */
 
@@ -392,11 +396,36 @@ export default function TasksTab() {
             />
 
             {/* Кнопки */}
-            <Box sx={{ display: "flex", gap: 1 }}>
+            {/* <Box sx={{ display: "flex", gap: 1 }}>
               <Button variant="contained" onClick={handleAdd} fullWidth>
                 + Додати
               </Button>
               <IconButton onClick={resetFilters} color="error">
+                <ClearIcon />
+              </IconButton>
+            </Box> */}
+
+            <Box sx={{ display: "flex", gap: 1 }}>
+              <Button
+                variant="contained"
+                onClick={handleAdd}
+                fullWidth
+              >
+                + Додати
+              </Button>
+
+              <Button
+                variant="outlined"
+                onClick={handleExport}
+                fullWidth
+              >
+                Експорт
+              </Button>
+
+              <IconButton
+                onClick={resetFilters}
+                color="error"
+              >
                 <ClearIcon />
               </IconButton>
             </Box>

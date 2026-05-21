@@ -31,8 +31,6 @@ export default function AddTaskReportModal({ onClose }) {
     (state) => state.modals.editTaskReportData
   );
 
-  console.log(task)
-
   const { data: fieldsData = [], isLoading: fieldsLoading } =
     useFieldsData();
   const { gpsData, isLoading: gpsLoading } =
@@ -41,7 +39,6 @@ export default function AddTaskReportModal({ onClose }) {
   const [visibilityState, setVisibilityState] = useState({});
   const { mutate: updateReport, isPending } = useUpdateTaskReport();
 
-  // if (!task) return null;
 
   const isLoading = fieldsLoading || gpsLoading;
 
@@ -183,16 +180,6 @@ const visibleTracks = useMemo(() => {
 ======================================================
 */
 
-// const implementWidthByAssignment = useMemo(() => {
-//   const map = {};
-
-//   (task?.assignments || []).forEach((a) => {
-//     map[a._id] = a.techniqueId?.width || 5.6;
-//   });
-
-//   return map;
-// }, [task]);
-
 const implementWidthByAssignment = useMemo(() => {
   const map = {};
 
@@ -216,15 +203,6 @@ const implementWidthByAssignment = useMemo(() => {
     }
   });
 
-  console.log("MAP BUILD DEBUG");
-  (task?.assignments || []).forEach((a) => {
-    console.log({
-      assignmentId: a._id,
-      vehicleWidth: a.vehicleId?.headerWidth,
-      techniqueWidth: a.techniqueId?.width,
-    });
-  });
-
 
   return map;
 }, [task]);
@@ -239,8 +217,6 @@ const gridResult = useMemo(() => {
     fieldPolygon: turfFieldPolygon,
     implementWidthByAssignment,
   });
-
-  // console.log("📊 GRID RESULT FROM HELPER:", result);
 
   return result;
 }, [
@@ -264,18 +240,46 @@ const totalHectares = useMemo(() => {
 ACTIONS
 ======================================================
 */
-
 const handleSave = () => {
-  if (!task) return;
+  if (!task || !gridResult) return;
+
+  const assignments = task.assignments.map(
+    (assignment) => {
+
+      let processedArea = 0;
+
+      Object.values(gridResult.days || {}).forEach(
+        (day) => {
+
+          processedArea +=
+            day.machines?.[
+              String(assignment._id)
+            ]?.fullHectares || 0;
+        }
+      );
+
+      return {
+        processedArea: Number(
+          processedArea.toFixed(2)
+        ),
+      };
+    }
+  );
 
   updateReport(
     {
       taskId: task._id,
-      processedArea: totalHectares
+      assignments,
     },
     {
       onSuccess: () => {
         onClose();
+      },
+      onError: (error) => {
+        console.error(
+          "UPDATE REPORT ERROR:",
+          error
+        );
       },
     }
   );
@@ -310,6 +314,8 @@ const handleExportExcel = () => {
 
         "Processed (ha)": machine.fullHectares ?? 0,
         "Worked Hours": Number(machine.workedHours ?? 0).toFixed(2),
+
+        "Note": task.note || "",
 
         "Start Time": machine.arrivalTime || "",
         "End Time": machine.departureTime || "",
@@ -451,6 +457,18 @@ RETURN (ТІЛЬКИ ТУТ!)
                     {Number(totalHectares || 0).toFixed(2)} га
                   </Typography>
                 )}
+
+                {task.note && (
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      mt: 1.5,
+                      whiteSpace: "pre-wrap",
+                    }}
+                  >
+                    <strong>Примітка:</strong> {task.note}
+                  </Typography>
+                )}
               </Box>
 
               {/* ASSIGNMENTS */}
@@ -458,7 +476,14 @@ RETURN (ТІЛЬКИ ТУТ!)
               {groupedByAssignment.map((machine) => {
                 const machineTotal = Object.values(gridResult?.days || {})
                   .reduce((sum, day) => {
-                    return sum + (day.machines?.[machine.assignmentId]?.fullHectares || 0);
+                    return (
+                      sum +
+                      (
+                        day.machines?.[
+                          String(machine.assignmentId)
+                        ]?.fullHectares || 0
+                      )
+                    );
                   }, 0);
 
                 return (
@@ -519,7 +544,9 @@ RETURN (ТІЛЬКИ ТУТ!)
                         const visible = visibilityState[key] ?? true;
 
                         const dayStats =
-                          gridResult?.days?.[day.date]?.machines?.[machine.assignmentId];
+                          gridResult?.days?.[day.date]?.machines?.[
+                            String(machine.assignmentId)
+                          ];
 
                         return (
                           <Box
@@ -624,9 +651,3 @@ RETURN (ТІЛЬКИ ТУТ!)
     </Fade>
   );
 }
-
-
-
-
-
-

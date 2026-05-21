@@ -1,40 +1,38 @@
-import apiRoutes from '../helpres/ApiRoutes';
+import apiRoutes from "../helpres/ApiRoutes";
 
-// Отримати всі таски
+/* =========================================
+   GET ALL TASKS
+========================================= */
+
 export const fetchTasksApi = async () => {
   const response = await fetch(apiRoutes.getTasks);
-  if (!response.ok) throw new Error('Не вдалося отримати таски');
+
+  if (!response.ok) {
+    throw new Error("Не вдалося отримати таски");
+  }
+
   return await response.json();
 };
 
-// Створити нову таску
-export const saveTaskApi = async (taskData) => {
-  const response = await fetch(apiRoutes.addTask, {
-    method: 'POST',
-    body: taskData,  // taskData - це FormData
-  });
-  if (!response.ok) throw new Error('Не вдалося створити таску');
+/* =========================================
+   GET TASK BY ID
+========================================= */
+
+export const fetchTaskByIdApi = async (taskId) => {
+  const response = await fetch(
+    apiRoutes.getTaskById(taskId)
+  );
+
+  if (!response.ok) {
+    throw new Error("Не вдалося отримати таску");
+  }
+
   return await response.json();
 };
 
-// Оновити таску
-export const updateTaskApi = async ({ taskId, taskData }) => {
-  const response = await fetch(apiRoutes.updateTask(taskId), {
-    method: 'PUT',
-    body: taskData,  // FormData
-  });
-  if (!response.ok) throw new Error('Не вдалося оновити таску');
-  return await response.json();
-};
-
-// Видалити таску
-export const deleteTaskApi = async (taskId) => {
-  const response = await fetch(apiRoutes.deleteTask(taskId), {
-    method: 'DELETE',
-  });
-  if (!response.ok) throw new Error('Не вдалося видалити таску');
-  return taskId;
-};
+/* =========================================
+   GET TASKS BY DATE
+========================================= */
 
 export const fetchTasksByDateApi = async (date) => {
   const url = date
@@ -43,33 +41,129 @@ export const fetchTasksByDateApi = async (date) => {
 
   const response = await fetch(url);
 
-  if (!response.ok)
-    throw new Error('Не вдалося отримати таски');
-
-  return await response.json();
-};
-
-export const fetchTasksByRangeApi = async (from, to) => {
-  const url = `${apiRoutes.getTasks}?from=${from}&to=${to}`;
-  const response = await fetch(url);
-
-  if (!response.ok)
+  if (!response.ok) {
     throw new Error("Не вдалося отримати таски");
-
-  return response.json();
-};
-
-export const updateTaskReportApi = async ({ taskId, processedArea }) => {
-  const formData = new FormData();
-  formData.append("processedArea", processedArea);
-
-  const response = await fetch(apiRoutes.updateTaskReport(taskId), {
-    method: "PATCH",
-    body: formData,
-  });
-
-  if (!response.ok)
-    throw new Error("Не вдалося оновити площу");
+  }
 
   return await response.json();
+};
+
+/* =========================================
+   GET TASK IDS BY RANGE
+========================================= */
+
+export const fetchTasksByRangeApi = async (
+  startDate,
+  endDate
+) => {
+  const response = await fetch(
+    apiRoutes.getTaskIdsByRange(
+      startDate,
+      endDate
+    )
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      "Не вдалося отримати таски за період"
+    );
+  }
+
+  return await response.json();
+};
+
+/* =========================================
+   CREATE TASK
+========================================= */
+
+export const saveTaskApi = async (taskData) => {
+  const response = await fetch(
+    apiRoutes.addTask,
+    {
+      method: "POST",
+      body: taskData,
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error("Не вдалося створити таску");
+  }
+
+  return await response.json();
+};
+
+/* =========================================
+   UPDATE TASK
+========================================= */
+
+export const updateTaskApi = async ({
+  taskId,
+  taskData,
+}) => {
+  const response = await fetch(
+    apiRoutes.updateTask(taskId),
+    {
+      method: "PUT",
+      body: taskData,
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error("Не вдалося оновити таску");
+  }
+
+  return await response.json();
+};
+
+/* =========================================
+   UPDATE TASK REPORT
+========================================= */
+
+
+export const updateTaskReportApi = async ({
+  taskId,
+  assignments,
+}) => {
+
+  const formData = new FormData();
+
+  formData.append(
+    "assignments",
+    JSON.stringify(assignments)
+  );
+
+  const response = await fetch(
+    apiRoutes.updateTaskReport(taskId),
+    {
+      method: "PATCH",
+      body: formData,
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      "Не вдалося оновити звіт"
+    );
+  }
+
+  return await response.json();
+};
+
+/* =========================================
+   DELETE TASK
+========================================= */
+
+export const deleteTaskApi = async (taskId) => {
+  const response = await fetch(
+    apiRoutes.deleteTask(taskId),
+    {
+      method: "DELETE",
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error("Не вдалося видалити таску");
+  }
+
+  return taskId;
 };

@@ -1,75 +1,243 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+// import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+// import {
+//   fetchTasksApi,
+//   saveTaskApi,
+//   updateTaskApi,
+//   deleteTaskApi,
+//   fetchTasksByDateApi,
+//   updateTaskReportApi
+// } from '../api/tasksApi';
+
+// // === ВСІ ТАСКИ ===
+// export const useTasksData = () =>
+//   useQuery({
+//     queryKey: ['tasks'],
+//     queryFn: fetchTasksApi,
+//   });
+
+// // === СТВОРЕННЯ ===
+// export const useSaveTask = () => {
+//   const queryClient = useQueryClient();
+//   return useMutation({
+//     mutationFn: saveTaskApi,
+//     onSuccess: () =>
+//       queryClient.invalidateQueries({ queryKey: ['tasks'] }),
+//   });
+// };
+
+// // === ОНОВЛЕННЯ ===
+// export const useUpdateTask = () => {
+//   const queryClient = useQueryClient();
+//   return useMutation({
+//     mutationFn: updateTaskApi,
+//     onSuccess: () =>
+//       queryClient.invalidateQueries({ queryKey: ['tasks'] }),
+//   });
+// };
+
+// // === ВИДАЛЕННЯ ===
+// export const useDeleteTask = () => {
+//   const queryClient = useQueryClient();
+//   return useMutation({
+//     mutationFn: deleteTaskApi,
+//     onSuccess: () =>
+//       queryClient.invalidateQueries({ queryKey: ['tasks'] }),
+//   });
+// };
+
+// // === ТАСКИ ПО ДАТІ ===
+// export const useTasksByDate = (date) =>
+//   useQuery({
+//     queryKey: ['tasks', date],
+//     queryFn: () => fetchTasksByDateApi(date),
+//     enabled: !!date,
+//   });
+
+
+// export const useTasksByRange = (from, to) =>
+//   useQuery({
+//     queryKey: ['tasks', from, to],
+//     queryFn: () => fetchTasksByRangeApi(from, to),
+//     enabled: !!from && !!to,
+//   });
+
+  
+
+// export const useUpdateTaskReport = () => {
+//   const queryClient = useQueryClient();
+
+//   return useMutation({
+//     mutationFn: updateTaskReportApi,
+//     onSuccess: () => {
+//       queryClient.invalidateQueries({ queryKey: ["tasks"] });
+//     },
+//   });
+// };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query";
+
 import {
   fetchTasksApi,
+  fetchTaskByIdApi,
+  fetchTasksByDateApi,
+  fetchTasksByRangeApi,
   saveTaskApi,
   updateTaskApi,
   deleteTaskApi,
-  fetchTasksByDateApi,
-  updateTaskReportApi
-} from '../api/tasksApi';
+  updateTaskReportApi,
+} from "../api/tasksApi";
 
-// === ВСІ ТАСКИ ===
+/* =========================================
+   ALL TASKS
+========================================= */
+
 export const useTasksData = () =>
   useQuery({
-    queryKey: ['tasks'],
+    queryKey: ["tasks"],
     queryFn: fetchTasksApi,
   });
 
-// === СТВОРЕННЯ ===
-export const useSaveTask = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: saveTaskApi,
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ['tasks'] }),
-  });
-};
+/* =========================================
+   TASK BY ID
+========================================= */
 
-// === ОНОВЛЕННЯ ===
-export const useUpdateTask = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: updateTaskApi,
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ['tasks'] }),
+export const useTaskById = (taskId) =>
+  useQuery({
+    queryKey: ["task", taskId],
+    queryFn: () => fetchTaskByIdApi(taskId),
+    enabled: !!taskId,
   });
-};
 
-// === ВИДАЛЕННЯ ===
-export const useDeleteTask = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: deleteTaskApi,
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ['tasks'] }),
-  });
-};
+/* =========================================
+   TASKS BY DATE
+========================================= */
 
-// === ТАСКИ ПО ДАТІ ===
 export const useTasksByDate = (date) =>
   useQuery({
-    queryKey: ['tasks', date],
+    queryKey: ["tasks-date", date],
     queryFn: () => fetchTasksByDateApi(date),
     enabled: !!date,
   });
 
+/* =========================================
+   TASKS BY RANGE
+========================================= */
 
-export const useTasksByRange = (from, to) =>
+export const useTasksByRange = (
+  startDate,
+  endDate
+) =>
   useQuery({
-    queryKey: ['tasks', from, to],
-    queryFn: () => fetchTasksByRangeApi(from, to),
-    enabled: !!from && !!to,
+    queryKey: [
+      "tasks-range",
+      startDate,
+      endDate,
+    ],
+
+    queryFn: () =>
+      fetchTasksByRangeApi(
+        startDate,
+        endDate
+      ),
+
+    enabled: !!startDate && !!endDate,
   });
 
-  
+/* =========================================
+   CREATE TASK
+========================================= */
+
+export const useSaveTask = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: saveTaskApi,
+
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["tasks"],
+      });
+    },
+  });
+};
+
+/* =========================================
+   UPDATE TASK
+========================================= */
+
+export const useUpdateTask = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: updateTaskApi,
+
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["tasks"],
+      });
+    },
+  });
+};
+
+/* =========================================
+   UPDATE TASK REPORT
+========================================= */
 
 export const useUpdateTaskReport = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: updateTaskReportApi,
+
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({
+        queryKey: ["tasks"],
+      });
+    },
+  });
+};
+
+/* =========================================
+   DELETE TASK
+========================================= */
+
+export const useDeleteTask = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: deleteTaskApi,
+
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["tasks"],
+      });
     },
   });
 };
