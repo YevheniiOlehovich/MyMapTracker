@@ -46,12 +46,6 @@ export default function Header() {
 
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  // const handleLogout = () => {
-  //   navigate("/"); // редіректимо на Main
-  //   sessionStorage.removeItem("token"); // видаляємо токен
-  //   window.location.reload(); // опціонально, щоб скинути стан
-  // };
-
   const handleLogout = () => {
     sessionStorage.clear(); // очищаємо всі дані сесії
     navigate("/"); // редірект на стартову сторінку / Main

@@ -5,6 +5,7 @@ import { createGlobalStyle } from 'styled-components';
 import { Provider } from 'react-redux'; // Імпортуємо Provider
 import store from './store/store'; // Імпортуємо ваш store
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'; // Імпортуємо React Router
+import ProtectedRoute from "./Components/ProtectedRoute";
 
 const GlobalStyle = createGlobalStyle`
   * {
@@ -31,11 +32,28 @@ function App() {
       <GlobalStyle />
       {/* <Main /> */}
       <Router> {/* Додаємо Router */}
-        <Routes>
-          <Route path="/" element={<Main />} /> {/* Головна сторінка */}
-          <Route path="/tasks" element={<TaskManager />} /> {/* Сторінка Tasks */}
-          <Route path="/libraries" element={<Libraries />} /> {/* Сторінка Libraries */}
-        </Routes>
+          <Routes>
+            <Route path="/" element={<Main />} />
+
+            <Route
+              path="/tasks"
+              element={
+                <ProtectedRoute>
+                  <TaskManager />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/libraries"
+              element={
+                <ProtectedRoute>
+                  <Libraries />
+                </ProtectedRoute>
+              }
+            />
+          </Routes>      
+
       </Router>
     </Provider>
   );

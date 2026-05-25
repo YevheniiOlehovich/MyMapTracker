@@ -273,7 +273,6 @@ export default function TasksTab() {
   if (isError) return <div>Помилка: {error.message}</div>;
 
   return (
-    // <Box sx={{ minHeight: "100vh", backgroundImage: `url(${bgPic})`, backgroundSize: "cover" }}>
     <Box
       sx={{
         height: "100vh",
@@ -283,16 +282,6 @@ export default function TasksTab() {
       }}
     >
       <Header />
-
-      {/* <Box sx={{ p: "80px 20px 20px" }}> */}
-      {/* <Box
-        sx={{
-          p: "80px 20px 20px",
-          height: "100vh",
-          display: "flex",
-          flexDirection: "column",
-        }}
-      > */}
       <Box
         sx={{
           p: "80px 20px 20px",
@@ -396,20 +385,20 @@ export default function TasksTab() {
             />
 
             {/* Кнопки */}
-            {/* <Box sx={{ display: "flex", gap: 1 }}>
-              <Button variant="contained" onClick={handleAdd} fullWidth>
-                + Додати
-              </Button>
-              <IconButton onClick={resetFilters} color="error">
-                <ClearIcon />
-              </IconButton>
-            </Box> */}
-
-            <Box sx={{ display: "flex", gap: 1 }}>
+            
+            <Box
+              sx={{
+                display: "flex",
+                gap: 1,
+                alignItems: "center",
+                justifyContent: "flex-start",
+              }}
+            >
               <Button
                 variant="contained"
                 onClick={handleAdd}
-                fullWidth
+                size="small"
+                sx={{ minWidth: 110 }}
               >
                 + Додати
               </Button>
@@ -417,7 +406,8 @@ export default function TasksTab() {
               <Button
                 variant="outlined"
                 onClick={handleExport}
-                fullWidth
+                size="small"
+                sx={{ minWidth: 90 }}
               >
                 Експорт
               </Button>
@@ -425,15 +415,15 @@ export default function TasksTab() {
               <IconButton
                 onClick={resetFilters}
                 color="error"
+                size="small"
               >
-                <ClearIcon />
+                <ClearIcon fontSize="small" />
               </IconButton>
             </Box>
           </Box>
         </Paper>
 
         {/* TABLE (залишив без змін) */}
-        {/* <Paper sx={{ height: 650, display: "flex", flexDirection: "column" }}> */}
         <Paper
           sx={{
             display: "flex",
@@ -442,14 +432,7 @@ export default function TasksTab() {
             minHeight: 0, // 🔥 дуже важливо
           }}
         >
-          {/* <TableContainer sx={{ flexGrow: 1 }}> */}
-          {/* <TableContainer
-            sx={{
-              flex: 1,
-              overflowY: "auto",
-              minHeight: 0, // 🔥 без цього flex ламається
-            }}
-          > */}
+          
           <TableContainer
             sx={{
               flex: 1,
