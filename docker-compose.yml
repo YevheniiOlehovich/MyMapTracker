@@ -1,12 +1,107 @@
-version: "3.9"
+# version: "3.9"
+
+# services:
+#   mongo:
+#     image: mongo:6
+#     container_name: mongo
+#     restart: always
+#     ports:
+#       - "27017:27017"
+#     volumes:
+#       - ./mongo_data:/data/db
+#     networks:
+#       - app-network
+
+#   backend:
+#     build: ./backend
+#     container_name: backend
+#     restart: always
+#     env_file:
+#       - ./backend/src/.env
+#     expose:
+#       - "5000"
+#     volumes:
+#       - ./uploads:/app/uploads
+#     depends_on:
+#       - mongo
+#     networks:
+#       - app-network
+
+#   gps-service:
+#     build: ./gps-service
+#     container_name: gps-service
+#     restart: always
+#     env_file:
+#       - ./gps-service/src/.env
+#     ports:
+#       - "20120:20120"
+#     networks:
+#       - app-network
+
+#   weather-service:
+#     build: ./weather-service
+#     container_name: weather-service
+#     restart: always
+#     env_file:
+#       - ./weather-service/src/.env
+#     ports:
+#       - "20220:20220"
+#     networks:
+#       - app-network
+
+#   weather-service2:
+#     build: ./weather-service2
+#     container_name: weather-service2
+#     restart: always
+#     env_file:
+#       - ./weather-service2/src/.env
+#     ports:
+#       - "20320:20320"
+#     depends_on:
+#       - mongo
+#     networks:
+#       - app-network
+  
+
+
+#   # 🔹 Фронт тільки збирається  # 🔹 Фронт тільки збирається
+#   frontend:
+#     build: ./frontend
+#     container_name: frontend
+#     restart: "no"
+#     volumes:
+#       - ./frontend/dist:/host_dist
+#     networks:
+#       - app-network
+
+#   # 🔥 ГОЛОВНИЙ
+#   nginx:
+#     image: nginx:alpine
+#     container_name: nginx
+#     restart: always
+#     ports:
+#       - "80:80"
+#       - "443:443"
+#     volumes:
+#       - ./nginx/conf.d:/etc/nginx/conf.d
+#       - ./frontend/dist:/usr/share/nginx/html
+#       - ./uploads:/usr/share/nginx/html/uploads
+#       - ./certs/cloudflare.crt:/etc/ssl/certs/cloudflare.crt:ro
+#       - ./certs/cloudflare.key:/etc/ssl/private/cloudflare.key:ro
+#     depends_on:
+#       - backend
+#     networks:
+#       - app-network
+
+# networks:
+#   app-network:
+#     driver: bridge
 
 services:
   mongo:
     image: mongo:6
     container_name: mongo
     restart: always
-    ports:
-      - "27017:27017"
     volumes:
       - ./mongo_data:/data/db
     networks:
@@ -61,10 +156,7 @@ services:
       - mongo
     networks:
       - app-network
-  
 
-
-  # 🔹 Фронт тільки збирається  # 🔹 Фронт тільки збирається
   frontend:
     build: ./frontend
     container_name: frontend
@@ -74,7 +166,6 @@ services:
     networks:
       - app-network
 
-  # 🔥 ГОЛОВНИЙ
   nginx:
     image: nginx:alpine
     container_name: nginx
