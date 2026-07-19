@@ -21,11 +21,11 @@ export default function Login({ onLogin }) {
         e.preventDefault();
         try {
             // Роут для локального сервера
-            const response = await fetch("http://localhost:5000/auth/login", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ username, password }),
-            });
+            // const response = await fetch("http://localhost:5000/auth/login", {
+            //     method: "POST",
+            //     headers: { "Content-Type": "application/json" },
+            //     body: JSON.stringify({ username, password }),
+            // });
 
             // Роут для авторизації на проді
             const response = await fetch("/api/auth/login", {
