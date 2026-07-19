@@ -22,6 +22,7 @@ import rentRoutes from './routes/rent.js';
 import propertyRoutes from './routes/property.js';
 import taskRoutes from './routes/taskRoutes.js';
 import authRoutes from './routes/auth.js';
+import rent_2026Routes from './routes/rent_2026.js';
 
 dotenv.config();
 
@@ -29,9 +30,11 @@ const app = express();
 app.set('trust proxy', 1); 
 const port = process.env.PORT || 5000;
 
-// const mongoURI = 'mongodb://localhost:27018/test' //Локал
+// const mongoURI = 'mongodb://localhost:27017/test' //Локал
 
-const mongoURI = `mongodb://mongo:27017/test` //Прод
+const mongoURI = "mongodb://localhost:27020/test";
+
+// const mongoURI = `mongodb://mongo:27017/test` //Прод
 
 mongoose.connect(mongoURI)
     .then(() => console.log('✅ Підключено до MongoDB'))
@@ -62,6 +65,7 @@ app.use('/crops', cropsRoutes);
 app.use('/varieties', varietyRoutes);
 app.use('/units', unitsRoutes);
 app.use('/rent', rentRoutes);
+app.use('/rent_2026', rent_2026Routes);
 app.use('/property', propertyRoutes);
 app.use('/tasks', taskRoutes);
 

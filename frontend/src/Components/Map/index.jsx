@@ -15,6 +15,7 @@ import { useGeozoneData } from "../../hooks/useGeozonesData";
 import { useGpsData } from "../../hooks/useGpsData";
 import { useUnitsData } from "../../hooks/useUnitsData";
 import { useRentsData } from "../../hooks/useRentData";
+import { useRent2026Data } from "../../hooks/useRent2026";
 import { usePropertiesData } from "../../hooks/usePropertiesData";
 import { useLastGpsByDate } from "../../hooks/useLastGpsByDate";
 
@@ -24,6 +25,7 @@ import {
   selectShowGeozones,
   selectShowUnits,
   selectShowRent,
+  selectShowRent2026,
   selectShowProperty,
 } from "../../store/layersList";
 
@@ -43,6 +45,7 @@ import CurrentLocationMarker from "../CurrentLocationMarker";
 
 import PropertyLayer from "../PropertyLayer";
 import RentLayer from "../RentLayer";
+import Rent2026Layer from "../RentLayer2026";
 import UnitsLayer from "../UnitsLayer";
 import GeozoneLayer from "../GeozoneLayer";
 import CadastreLayer from "../CadastreLayer";
@@ -95,6 +98,11 @@ export default function Map() {
   } = useRentsData();
 
   const {
+    data: rent2026Data = [],
+    isLoading: isRent2026Loading,
+  } = useRent2026Data();
+
+  const {
     data: propertyData = [],
     isLoading: isPropertyLoading,
   } = usePropertiesData();
@@ -107,6 +115,7 @@ export default function Map() {
   const showGeozones = useSelector(selectShowGeozones);
   const showUnits = useSelector(selectShowUnits);
   const showRent = useSelector(selectShowRent);
+  const showRent2026 = useSelector(selectShowRent2026);
   const showProperty = useSelector(selectShowProperty);
 
   const selectedCadastre = useSelector(
@@ -160,6 +169,7 @@ export default function Map() {
     isGeozoneLoading ||
     isUnitsLoading ||
     isRentsLoading ||
+    isRent2026Loading ||
     isPropertyLoading
   ) {
     return <p>Loading map data...</p>;
@@ -236,6 +246,10 @@ export default function Map() {
 
         {showRent && (
           <RentLayer rentData={rentData} />
+        )}
+
+        {showRent2026 && (
+            <Rent2026Layer rentData={rent2026Data} />
         )}
 
         {showProperty && (

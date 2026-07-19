@@ -19,12 +19,14 @@ import {
   toggleGeozones,
   toggleUnits,
   toggleRent,
+  toggleRent2026,
   toggleProperty,
   selectShowFields,
   selectShowCadastre,
   selectShowGeozones,
   selectShowUnits,
   selectShowRent,
+  selectShowRent2026,
   selectShowProperty,
 } from "../../store/layersList";
 
@@ -37,6 +39,7 @@ export default function LayersList({ open = true }) {
   const showGeozones = useSelector(selectShowGeozones);
   const showUnits = useSelector(selectShowUnits);
   const showRent = useSelector(selectShowRent);
+  const showRent2026 = useSelector(selectShowRent2026);
   const showProperty = useSelector(selectShowProperty);
 
   const mapOptions = [
@@ -54,7 +57,8 @@ export default function LayersList({ open = true }) {
     { value: "cadastre", checked: showCadastre, handler: () => dispatch(toggleCadastre()), label: "Кадастр" },
     { value: "geozones", checked: showGeozones, handler: () => dispatch(toggleGeozones()), label: "Геозони" },
     { value: "units", checked: showUnits, handler: () => dispatch(toggleUnits()), label: "Господарчі ділянки" },
-    { value: "rent", checked: showRent, handler: () => dispatch(toggleRent()), label: "Орендовані ділянки" },
+    // { value: "rent", checked: showRent, handler: () => dispatch(toggleRent()), label: "Орендовані ділянки" },
+    { value: "rent_2026", checked: showRent2026, handler: () => dispatch(toggleRent2026()), label: "Орендовані ділянки (2026)"},
     { value: "property", checked: showProperty, handler: () => dispatch(toggleProperty()), label: "Ділянки у власності" },
   ];
 

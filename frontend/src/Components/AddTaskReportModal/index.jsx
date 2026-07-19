@@ -246,22 +246,54 @@ const handleSave = () => {
   const assignments = task.assignments.map(
     (assignment) => {
 
+      // let processedArea = 0;
+
+      // Object.values(gridResult.days || {}).forEach(
+      //   (day) => {
+
+      //     processedArea +=
+      //       day.machines?.[
+      //         String(assignment._id)
+      //       ]?.fullHectares || 0;
+      //   }
+      // );
+
+      // return {
+      //   processedArea: Number(
+      //     processedArea.toFixed(2)
+      //   ),
+      // };
+
+
       let processedArea = 0;
+      let workedHours = 0;
 
-      Object.values(gridResult.days || {}).forEach(
-        (day) => {
+      let arrivalTime = null;
+      let departureTime = null;
 
-          processedArea +=
-            day.machines?.[
-              String(assignment._id)
-            ]?.fullHectares || 0;
-        }
-      );
+      Object.values(gridResult.days || {}).forEach((day) => {
+          const machine =
+              day.machines?.[String(assignment._id)];
+
+          if (!machine) return;
+
+          processedArea += machine.fullHectares || 0;
+          workedHours += machine.workedHours || 0;
+
+          if (!arrivalTime && machine.arrivalTime) {
+              arrivalTime = machine.arrivalTime;
+          }
+
+          if (machine.departureTime) {
+              departureTime = machine.departureTime;
+          }
+      });
 
       return {
-        processedArea: Number(
-          processedArea.toFixed(2)
-        ),
+          processedArea: Number(processedArea.toFixed(2)),
+          workedHours: Number(workedHours.toFixed(2)),
+          arrivalTime,
+          departureTime,
       };
     }
   );

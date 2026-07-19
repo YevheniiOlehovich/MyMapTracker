@@ -36,6 +36,31 @@ const TaskSchema = new mongoose.Schema(
       ref: "Crop",
     },
 
+    // assignments: [
+    //   {
+    //     personnelId: {
+    //       type: mongoose.Schema.Types.ObjectId,
+    //       ref: "Personnel",
+    //     },
+
+    //     vehicleId: {
+    //       type: mongoose.Schema.Types.ObjectId,
+    //       ref: "Vehicle",
+    //     },
+
+    //     techniqueId: {
+    //       type: mongoose.Schema.Types.ObjectId,
+    //       ref: "Technique",
+    //     },
+
+    //     // 🔥 ПЛОЩА ЕКІПАЖУ
+    //     processedArea: {
+    //       type: Number,
+    //       default: 0,
+    //     },
+    //   },
+    // ],
+
     assignments: [
       {
         personnelId: {
@@ -53,10 +78,24 @@ const TaskSchema = new mongoose.Schema(
           ref: "Technique",
         },
 
-        // 🔥 ПЛОЩА ЕКІПАЖУ
         processedArea: {
           type: Number,
           default: 0,
+        },
+
+        workedHours: {
+          type: Number,
+          default: 0,
+        },
+
+        arrivalTime: {
+          type: String,
+          default: null,
+        },
+
+        departureTime: {
+          type: String,
+          default: null,
         },
       },
     ],
@@ -529,30 +568,40 @@ router.post(
           req.body.crop
         ),
 
-        assignments:
-          parsedAssignments.map(
-            (a) => ({
-              personnelId:
-                extractId(
-                  a.personnel
-                ),
+        // assignments:
+        //   parsedAssignments.map(
+        //     (a) => ({
+        //       personnelId:
+        //         extractId(
+        //           a.personnel
+        //         ),
 
-              vehicleId:
-                extractId(
-                  a.vehicle
-                ),
+        //       vehicleId:
+        //         extractId(
+        //           a.vehicle
+        //         ),
 
-              techniqueId:
-                extractId(
-                  a.technique
-                ),
+        //       techniqueId:
+        //         extractId(
+        //           a.technique
+        //         ),
 
-              processedArea:
-                Number(
-                  a.processedArea
-                ) || 0,
-            })
-          ),
+        //       processedArea:
+        //         Number(
+        //           a.processedArea
+        //         ) || 0,
+        //     })
+        //   ),
+        assignments: parsedAssignments.map((a) => ({
+          personnelId: extractId(a.personnel),
+          vehicleId: extractId(a.vehicle),
+          techniqueId: extractId(a.technique),
+
+          processedArea: Number(a.processedArea) || 0,
+          workedHours: Number(a.workedHours) || 0,
+          arrivalTime: a.arrivalTime || null,
+          departureTime: a.departureTime || null,
+        })),
 
         note:
           typeof req.body
@@ -700,10 +749,14 @@ router.put(
                   a.technique
                 ),
 
-              processedArea:
-                Number(
-                  a.processedArea
-                ) || 0,
+              // processedArea:
+              //   Number(
+              //     a.processedArea
+              //   ) || 0,
+              processedArea: Number(a.processedArea) || 0,
+              workedHours: Number(a.workedHours) || 0,
+              arrivalTime: a.arrivalTime || null,
+              departureTime: a.departureTime || null,
             })
           ),
 
@@ -799,17 +852,37 @@ router.patch(
 
       // 🔥 UPDATE CREW AREAS
 
+      // task.assignments.forEach(
+      //   (
+      //     assignment,
+      //     index
+      //   ) => {
+      //     assignment.processedArea =
+      //       Number(
+      //         parsedAssignments[
+      //           index
+      //         ]?.processedArea
+      //       ) || 0;
+      //   }
+      // );
+
       task.assignments.forEach(
-        (
-          assignment,
-          index
-        ) => {
+        (assignment, index) => {
           assignment.processedArea =
             Number(
-              parsedAssignments[
-                index
-              ]?.processedArea
+              parsedAssignments[index]?.processedArea
             ) || 0;
+
+          assignment.workedHours =
+            Number(
+              parsedAssignments[index]?.workedHours
+            ) || 0;
+
+          assignment.arrivalTime =
+            parsedAssignments[index]?.arrivalTime || null;
+
+          assignment.departureTime =
+            parsedAssignments[index]?.departureTime || null;
         }
       );
 

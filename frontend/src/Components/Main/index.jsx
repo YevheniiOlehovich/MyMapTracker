@@ -18,6 +18,7 @@ import { fetchCadastre } from '../../api/cadastreApi';
 import { fetchGeozoneApi } from '../../api/geozonesApi';
 import { fetchUnits } from '../../api/unitsApi';
 import { fetchRents } from '../../api/rentApi';
+import { fetchRent2026 } from '../../api/rent2026Api';
 import { fetchProperties } from '../../api/propertyApi';
 import { fetchLastGpsByDateApi } from '../../api/gpsLastByDateApi';
 
@@ -52,6 +53,7 @@ export default function Main() {
                 geozone,
                 rawUnits,
                 rawRents,
+                rawRent2026,
                 rawProperties
             ] = await Promise.all([
                 queryClient.fetchQuery({ queryKey: ['groups'], queryFn: fetchGroupsApi }),
@@ -63,6 +65,7 @@ export default function Main() {
                 queryClient.fetchQuery({ queryKey: ['geozone'], queryFn: fetchGeozoneApi }),
                 queryClient.fetchQuery({ queryKey: ['units'], queryFn: fetchUnits }),
                 queryClient.fetchQuery({ queryKey: ['rents'], queryFn: fetchRents }),
+                queryClient.fetchQuery({ queryKey: ['rent_2026'], queryFn: fetchRent2026 }),
                 queryClient.fetchQuery({ queryKey: ['properties'], queryFn: fetchProperties })
             ]);
 
@@ -77,17 +80,20 @@ export default function Main() {
             const fieldsWithVisibility = rawFields?.map(f => ({ ...f, visible: true })) || [];
             const unitsWithVisibility = rawUnits?.map(u => ({ ...u, visible: true })) || [];
             const rentsWithVisibility = rawRents?.map(r => ({ ...r, visible: true })) || [];
+            const rent2026WithVisibility = rawRent2026?.map(r => ({ ...r, visible: true })) || [];
             const propertiesWithVisibility = rawProperties?.map(p => ({ ...p, visible: true })) || [];
 
             queryClient.setQueryData(['fields'], fieldsWithVisibility);
             queryClient.setQueryData(['units'], unitsWithVisibility);
             queryClient.setQueryData(['rents'], rentsWithVisibility);
+            queryClient.setQueryData(['rent_2026'], rent2026WithVisibility);
             queryClient.setQueryData(['properties'], propertiesWithVisibility);
 
             sessionStorage.setItem('groups', JSON.stringify(groups));
             sessionStorage.setItem('personnel', JSON.stringify(personnel));
             sessionStorage.setItem('vehicles', JSON.stringify(vehicles));
             sessionStorage.setItem('techniques', JSON.stringify(techniques));
+            sessionStorage.setItem('rent_2026', JSON.stringify(rent2026WithVisibility));
 
         } catch (error) {
             console.error('Error loading initial data:', error);

@@ -75,6 +75,12 @@ const apiRoutes = {
     updateRent: (id) => `${API_BASE_URL}/rent/${id}`,
     deleteRent: (id) => `${API_BASE_URL}/rent/${id}`,
 
+    // Орендовані ділянки 2026
+    getRent2026: `${API_BASE_URL}/rent_2026`,
+    addRent2026: `${API_BASE_URL}/rent_2026`,
+    updateRent2026: (id) => `${API_BASE_URL}/rent_2026/${id}`,
+    deleteRent2026: (id) => `${API_BASE_URL}/rent_2026/${id}`,
+
     // Власність (property)
     getProperties: `${API_BASE_URL}/property`,
     addProperty: `${API_BASE_URL}/property`,

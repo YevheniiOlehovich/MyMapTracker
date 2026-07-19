@@ -86,6 +86,17 @@ export const exportTasksToExcel = (
                 "Оброблено (га)":
                     processedArea,
 
+                "Початок робіт":
+                    assignment.arrivalTime || "—",
+
+                "Кінець робіт":
+                    assignment.departureTime || "—",
+
+                "Відпрацьовано (год)":
+                    assignment.workedHours != null
+                        ? Number(assignment.workedHours).toFixed(2)
+                        : "—",
+
                 "Примітка":
                     task.note || "",
             });
@@ -138,8 +149,16 @@ export const exportTasksToExcel = (
                     "—",
 
                 "Оброблено (га)":
-                    Number(task.processedArea || 0)
-                        .toFixed(2),
+                    Number(task.processedArea || 0).toFixed(2),
+
+                "Початок робіт":
+                    "—",
+
+                "Кінець робіт":
+                    "—",
+
+                "Відпрацьовано (год)":
+                    "—",
 
                 "Примітка":
                     task.note || "",
@@ -165,7 +184,12 @@ export const exportTasksToExcel = (
         { wch: 35 },
         { wch: 12 },
         { wch: 18 },
-        { wch: 50 },
+
+        { wch: 14 }, 
+        { wch: 14 }, 
+        { wch: 18 }, 
+
+        { wch: 50 }, 
     ];
 
     const workbook =
