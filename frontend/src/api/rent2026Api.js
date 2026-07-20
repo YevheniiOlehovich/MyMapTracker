@@ -29,9 +29,9 @@ export const addRent2026Api = async (data) => {
 };
 
 // Оновити
-export const updateRent2026Api = async (data) => {
+export const updateRent2026Api = async ({ id, data }) => {
     const response = await fetch(
-        apiRoutes.updateRent2026(data._id),
+        apiRoutes.updateRent2026(id),
         {
             method: "PUT",
             headers: {

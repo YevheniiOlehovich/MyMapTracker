@@ -11,28 +11,66 @@ import {
     deleteRent2026Api,
 } from "../api/rent2026Api";
 
+const QUERY_KEY = ["rent_2026"];
+const STORAGE_KEY = "rent_2026";
+
+// ---------------------------------
+// Helpers
+// ---------------------------------
+
+const prepareData = (data) =>
+    data.map((item) => ({
+        ...item,
+        visible: item.visible ?? true,
+    }));
+
+const getStorageData = () => {
+    const cache = sessionStorage.getItem(STORAGE_KEY);
+
+    return cache ? JSON.parse(cache) : undefined;
+};
+
+const setStorageData = (data) => {
+    sessionStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify(data)
+    );
+};
+
+const refreshRent2026 = async (queryClient) => {
+    const data = await fetchRent2026();
+
+    const prepared = prepareData(data);
+
+    queryClient.setQueryData(
+        QUERY_KEY,
+        prepared
+    );
+
+    setStorageData(prepared);
+
+    return prepared;
+};
+
 // ---------------------------------
 // Дані
 // ---------------------------------
 
 export const useRent2026Data = () =>
     useQuery({
-        queryKey: ["rent_2026"],
+        queryKey: QUERY_KEY,
+
         queryFn: async () => {
             const data = await fetchRent2026();
 
-            const updated = data.map(item => ({
-                ...item,
-                visible: true,
-            }));
+            const prepared = prepareData(data);
 
-            sessionStorage.setItem(
-                "rent_2026",
-                JSON.stringify(updated)
-            );
+            setStorageData(prepared);
 
-            return updated;
+            return prepared;
         },
+
+        initialData: getStorageData,
 
         staleTime: 5 * 60 * 1000,
         cacheTime: 10 * 60 * 1000,
@@ -50,25 +88,7 @@ export const useAddRent2026 = () => {
         mutationFn: addRent2026Api,
 
         onSuccess: async () => {
-            const data = await queryClient.fetchQuery({
-                queryKey: ["rent_2026"],
-                queryFn: fetchRent2026,
-            });
-
-            const updated = data.map(item => ({
-                ...item,
-                visible: true,
-            }));
-
-            queryClient.setQueryData(
-                ["rent_2026"],
-                updated
-            );
-
-            sessionStorage.setItem(
-                "rent_2026",
-                JSON.stringify(updated)
-            );
+            await refreshRent2026(queryClient);
         },
     });
 };
@@ -83,29 +103,8 @@ export const useUpdateRent2026 = () => {
     return useMutation({
         mutationFn: updateRent2026Api,
 
-        onSuccess: (updatedItem) => {
-            const data =
-                queryClient.getQueryData(["rent_2026"]) || [];
-
-            const updated = data.map(item =>
-                item._id === updatedItem.data._id
-                    ? {
-                          ...updatedItem.data,
-                          visible:
-                              item.visible ?? true,
-                      }
-                    : item
-            );
-
-            queryClient.setQueryData(
-                ["rent_2026"],
-                updated
-            );
-
-            sessionStorage.setItem(
-                "rent_2026",
-                JSON.stringify(updated)
-            );
+        onSuccess: async () => {
+            await refreshRent2026(queryClient);
         },
     });
 };
@@ -121,25 +120,7 @@ export const useDeleteRent2026 = () => {
         mutationFn: deleteRent2026Api,
 
         onSuccess: async () => {
-            const data = await queryClient.fetchQuery({
-                queryKey: ["rent_2026"],
-                queryFn: fetchRent2026,
-            });
-
-            const updated = data.map(item => ({
-                ...item,
-                visible: true,
-            }));
-
-            queryClient.setQueryData(
-                ["rent_2026"],
-                updated
-            );
-
-            sessionStorage.setItem(
-                "rent_2026",
-                JSON.stringify(updated)
-            );
+            await refreshRent2026(queryClient);
         },
     });
 };
@@ -154,9 +135,9 @@ export const useToggleRent2026Visibility = () => {
     return useMutation({
         mutationFn: ({ id, visible }) => {
             const data =
-                queryClient.getQueryData(["rent_2026"]) || [];
+                queryClient.getQueryData(QUERY_KEY) || [];
 
-            const updated = data.map(item =>
+            const updated = data.map((item) =>
                 item._id === id
                     ? {
                           ...item,
@@ -166,14 +147,13 @@ export const useToggleRent2026Visibility = () => {
             );
 
             queryClient.setQueryData(
-                ["rent_2026"],
+                QUERY_KEY,
                 updated
             );
 
-            sessionStorage.setItem(
-                "rent_2026",
-                JSON.stringify(updated)
-            );
+            setStorageData(updated);
+
+            return updated;
         },
     });
 };

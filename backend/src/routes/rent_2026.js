@@ -56,12 +56,10 @@ const rent2026Schema = new mongoose.Schema(
             type: {
                 type: String,
                 enum: ["Polygon", "MultiPolygon"],
-                default: "Polygon",
             },
 
             coordinates: {
                 type: Array,
-                required: true,
             },
         },
 

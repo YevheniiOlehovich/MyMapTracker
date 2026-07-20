@@ -17,6 +17,7 @@ const modalSlice = createSlice({
         isAddTaskModalVisible: false,
         isAddTaskReportModalVisible: false,
         isExportTasksModalVisible: false,
+        isAddLandPlotModalVisible: false,
 
         editTechniqueId: null,
         editGroupId: null,
@@ -31,6 +32,7 @@ const modalSlice = createSlice({
         editTaskId: null,
         // editTaskReportId: null,
         editTaskReportData: null,
+        selectedLandPlot: null,
 
     },
     reducers: {
@@ -134,14 +136,14 @@ const modalSlice = createSlice({
             state.isAddTaskModalVisible = false;
             state.editTaskId = null;
         },
-        // openTaskReportModal: (state, action) => {
-        //     state.isAddTaskReportModalVisible = true;
-        //     state.editTaskReportData = action.payload; // зберігаємо весь об'єкт таски
-        // },
-        // closeTaskReportModal: (state) => {
-        //     state.isAddTaskReportModalVisible = false;
-        //     state.editTaskReportData = null;
-        // },
+        openAddLandPlotModal: (state, action) => {
+            state.isAddLandPlotModalVisible = true;
+            state.selectedLandPlot = action.payload || null;
+        },
+        closeAddLandPlotModal: (state) => {
+            state.isAddLandPlotModalVisible = false;
+            state.selectedLandPlot = null;
+        },
         openTaskReportModal: (state, action) => {
             state.isAddTaskReportModalVisible = true;
             state.editTaskReportData = action.payload; // зберігаємо всю таску
@@ -190,6 +192,8 @@ export const {
     closeTaskReportModal,
     openExportTasksModal,
     closeExportTasksModal,
+    openAddLandPlotModal,
+    closeAddLandPlotModal,
 
 } = modalSlice.actions;
 
