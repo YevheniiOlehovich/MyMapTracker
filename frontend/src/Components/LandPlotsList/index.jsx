@@ -3,6 +3,9 @@ import { useDispatch } from "react-redux";
 import { useRent2026Data } from "../../hooks/useRent2026";
 import { setMapCenter } from "../../store/mapCenterSlice";
 import { setSelectedCadastre } from "../../store/selectedCadastreSlice";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined"; 
+
+import { openAddLandPlotModal } from "../../store/modalSlice";
 
 import {
   IconButton,
@@ -34,6 +37,10 @@ export default function LandPlotsList({ open = true }) {
     error,
   } = useRent2026Data();
 
+  const handleEdit = (plot) => {
+    dispatch(openAddLandPlotModal(plot));
+  };
+
   const filteredData = useMemo(() => {
     const value = search.toLowerCase().trim();
 
@@ -41,9 +48,9 @@ export default function LandPlotsList({ open = true }) {
 
     return rent2026Data.filter((item) => {
       return (
-        item.plot?.cadnum?.toLowerCase().includes(value) ||
-        item.source?.toLowerCase().includes(value) ||
-        item.owner?.name?.toLowerCase().includes(value)
+        (item.plot?.cadnum || "").toLowerCase().includes(value) ||
+        (item.source || "").toLowerCase().includes(value) ||
+        (item.owner?.name || "").toLowerCase().includes(value)
       );
     });
   }, [rent2026Data, search]);
@@ -211,9 +218,10 @@ export default function LandPlotsList({ open = true }) {
               {/* INFO */}
               <Typography
                 sx={{
+                  flex: 1,
+                  pr: 1,
                   fontSize: 12,
                   color: "white",
-                  maxWidth: 240,
                   lineHeight: 1.45,
                 }}
               >
@@ -253,6 +261,22 @@ export default function LandPlotsList({ open = true }) {
                   gap: 0.3,
                 }}
               >
+
+                <Tooltip title="Редагувати ділянку">
+                  <IconButton
+                      size="small"
+                      sx={{ p: 0.4 }}
+                      onClick={() => handleEdit(item)}
+                  >
+                      <EditOutlinedIcon
+                          sx={{
+                              fontSize: 18,
+                              color: "white",
+                          }}
+                      />
+                  </IconButton>
+              </Tooltip>
+
                 <Tooltip title="Центрувати ділянку">
                   <span>
                     <IconButton
