@@ -30,8 +30,6 @@ const app = express();
 app.set('trust proxy', 1); 
 const port = process.env.PORT || 5000;
 
-// const mongoURI = 'mongodb://localhost:27017/test' //Локал
-
 // const mongoURI = "mongodb://localhost:27020/test";
 
 const mongoURI = `mongodb://mongo:27017/test` //Прод
