@@ -1,5 +1,3 @@
-// components/Rent2026Layer.jsx
-
 import React from "react";
 import { Polygon, Popup } from "react-leaflet";
 

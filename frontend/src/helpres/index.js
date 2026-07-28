@@ -57,3 +57,13 @@ export const fieldOperations = [
 
 
 export const BACKEND_URL = 'http://localhost:5000';
+
+export const SOURCES = [
+    { value: "ЛАДА", label: "ЛАДА" },
+    { value: "КРОК", label: "КРОК" },
+];
+
+export const OWNERSHIP_TYPES = [
+    { value: "own", label: "Власність" },
+    { value: "rent", label: "Оренда" },
+];

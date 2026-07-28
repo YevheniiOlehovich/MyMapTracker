@@ -17,9 +17,9 @@ import {
     closeAddLandPlotModal,
 } from "../../store/modalSlice";
 import {
-    useAddRent2026,
-    useUpdateRent2026,
-} from "../../hooks/useRent2026";
+    useAddPlot,
+    useUpdatePlot,
+} from "../../hooks/usePlotsData";
 
 import LandPlotInfoPanel from "../LandPlotInfoPannel";
 import LandPlotGeometryPanel from "../LandPlotGeometryPanel";
@@ -46,7 +46,8 @@ export default function AddLandPlotModal() {
 
 
     const [formData, setFormData] = useState({
-        source: "",
+        ownershipType: "own",
+        source: "ЛАДА",
 
         owner: {
             name: "",
@@ -96,7 +97,8 @@ export default function AddLandPlotModal() {
             );
         } else {
             setFormData({
-                source: "",
+                ownershipType: "own",
+                source: "ЛАДА",
 
                 owner: {
                     name: "",
@@ -158,8 +160,8 @@ export default function AddLandPlotModal() {
         }));
     };
 
-    const addMutation = useAddRent2026();
-    const updateMutation = useUpdateRent2026();
+    const addMutation = useAddPlot();
+    const updateMutation = useUpdatePlot();
 
     const handleSave = () => {
         const data = {

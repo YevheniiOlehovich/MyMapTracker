@@ -81,6 +81,12 @@ const apiRoutes = {
     updateRent2026: (id) => `${API_BASE_URL}/rent_2026/${id}`,
     deleteRent2026: (id) => `${API_BASE_URL}/rent_2026/${id}`,
 
+    // Ділянки
+    getPlots: `${API_BASE_URL}/plots`,
+    addPlot: `${API_BASE_URL}/plots`,
+    updatePlot: (id) => `${API_BASE_URL}/plots/${id}`,
+    deletePlot: (id) => `${API_BASE_URL}/plots/${id}`,
+
     // Власність (property)
     getProperties: `${API_BASE_URL}/property`,
     addProperty: `${API_BASE_URL}/property`,

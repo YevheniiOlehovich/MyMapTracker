@@ -7,8 +7,13 @@ const router = express.Router();
 // Schema
 // ======================
 
-const rent2026Schema = new mongoose.Schema(
+const plotSchema = new mongoose.Schema(
     {
+        ownershipType: {
+            type: String,
+            default: "",
+        },
+
         source: {
             type: String,
             default: "",
@@ -68,25 +73,25 @@ const rent2026Schema = new mongoose.Schema(
         },
     },
     {
-        collection: "rent_2026",
+        collection: "plots",
         timestamps: true,
     }
 );
 
 // ======================
-// Індекси
+// Indexes
 // ======================
 
-rent2026Schema.index({ geometry: "2dsphere" });
-rent2026Schema.index({ "plot.cadnum": 1 });
+plotSchema.index({ geometry: "2dsphere" });
+plotSchema.index({ "plot.cadnum": 1 });
 
 // ======================
 // Model
 // ======================
 
-const Rent2026 =
-    mongoose.models.Rent2026 ||
-    mongoose.model("Rent2026", rent2026Schema);
+const Plot =
+    mongoose.models.Plot ||
+    mongoose.model("Plot", plotSchema);
 
 // ======================
 // GET ALL
@@ -94,9 +99,9 @@ const Rent2026 =
 
 router.get("/", async (req, res) => {
     try {
-        const rents = await Rent2026.find().lean();
+        const plots = await Plot.find().lean();
 
-        res.status(200).json(rents);
+        res.status(200).json(plots);
     } catch (error) {
         res.status(500).json({
             message: "Помилка отримання ділянок",
@@ -111,15 +116,15 @@ router.get("/", async (req, res) => {
 
 router.get("/:id", async (req, res) => {
     try {
-        const rent = await Rent2026.findById(req.params.id);
+        const plot = await Plot.findById(req.params.id);
 
-        if (!rent) {
+        if (!plot) {
             return res.status(404).json({
                 message: "Ділянку не знайдено",
             });
         }
 
-        res.status(200).json(rent);
+        res.status(200).json(plot);
     } catch (error) {
         res.status(500).json({
             message: "Помилка отримання ділянки",
@@ -137,7 +142,7 @@ router.post("/", async (req, res) => {
         const body = req.body;
 
         if (Array.isArray(body)) {
-            const result = await Rent2026.insertMany(body);
+            const result = await Plot.insertMany(body);
 
             return res.status(201).json({
                 message: "Ділянки успішно додано",
@@ -146,11 +151,11 @@ router.post("/", async (req, res) => {
             });
         }
 
-        const rent = await Rent2026.create(body);
+        const plot = await Plot.create(body);
 
         res.status(201).json({
             message: "Ділянку успішно додано",
-            data: rent,
+            data: plot,
         });
     } catch (error) {
         res.status(500).json({
@@ -166,7 +171,7 @@ router.post("/", async (req, res) => {
 
 router.put("/:id", async (req, res) => {
     try {
-        const rent = await Rent2026.findByIdAndUpdate(
+        const plot = await Plot.findByIdAndUpdate(
             req.params.id,
             req.body,
             {
@@ -175,7 +180,7 @@ router.put("/:id", async (req, res) => {
             }
         );
 
-        if (!rent) {
+        if (!plot) {
             return res.status(404).json({
                 message: "Ділянку не знайдено",
             });
@@ -183,7 +188,7 @@ router.put("/:id", async (req, res) => {
 
         res.status(200).json({
             message: "Ділянку успішно оновлено",
-            data: rent,
+            data: plot,
         });
     } catch (error) {
         res.status(500).json({
@@ -199,9 +204,9 @@ router.put("/:id", async (req, res) => {
 
 router.delete("/:id", async (req, res) => {
     try {
-        const rent = await Rent2026.findByIdAndDelete(req.params.id);
+        const plot = await Plot.findByIdAndDelete(req.params.id);
 
-        if (!rent) {
+        if (!plot) {
             return res.status(404).json({
                 message: "Ділянку не знайдено",
             });

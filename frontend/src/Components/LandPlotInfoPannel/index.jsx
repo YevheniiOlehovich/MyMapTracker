@@ -11,6 +11,11 @@ import {
     MenuItem,
 } from "@mui/material";
 
+import {
+    SOURCES,
+    OWNERSHIP_TYPES,
+} from "../../helpres/index";
+
 export default function LandPlotInfoPanel({
     formData,
     handleChange,
@@ -26,6 +31,22 @@ export default function LandPlotInfoPanel({
             }}
         >
             <FormControl fullWidth sx={{ mb: 2 }}>
+                <InputLabel>Тип</InputLabel>
+
+                <Select
+                    label="Тип"
+                    value={formData.ownershipType}
+                    onChange={handleRootChange("ownershipType")}
+                >
+                    {OWNERSHIP_TYPES.map((item) => (
+                        <MenuItem key={item.value} value={item.value}>
+                            {item.label}
+                        </MenuItem>
+                    ))}
+                </Select>
+            </FormControl>
+
+            <FormControl fullWidth sx={{ mb: 2 }}>
                 <InputLabel>Джерело</InputLabel>
 
                 <Select
@@ -33,8 +54,11 @@ export default function LandPlotInfoPanel({
                     value={formData.source}
                     onChange={handleRootChange("source")}
                 >
-                    <MenuItem value="КРОК">КРОК</MenuItem>
-                    <MenuItem value="ЛАДА">ЛАДА</MenuItem>
+                    {SOURCES.map((item) => (
+                        <MenuItem key={item.value} value={item.value}>
+                            {item.label}
+                        </MenuItem>
+                    ))}
                 </Select>
             </FormControl>
 

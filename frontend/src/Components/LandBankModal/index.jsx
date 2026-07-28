@@ -1,6 +1,5 @@
 import { useMemo } from "react";
-import { useRent2026Data } from "../../hooks/useRent2026";
-import { usePropertiesData } from "../../hooks/usePropertiesData";
+import { usePlotsData } from "../../hooks/usePlotsData";
 
 import {
     Dialog,
@@ -23,32 +22,29 @@ import {
 import CloseIcon from "@mui/icons-material/Close";
 
 export default function LandBankModal({ onClose }) {
-    const {
-        data: rentData = [],
-        isLoading: rentLoading,
-        error: rentError,
-    } = useRent2026Data();
 
     const {
-        data: propertyData = [],
-        isLoading: propertyLoading,
-        error: propertyError,
-    } = usePropertiesData();
+        data: plotsData = [],
+        isLoading,
+        error,
+    } = usePlotsData();
 
     const rows = useMemo(() => {
-        return [
-            ...propertyData.map((item) => ({
-                ...item,
-                recordType: "Власність",
-            })),
-            ...rentData.map((item) => ({
-                ...item,
-                recordType: "Оренда",
-            })),
-        ];
-    }, [propertyData, rentData]);
+        return [...plotsData].sort((a, b) => {
+
+            if (a.ownershipType !== b.ownershipType) {
+                return a.ownershipType === "own" ? -1 : 1;
+            }
+
+            return (a.owner?.name || "").localeCompare(
+                b.owner?.name || "",
+                "uk"
+            );
+        });
+    }, [plotsData]);
 
     const stats = useMemo(() => {
+
         const result = {
             totalCount: 0,
             totalArea: 0,
@@ -56,224 +52,272 @@ export default function LandBankModal({ onClose }) {
             rentCount: 0,
             rentArea: 0,
 
-            propertyCount: 0,
-            propertyArea: 0,
+            ownCount: 0,
+            ownArea: 0,
 
+            krokCount: 0,
             krokArea: 0,
+
+            ladaCount: 0,
             ladaArea: 0,
         };
 
-        propertyData.forEach((item) => {
+        plotsData.forEach((item) => {
+
             const area = Number(item.plot?.area || 0);
 
             result.totalCount++;
-            result.propertyCount++;
-
             result.totalArea += area;
-            result.propertyArea += area;
 
-            if (item.source === "КРОК")
-                result.krokArea += area;
+            if (item.ownershipType === "rent") {
 
-            if (item.source === "ЛАДА")
-                result.ladaArea += area;
-        });
+                result.rentCount++;
+                result.rentArea += area;
 
-        rentData.forEach((item) => {
-            const area = Number(item.plot?.area || 0);
+                if (item.source === "КРОК") {
+                    result.krokCount++;
+                    result.krokArea += area;
+                }
 
-            result.totalCount++;
-            result.rentCount++;
+                if (item.source === "ЛАДА") {
+                    result.ladaCount++;
+                    result.ladaArea += area;
+                }
 
-            result.totalArea += area;
-            result.rentArea += area;
+            } else {
 
-            if (item.source === "КРОК")
-                result.krokArea += area;
+                result.ownCount++;
+                result.ownArea += area;
 
-            if (item.source === "ЛАДА")
-                result.ladaArea += area;
+            }
+
         });
 
         return result;
-    }, [propertyData, rentData]);
 
-    if (rentLoading || propertyLoading)
-        return <p>Завантаження...</p>;
+    }, [plotsData]);
 
-    if (rentError)
-        return <p>{rentError.message}</p>;
+    if (isLoading)
+        return <Typography sx={{ p: 3 }}>Завантаження...</Typography>;
 
-    if (propertyError)
-        return <p>{propertyError.message}</p>;
-
-
+    if (error)
         return (
-        <Dialog
-            open
-            onClose={onClose}
-            maxWidth="xl"
-            fullWidth
+            <Typography color="error" sx={{ p: 3 }}>
+                {error.message}
+            </Typography>
+        );
+
+    return (
+    
+    <Dialog
+        open
+        onClose={onClose}
+        maxWidth="xl"
+        fullWidth
+    >
+        <DialogTitle
+            sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+            }}
         >
-            <DialogTitle
+            Земельний банк
+
+            <IconButton onClick={onClose}>
+                <CloseIcon />
+            </IconButton>
+        </DialogTitle>
+
+        <DialogContent dividers>
+
+            {/* СТАТИСТИКА */}
+
+            <Box
                 sx={{
+                    mb: 3,
                     display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
+                    flexWrap: "wrap",
+                    gap: 2,
                 }}
             >
-                Земельний банк
 
-                <IconButton onClick={onClose}>
-                    <CloseIcon />
-                </IconButton>
-            </DialogTitle>
+                <Paper sx={{ p: 2, minWidth: 220 }}>
+                    <Typography variant="h6">
+                        Загалом
+                    </Typography>
 
-            <DialogContent dividers>
+                    <Typography>
+                        Ділянок: <b>{stats.totalCount}</b>
+                    </Typography>
 
-                <Box
-                    sx={{
-                        mb: 3,
-                        display: "flex",
-                        flexWrap: "wrap",
-                        gap: 3,
-                    }}
-                >
-                    <Paper sx={{ p: 2, minWidth: 220 }}>
-                        <Typography variant="h6">
-                            Загалом
-                        </Typography>
+                    <Typography>
+                        Площа: <b>{stats.totalArea.toFixed(4)} га</b>
+                    </Typography>
+                </Paper>
 
-                        <Typography>
-                            Ділянок: <b>{stats.totalCount}</b>
-                        </Typography>
+                <Paper sx={{ p: 2, minWidth: 220 }}>
+                    <Typography
+                        variant="h6"
+                        color="warning.main"
+                    >
+                        Оренда
+                    </Typography>
 
-                        <Typography>
-                            Площа:{" "}
-                            <b>{stats.totalArea.toFixed(4)} га</b>
-                        </Typography>
-                    </Paper>
+                    <Typography>
+                        Ділянок: <b>{stats.rentCount}</b>
+                    </Typography>
 
-                    <Paper sx={{ p: 2, minWidth: 220 }}>
-                        <Typography variant="h6">
-                            Оренда
-                        </Typography>
+                    <Typography>
+                        Площа: <b>{stats.rentArea.toFixed(4)} га</b>
+                    </Typography>
+                </Paper>
 
-                        <Typography>
-                            Ділянок: <b>{stats.rentCount}</b>
-                        </Typography>
+                <Paper sx={{ p: 2, minWidth: 220 }}>
+                    <Typography
+                        variant="h6"
+                        color="success.main"
+                    >
+                        Власність
+                    </Typography>
 
-                        <Typography>
-                            Площа:{" "}
-                            <b>{stats.rentArea.toFixed(4)} га</b>
-                        </Typography>
-                    </Paper>
+                    <Typography>
+                        Ділянок: <b>{stats.ownCount}</b>
+                    </Typography>
 
-                    <Paper sx={{ p: 2, minWidth: 220 }}>
-                        <Typography variant="h6">
-                            Власність
-                        </Typography>
+                    <Typography>
+                        Площа: <b>{stats.ownArea.toFixed(4)} га</b>
+                    </Typography>
+                </Paper>
 
-                        <Typography>
-                            Ділянок: <b>{stats.propertyCount}</b>
-                        </Typography>
+                <Paper sx={{ p: 2, minWidth: 240 }}>
+                    <Typography variant="h6">
+                        Оренда по організаціях
+                    </Typography>
 
-                        <Typography>
-                            Площа:{" "}
-                            <b>{stats.propertyArea.toFixed(4)} га</b>
-                        </Typography>
-                    </Paper>
+                    <Typography color="primary">
+                        КРОК:
+                        {" "}
+                        <b>
+                            {stats.krokCount} (
+                            {stats.krokArea.toFixed(4)} га)
+                        </b>
+                    </Typography>
 
-                    <Paper sx={{ p: 2, minWidth: 220 }}>
-                        <Typography variant="h6">
-                            По організаціях
-                        </Typography>
+                    <Typography color="secondary">
+                        ЛАДА:
+                        {" "}
+                        <b>
+                            {stats.ladaCount} (
+                            {stats.ladaArea.toFixed(4)} га)
+                        </b>
+                    </Typography>
+                </Paper>
 
-                        <Typography color="primary">
-                            КРОК:{" "}
-                            <b>{stats.krokArea.toFixed(4)} га</b>
-                        </Typography>
+            </Box>
 
-                        <Typography color="success.main">
-                            ЛАДА:{" "}
-                            <b>{stats.ladaArea.toFixed(4)} га</b>
-                        </Typography>
-                    </Paper>
-                </Box>
+            {/* ТАБЛИЦЯ */}
 
-                <TableContainer component={Paper}>
-                    <Table size="small">
+            <TableContainer component={Paper}>
+                <Table size="small">
 
-                        <TableHead>
-                            <TableRow>
-                                <TableCell>Тип</TableCell>
-                                <TableCell>Власник</TableCell>
-                                <TableCell>Організація</TableCell>
-                                <TableCell>Кадастровий номер</TableCell>
-                                <TableCell>Тип ділянки</TableCell>
-                                <TableCell align="right">
-                                    Площа
-                                </TableCell>
+                    <TableHead>
+                        <TableRow>
+                            <TableCell>Тип</TableCell>
+                            <TableCell>Власник</TableCell>
+                            <TableCell>Організація</TableCell>
+                            <TableCell>Кадастровий номер</TableCell>
+                            <TableCell>Тип угідь</TableCell>
+                            <TableCell align="right">
+                                Площа
+                            </TableCell>
+                            <TableCell>
+                                Кінець договору
+                            </TableCell>
+                        </TableRow>
+                    </TableHead>
+
+                    <TableBody>
+
+                        {rows.map((item) => (
+
+                            <TableRow
+                                key={item._id}
+                                hover
+                            >
+
                                 <TableCell>
-                                    Кінець договору
+
+                                    <Typography
+                                        fontWeight={700}
+                                        color={
+                                            item.ownershipType === "own"
+                                                ? "success.main"
+                                                : "warning.main"
+                                        }
+                                    >
+                                        {item.ownershipType === "own"
+                                            ? "Власність"
+                                            : "Оренда"}
+                                    </Typography>
+
                                 </TableCell>
+
+                                <TableCell>
+                                    {item.owner?.name || "-"}
+                                </TableCell>
+
+                                <TableCell>
+
+                                    {item.ownershipType === "rent"
+                                        ? item.source
+                                        : "-"}
+
+                                </TableCell>
+
+                                <TableCell>
+                                    {item.plot?.cadnum}
+                                </TableCell>
+
+                                <TableCell>
+                                    {item.plot?.plotType}
+                                </TableCell>
+
+                                <TableCell align="right">
+                                    {Number(
+                                        item.plot?.area || 0
+                                    ).toFixed(4)}
+                                </TableCell>
+
+                                <TableCell>
+
+                                    {item.ownershipType === "rent"
+                                        ? item.agreement?.endDate
+                                        : "-"}
+
+                                </TableCell>
+
                             </TableRow>
-                        </TableHead>
 
-                        <TableBody>
+                        ))}
 
-                            {rows.map((item) => (
-                                <TableRow
-                                    key={`${item.recordType}-${item._id}`}
-                                    hover
-                                >
-                                    <TableCell>
-                                        <b>{item.recordType}</b>
-                                    </TableCell>
+                    </TableBody>
 
-                                    <TableCell>
-                                        {item.owner?.name}
-                                    </TableCell>
+                </Table>
+            </TableContainer>
 
-                                    <TableCell>
-                                        {item.source}
-                                    </TableCell>
+        </DialogContent>
 
-                                    <TableCell>
-                                        {item.plot?.cadnum}
-                                    </TableCell>
+        <DialogActions>
 
-                                    <TableCell>
-                                        {item.plot?.plotType}
-                                    </TableCell>
+            <Button
+                variant="contained"
+                onClick={onClose}
+            >
+                Закрити
+            </Button>
 
-                                    <TableCell align="right">
-                                        {Number(item.plot?.area || 0).toFixed(4)}
-                                    </TableCell>
+        </DialogActions>
 
-                                    <TableCell>
-                                        {item.recordType === "Оренда"
-                                            ? item.agreement?.endDate
-                                            : ""}
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-
-                        </TableBody>
-
-                    </Table>
-                </TableContainer>
-
-            </DialogContent>
-
-            <DialogActions>
-                <Button
-                    variant="contained"
-                    onClick={onClose}
-                >
-                    Закрити
-                </Button>
-            </DialogActions>
-        </Dialog>
-    );
-}
+    </Dialog>
+)}

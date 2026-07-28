@@ -23,6 +23,7 @@ import propertyRoutes from './routes/property.js';
 import taskRoutes from './routes/taskRoutes.js';
 import authRoutes from './routes/auth.js';
 import rent_2026Routes from './routes/rent_2026.js';
+import plotsRoutes from './routes/plots.js'
 
 dotenv.config();
 
@@ -65,6 +66,7 @@ app.use('/units', unitsRoutes);
 app.use('/rent', rentRoutes);
 app.use('/rent_2026', rent_2026Routes);
 app.use('/property', propertyRoutes);
+app.use('/plots', plotsRoutes)
 app.use('/tasks', taskRoutes);
 
 // Головний маршрут

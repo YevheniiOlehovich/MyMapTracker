@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  MapContainer,
-  TileLayer,
-  useMapEvents,
+    MapContainer,
+    TileLayer,
+    useMapEvents,
 } from "react-leaflet";
 
 import Styles from "./styled";
@@ -12,264 +12,231 @@ import { getTileLayerConfig } from "../../helpres/tileLayerHelper";
 import { useCadastreData } from "../../hooks/useCadastreData";
 import { useFieldsData } from "../../hooks/useFieldsData";
 import { useGeozoneData } from "../../hooks/useGeozonesData";
-import { useGpsData } from "../../hooks/useGpsData";
 import { useUnitsData } from "../../hooks/useUnitsData";
-import { useRentsData } from "../../hooks/useRentData";
-import { useRent2026Data } from "../../hooks/useRent2026";
-import { usePropertiesData } from "../../hooks/usePropertiesData";
+import { usePlotsData } from "../../hooks/usePlotsData";
 import { useLastGpsByDate } from "../../hooks/useLastGpsByDate";
 
 import {
-  selectShowFields,
-  selectShowCadastre,
-  selectShowGeozones,
-  selectShowUnits,
-  selectShowRent,
-  selectShowRent2026,
-  selectShowProperty,
+    selectShowFields,
+    selectShowCadastre,
+    selectShowGeozones,
+    selectShowUnits,
 } from "../../store/layersList";
 
 import {
-  selectMapCenter,
-  selectZoomLevel,
-  setZoomLevel,
+    selectMapCenter,
+    selectZoomLevel,
+    setZoomLevel,
 } from "../../store/mapCenterSlice";
 
 import { selectCurrentLocation } from "../../store/currentLocationSlice";
-import { setSelectedField, openAddFieldsModal } from "../../store/modalSlice";
+import {
+    setSelectedField,
+    openAddFieldsModal,
+} from "../../store/modalSlice";
 
 import MapCenterUpdater from "../MapCenterUpdater";
 import TrackMarkers from "../TrackMarkers";
 import MeasureLayer from "../MeasureLayer";
 import CurrentLocationMarker from "../CurrentLocationMarker";
 
-import PropertyLayer from "../PropertyLayer";
-import RentLayer from "../RentLayer";
-import Rent2026Layer from "../RentLayer2026";
 import UnitsLayer from "../UnitsLayer";
 import GeozoneLayer from "../GeozoneLayer";
 import CadastreLayer from "../CadastreLayer";
 import SelectedCadastreLayer from "../SelectedCadastreLayer";
 import FieldsLayer from "../FieldsLayer";
+import PlotsLayer from "../PlotsLayer";
 
 import "leaflet/dist/leaflet.css";
 import "@geoman-io/leaflet-geoman-free/dist/leaflet-geoman.css";
 import "@geoman-io/leaflet-geoman-free";
 
 function ZoomTracker({ setZoomLevel }) {
-  useMapEvents({
-    zoomend: (e) => {
-      setZoomLevel(e.target.getZoom());
-    },
-  });
+    useMapEvents({
+        zoomend: (e) => {
+            setZoomLevel(e.target.getZoom());
+        },
+    });
 
-  return null;
+    return null;
 }
 
 export default function Map() {
-  const dispatch = useDispatch();
+    const dispatch = useDispatch();
 
-  const {
-    data: fieldsData = [],
-    isLoading: isFieldsLoading,
-  } = useFieldsData();
+    const {
+        data: fieldsData = [],
+        isLoading: isFieldsLoading,
+    } = useFieldsData();
 
-  const {
-    data: cadastreData = [],
-    isLoading: isCadastreLoading,
-  } = useCadastreData();
+    const {
+        data: cadastreData = [],
+        isLoading: isCadastreLoading,
+    } = useCadastreData();
 
-  const {
-    data: geozoneData = [],
-    isLoading: isGeozoneLoading,
-  } = useGeozoneData();
+    const {
+        data: geozoneData = [],
+        isLoading: isGeozoneLoading,
+    } = useGeozoneData();
 
-  const {
-    data: unitsData = [],
-    isLoading: isUnitsLoading,
-  } = useUnitsData();
+    const {
+        data: unitsData = [],
+        isLoading: isUnitsLoading,
+    } = useUnitsData();
 
-  const {
-    data: rentData = [],
-    isLoading: isRentsLoading,
-  } = useRentsData();
+    const {
+        data: plotsData = [],
+        isLoading: isPlotsLoading,
+    } = usePlotsData();
 
-  const {
-    data: rent2026Data = [],
-    isLoading: isRent2026Loading,
-  } = useRent2026Data();
+    const {
+        data: lastGpsData = [],
+    } = useLastGpsByDate();
 
-  const {
-    data: propertyData = [],
-    isLoading: isPropertyLoading,
-  } = usePropertiesData();
+    const showFields = useSelector(selectShowFields);
+    const showCadastre = useSelector(selectShowCadastre);
+    const showGeozones = useSelector(selectShowGeozones);
+    const showUnits = useSelector(selectShowUnits);
 
-  const { data: lastGpsData = [] } =
-    useLastGpsByDate();
+    const selectedCadastre = useSelector(
+        (state) => state.selectedCadastre.selectedCadastre
+    );
 
-  const showFields = useSelector(selectShowFields);
-  const showCadastre = useSelector(selectShowCadastre);
-  const showGeozones = useSelector(selectShowGeozones);
-  const showUnits = useSelector(selectShowUnits);
-  const showRent = useSelector(selectShowRent);
-  const showRent2026 = useSelector(selectShowRent2026);
-  const showProperty = useSelector(selectShowProperty);
+    const mapType = useSelector(
+        (state) => state.map.type
+    );
 
-  const selectedCadastre = useSelector(
-    (state) => state.selectedCadastre.selectedCadastre
-  );
+    const mapCenter = useSelector(selectMapCenter);
+    const zoomLevel = useSelector(selectZoomLevel);
 
-  const mapType = useSelector(
-    (state) => state.map.type
-  );
+    const currentLocation = useSelector(
+        selectCurrentLocation
+    );
 
-  const mapCenter = useSelector(selectMapCenter);
-  const zoomLevel = useSelector(selectZoomLevel);
-  const currentLocation = useSelector(
-    selectCurrentLocation
-  );
+    const selectedDate = useSelector(
+        (state) => state.calendar.selectedDate
+    );
 
-  const selectedDate = useSelector(
-    (state) => state.calendar.selectedDate
-  );
+    const selectedImei = useSelector(
+        (state) => state.vehicle.imei
+    );
 
-  const selectedImei = useSelector(
-    (state) => state.vehicle.imei
-  );
+    const showTrack = useSelector(
+        (state) => state.vehicle.showTrack
+    );
 
-  const showTrack = useSelector(
-    (state) => state.vehicle.showTrack
-  );
+    const activeFieldId = useSelector(
+        (state) => state.activeField.activeFieldId
+    );
 
-  const activeFieldId = useSelector(
-    (state) => state.activeField.activeFieldId
-  );
+    const [key, setKey] = useState(0);
 
-  const [key, setKey] = useState(0);
+    useEffect(() => {
+        setKey((prev) => prev + 1);
+    }, [mapType]);
 
-  useEffect(() => {
-    setKey((prev) => prev + 1);
-  }, [mapType]);
+    const tileLayerConfig = getTileLayerConfig(mapType);
 
-  const tileLayerConfig =
-    getTileLayerConfig(mapType);
+    const handleEditField = (field) => {
+        dispatch(setSelectedField(field._id));
+        dispatch(openAddFieldsModal());
+    };
 
-  const handleEditField = (field) => {
-    dispatch(setSelectedField(field._id));
-    dispatch(openAddFieldsModal());
-  };
+    if (
+        isCadastreLoading ||
+        isFieldsLoading ||
+        isGeozoneLoading ||
+        isUnitsLoading ||
+        isPlotsLoading
+    ) {
+        return <p>Loading map data...</p>;
+    }
 
-  if (
-    isCadastreLoading ||
-    isFieldsLoading ||
-    isGeozoneLoading ||
-    isUnitsLoading ||
-    isRentsLoading ||
-    isRent2026Loading ||
-    isPropertyLoading
-  ) {
-    return <p>Loading map data...</p>;
-  }
+    return (
+        <Styles.wrapper>
+            <MapContainer
+                key={key}
+                center={mapCenter}
+                zoom={zoomLevel}
+                attributionControl
+                doubleClickZoom
+                scrollWheelZoom
+                easeLinearity={0.8}
+                zoomControl={false}
+                style={{
+                    height: "100vh",
+                    width: "100%",
+                }}
+            >
+                {tileLayerConfig && (
+                    <TileLayer
+                        url={tileLayerConfig.url}
+                        subdomains={tileLayerConfig.subdomains}
+                        attribution={tileLayerConfig.attribution}
+                    />
+                )}
 
-  return (
-    <Styles.wrapper>
-      <MapContainer
-        key={key}
-        center={mapCenter}
-        zoom={zoomLevel}
-        attributionControl
-        doubleClickZoom
-        scrollWheelZoom
-        easeLinearity={0.8}
-        zoomControl={false}
-        style={{
-          height: "100vh",
-          width: "100%",
-        }}
-      >
-        {tileLayerConfig && (
-          <TileLayer
-            url={tileLayerConfig.url}
-            subdomains={
-              tileLayerConfig.subdomains
-            }
-            attribution={
-              tileLayerConfig.attribution
-            }
-          />
-        )}
+                <TrackMarkers
+                    gpsData={lastGpsData}
+                    selectedDate={selectedDate}
+                    selectedImei={selectedImei}
+                    showTrack={showTrack}
+                />
 
-        <TrackMarkers
-          gpsData={lastGpsData}
-          selectedDate={selectedDate}
-          selectedImei={selectedImei}
-          showTrack={showTrack}
-        />
+                {showFields && (
+                    <FieldsLayer
+                        fieldsData={fieldsData}
+                        zoomLevel={zoomLevel}
+                        activeFieldId={activeFieldId}
+                        onEditField={handleEditField}
+                    />
+                )}
 
-        {showFields && (
-          <FieldsLayer
-            fieldsData={fieldsData}
-            zoomLevel={zoomLevel}
-            activeFieldId={activeFieldId}
-            onEditField={handleEditField}
-          />
-        )}
+                {showCadastre && (
+                    <CadastreLayer
+                        cadastreData={cadastreData}
+                        zoomLevel={zoomLevel}
+                    />
+                )}
 
-        {/* КАДАСТР */}
-        {showCadastre && (
-            <CadastreLayer
-                cadastreData={cadastreData}
-                zoomLevel={zoomLevel}
-            />
-        )}
+                {selectedCadastre && (
+                    <SelectedCadastreLayer
+                        zoomLevel={zoomLevel}
+                    />
+                )}
 
-        {selectedCadastre && (
-            <SelectedCadastreLayer
-                zoomLevel={zoomLevel}
-            />
-        )}
+                {showGeozones && (
+                    <GeozoneLayer
+                        geozoneData={geozoneData}
+                        zoomLevel={zoomLevel}
+                    />
+                )}
 
-        {showGeozones && (
-          <GeozoneLayer
-            geozoneData={geozoneData}
-            zoomLevel={zoomLevel}
-          />
-        )}
+                {showUnits && (
+                    <UnitsLayer
+                        unitsData={unitsData}
+                    />
+                )}
 
-        {showUnits && (
-          <UnitsLayer unitsData={unitsData} />
-        )}
+                <PlotsLayer
+                    plotsData={plotsData}
+                />
 
-        {showRent && (
-          <RentLayer rentData={rentData} />
-        )}
+                {currentLocation && (
+                    <CurrentLocationMarker
+                        position={currentLocation}
+                    />
+                )}
 
-        {showRent2026 && (
-            <Rent2026Layer rentData={rent2026Data} />
-        )}
+                <ZoomTracker
+                    setZoomLevel={(zoom) =>
+                        dispatch(setZoomLevel(zoom))
+                    }
+                />
 
-        {showProperty && (
-          <PropertyLayer
-            propertyData={propertyData}
-            zoomLevel={zoomLevel}
-          />
-        )}
-
-        {currentLocation && (
-          <CurrentLocationMarker
-            position={currentLocation}
-          />
-        )}
-
-        <ZoomTracker
-          setZoomLevel={(zoom) =>
-            dispatch(setZoomLevel(zoom))
-          }
-        />
-
-        <MapCenterUpdater />
-        <MeasureLayer />
-      </MapContainer>
-    </Styles.wrapper>
-  );
+                <MapCenterUpdater />
+                <MeasureLayer />
+            </MapContainer>
+        </Styles.wrapper>
+    );
 }

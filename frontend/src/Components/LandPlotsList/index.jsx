@@ -1,6 +1,8 @@
 import React, { useState, useMemo } from "react";
 import { useDispatch } from "react-redux";
 import { useRent2026Data } from "../../hooks/useRent2026";
+
+import { usePlotsData } from "../../hooks/usePlotsData";
 import { setMapCenter } from "../../store/mapCenterSlice";
 import { setSelectedCadastre } from "../../store/selectedCadastreSlice";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined"; 
@@ -31,11 +33,11 @@ export default function LandPlotsList({ open = true }) {
   const [search, setSearch] = useState("");
 
   const {
-    data: rent2026Data = [],
+    data: plotsData = [],
     isLoading,
     isError,
     error,
-  } = useRent2026Data();
+} = usePlotsData();
 
   const handleEdit = (plot) => {
     dispatch(openAddLandPlotModal(plot));
@@ -44,16 +46,16 @@ export default function LandPlotsList({ open = true }) {
   const filteredData = useMemo(() => {
     const value = search.toLowerCase().trim();
 
-    if (!value) return rent2026Data;
+    if (!value) return plotsData;
 
-    return rent2026Data.filter((item) => {
+    return plotsData.filter((item) => {
       return (
         (item.plot?.cadnum || "").toLowerCase().includes(value) ||
         (item.source || "").toLowerCase().includes(value) ||
         (item.owner?.name || "").toLowerCase().includes(value)
       );
     });
-  }, [rent2026Data, search]);
+  }, [plotsData, search]);
 
   const handleCenterMap = (item) => {
     if (
@@ -226,7 +228,7 @@ export default function LandPlotsList({ open = true }) {
                 }}
               >
                 <b>
-                  {item.plot?.cadnum || "Без номера"}
+                    {item.plot?.cadnum || "Без номера"}
                 </b>
 
                 <br />
@@ -236,22 +238,41 @@ export default function LandPlotsList({ open = true }) {
                 <br />
 
                 <span
-                  style={{
-                    color: "#bdbdbd",
-                  }}
+                    style={{
+                        color:
+                            item.ownershipType === "own"
+                                ? "#81c784"
+                                : "#ffb74d",
+                        fontWeight: 600,
+                    }}
                 >
-                  {item.source}
+                    {item.ownershipType === "own"
+                        ? "Власність"
+                        : "Оренда"}
                 </span>
 
                 <br />
 
-                <span
-                  style={{
-                    color: "#90caf9",
-                  }}
-                >
-                  {item.owner?.name}
-                </span>
+                {item.ownershipType === "rent" ? (
+                    <span
+                        style={{
+                            color:
+                                item.source === "КРОК"
+                                    ? "#64b5f6"
+                                    : "#ce93d8",
+                        }}
+                    >
+                        {item.source}
+                    </span>
+                ) : (
+                    <span
+                        style={{
+                            color: "#90caf9",
+                        }}
+                    >
+                        {item.owner?.name || "Власник невідомий"}
+                    </span>
+                )}
               </Typography>
 
               {/* ACTION */}

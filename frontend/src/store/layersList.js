@@ -1,49 +1,72 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createSlice } from "@reduxjs/toolkit";
 
 const layersSlice = createSlice({
-    name: 'layers',
+    name: "layers",
+
     initialState: {
         showFields: true,
         showCadastre: false,
         showGeozones: false,
         showUnits: true,
-        showRent: false,
-        showRent2026: false,
-        showProperty: false,
+
+        showOwnPlots: false,
+        showLadaRentPlots: false,
+        showKrokRentPlots: false,
     },
+
     reducers: {
         toggleFields: (state) => {
             state.showFields = !state.showFields;
         },
+
         toggleCadastre: (state) => {
             state.showCadastre = !state.showCadastre;
         },
+
         toggleGeozones: (state) => {
             state.showGeozones = !state.showGeozones;
         },
+
         toggleUnits: (state) => {
             state.showUnits = !state.showUnits;
         },
-        toggleRent: (state) => {
-            state.showRent = !state.showRent;
+
+        toggleOwnPlots: (state) => {
+            state.showOwnPlots = !state.showOwnPlots;
         },
-        toggleRent2026: (state) => {
-            state.showRent2026 = !state.showRent2026;
+
+        toggleLadaRentPlots: (state) => {
+            state.showLadaRentPlots = !state.showLadaRentPlots;
         },
-        toggleProperty: (state) => {  // переключати власність
-            state.showProperty = !state.showProperty;
+
+        toggleKrokRentPlots: (state) => {
+            state.showKrokRentPlots = !state.showKrokRentPlots;
         },
     },
 });
 
-export const { toggleFields, toggleCadastre, toggleGeozones, toggleUnits, toggleRent, toggleRent2026, toggleProperty } = layersSlice.actions;
+export const {
+    toggleFields,
+    toggleCadastre,
+    toggleGeozones,
+    toggleUnits,
+    toggleOwnPlots,
+    toggleLadaRentPlots,
+    toggleKrokRentPlots,
+} = layersSlice.actions;
 
 export const selectShowFields = (state) => state.layers.showFields;
 export const selectShowCadastre = (state) => state.layers.showCadastre;
 export const selectShowGeozones = (state) => state.layers.showGeozones;
 export const selectShowUnits = (state) => state.layers.showUnits;
-export const selectShowRent = (state) => state.layers.showRent;
-export const selectShowRent2026 = (state) => state.layers.showRent2026;
-export const selectShowProperty = (state) => state.layers.showProperty;
+
+export const selectShowOwnPlots = (state) =>
+    state.layers.showOwnPlots;
+
+export const selectShowLadaRentPlots = (state) =>
+    state.layers.showLadaRentPlots;
+
+export const selectShowKrokRentPlots = (state) =>
+    state.layers.showKrokRentPlots;
 
 export default layersSlice.reducer;

@@ -18,7 +18,6 @@ import PersonnelList from "../PersonnelList";
 import VehicleList from "../VehicleList";
 import TechniqueList from "../TechniqueList";
 import FieldsList from "../FieldsList";
-// import CadasterList from "../CadasterList";
 import LandPlotsList from "../LandPlotsList";
 import LayersList from "../LayersList";
 import CalendarList from "../CalendarList";
@@ -58,12 +57,6 @@ export default function Aside() {
       label: "Поля",
       component: <FieldsList />,
     },
-    // {
-    //   name: "cadastre",
-    //   icon: <AccountTree />,
-    //   label: "Кадастрові ділянки",
-    //   component: <CadasterList />,
-    // },
     {
       name: "landPlots",
       icon: <AccountTree />,
