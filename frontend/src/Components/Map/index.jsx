@@ -69,9 +69,6 @@ function ZoomTracker({ setZoomLevel }) {
 export default function Map() {
   const dispatch = useDispatch();
 
-  const { data: gpsData = [], isLoading: isGpsLoading } =
-    useGpsData();
-
   const {
     data: fieldsData = [],
     isLoading: isFieldsLoading,
@@ -163,7 +160,6 @@ export default function Map() {
   };
 
   if (
-    isGpsLoading ||
     isCadastreLoading ||
     isFieldsLoading ||
     isGeozoneLoading ||
